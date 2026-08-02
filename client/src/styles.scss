@@ -1,0 +1,4 @@
+/* LeadFlow global styles.
+   tokens.css defines the design-system custom properties and base element styles;
+   it must load before any PrimeNG component styles (theme is provided in app.config.ts). */
+@import './theme/tokens.css';

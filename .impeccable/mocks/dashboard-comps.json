@@ -1,0 +1,14 @@
+{
+  "surface": "dashboard + app shell",
+  "mode": "operate",
+  "direction": "register with attention gutter (surface seed 25b8f9c7, candidate 5)",
+  "variants": [
+    "A open ledger",
+    "B margin index",
+    "C tally board"
+  ],
+  "medium": "live HTML at 390px, real tokens, embedded Fredoka+Archivo subsets",
+  "approved": true,
+  "approvedVariant": "A — יומן פתוח / the open ledger",
+  "desktopComp": ".impeccable/mocks/dashboard-a-desktop.html"
+}
