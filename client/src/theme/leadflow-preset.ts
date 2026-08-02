@@ -3,13 +3,14 @@ import Aura from '@primeuix/themes/aura';
 
 /**
  * LeadFlow — PrimeNG 20 preset.
- * Modernist base: mono red on a light ground, zero radius, strong rules.
- * Mirrors client/src/theme/tokens.css and docs/DESIGN-SYSTEM.md — change both together.
+ * World: שלט שוק / the market sign — ink on poster stock, one fluorescent field for
+ * today, one red for commit. Zero radius, no shadows, heavy rules.
+ * Mirrors client/src/theme/tokens.css and docs/DESIGN-SYSTEM.md — change all three together.
  *
  * providePrimeNG({ theme: { preset: LeadFlowPreset,
  *   options: { darkModeSelector: '[data-theme="dark"]' } } })
  */
-// The preset uses project-specific primitive ramps (accent/ink) and extra component
+// The preset uses project-specific primitive ramps (red/paper) and extra component
 // tokens that @primeuix/themes' compile-time token map doesn't enumerate; the theme
 // engine resolves them dynamically at runtime, so the literal is widened here.
 export const LeadFlowPreset = definePreset(Aura, {
@@ -17,30 +18,30 @@ export const LeadFlowPreset = definePreset(Aura, {
     borderRadius: {
       none: '0', xs: '0', sm: '0', md: '0', lg: '0', xl: '0',
     },
-    // accent ramp — the single colour role in the system
-    accent: {
-      50: '#fff2ef', 100: '#fff2ef', 200: '#ffe0d9', 300: '#ffc4b8',
-      400: '#ff9783', 500: '#ff563c', 600: '#dd2b0f', 700: '#ae1800',
-      800: '#7c1405', 900: '#4d170e', 950: '#4d170e',
+    // commit red — primary action, Won, cleared marks
+    red: {
+      50: '#fdf0ee', 100: '#fbdcd9', 200: '#f5b3ac', 300: '#ee847a',
+      400: '#e04b3e', 500: '#cc1b12', 600: '#b3150e', 700: '#8f110b',
+      800: '#6b0d08', 900: '#470906', 950: '#2c0604',
     },
-    // neutral ramp — carries pipeline progression
-    ink: {
-      50: '#f8f4f4', 100: '#f8f4f4', 200: '#eae7e7', 300: '#d7d3d3',
-      400: '#bab6b6', 500: '#9b9797', 600: '#7d7979', 700: '#605d5d',
-      800: '#444141', 900: '#2d2b2b', 950: '#201e1d',
+    // paper ramp — poster stock through to ink; carries pipeline progression
+    paper: {
+      50: '#fbf7ee', 100: '#f7f1e4', 200: '#efe7d4', 300: '#e8dcc0',
+      400: '#c9b98f', 500: '#a2957a', 600: '#6b6358', 700: '#4a453d',
+      800: '#2e2a25', 900: '#221f1b', 950: '#14110f',
     },
   },
 
   semantic: {
     primary: {
-      50: '{accent.50}', 100: '{accent.100}', 200: '{accent.200}',
-      300: '{accent.300}', 400: '{accent.400}', 500: '{accent.500}',
-      600: '{accent.600}', 700: '{accent.700}', 800: '{accent.800}',
-      900: '{accent.900}', 950: '{accent.950}',
+      50: '{red.50}', 100: '{red.100}', 200: '{red.200}',
+      300: '{red.300}', 400: '{red.400}', 500: '{red.500}',
+      600: '{red.600}', 700: '{red.700}', 800: '{red.800}',
+      900: '{red.900}', 950: '{red.950}',
     },
     borderRadius: { none: '0', xs: '0', sm: '0', md: '0', lg: '0', xl: '0' },
     focusRing: {
-      width: '2px',
+      width: '3px',
       style: 'solid',
       color: '{primary.color}',
       offset: '2px',
@@ -48,57 +49,57 @@ export const LeadFlowPreset = definePreset(Aura, {
     },
     formField: {
       paddingX: '12px',
-      paddingY: '10px',
+      paddingY: '11px',
       borderRadius: '0',
-      focusRing: { width: '2px', style: 'solid', color: '{primary.color}', offset: '0' },
+      focusRing: { width: '3px', style: 'solid', color: '{primary.color}', offset: '0' },
     },
     transitionDuration: '120ms',
 
     colorScheme: {
       light: {
         surface: {
-          0: '#ffffff', 50: '#f8f4f4', 100: '#f3f2f2', 200: '#eae9e9',
-          300: '#d7d3d3', 400: '#bab6b6', 500: '#9b9797', 600: '#7d7979',
-          700: '#605d5d', 800: '#444141', 900: '#2d2b2b', 950: '#201e1d',
+          0: '#ffffff', 50: '#fbf7ee', 100: '#f7f1e4', 200: '#efe7d4',
+          300: '#e8dcc0', 400: '#c9b98f', 500: '#a2957a', 600: '#6b6358',
+          700: '#4a453d', 800: '#2e2a25', 900: '#221f1b', 950: '#14110f',
         },
         primary: {
-          color: '#ec3013',
-          contrastColor: '#f3f2f2',
-          hoverColor: '{accent.600}',
-          activeColor: '{accent.700}',
+          color: '#cc1b12',
+          contrastColor: '#ffffff',
+          hoverColor: '{red.600}',
+          activeColor: '{red.700}',
         },
-        content: { background: '#eae9e9', borderColor: 'rgba(32,30,29,0.40)' },
-        text: { color: '#201e1d', mutedColor: '#605d5d' },
+        content: { background: '#efe7d4', borderColor: '#14110f' },
+        text: { color: '#14110f', mutedColor: '#6b6358' },
         formField: {
-          background: '#eae9e9',
-          borderColor: 'rgba(32,30,29,0.40)',
-          hoverBorderColor: 'rgba(32,30,29,0.60)',
-          focusBorderColor: '#ec3013',
-          color: '#201e1d',
-          placeholderColor: '#9b9797',
+          background: '#efe7d4',
+          borderColor: '#14110f',
+          hoverBorderColor: '#14110f',
+          focusBorderColor: '#cc1b12',
+          color: '#14110f',
+          placeholderColor: '#6b6358',
         },
       },
       dark: {
         surface: {
-          0: '#1a1918', 50: '#1a1918', 100: '#262423', 200: '#302d2c',
-          300: '#3a3736', 400: '#4a4645', 500: '#605d5d', 600: '#7d7979',
-          700: '#9b9797', 800: '#bab6b6', 900: '#d7d3d3', 950: '#f3f2f2',
+          0: '#171512', 50: '#171512', 100: '#221f1b', 200: '#2e2a25',
+          300: '#3a342a', 400: '#554c39', 500: '#6b6358', 600: '#a2957a',
+          700: '#c9b98f', 800: '#e8dcc0', 900: '#efe7d4', 950: '#f7f1e4',
         },
         primary: {
-          color: '#ff563c',              // accent-500: #ec3013 drops below 3:1 on dark
-          contrastColor: '#1a1918',
-          hoverColor: '{accent.400}',
-          activeColor: '{accent.300}',
+          color: '#ff6a4d',              // #cc1b12 drops to 3.3:1 on the dark ground
+          contrastColor: '#171512',
+          hoverColor: '{red.300}',
+          activeColor: '{red.200}',
         },
-        content: { background: '#262423', borderColor: 'rgba(243,242,242,0.35)' },
-        text: { color: '#f3f2f2', mutedColor: 'rgba(243,242,242,0.65)' },
+        content: { background: '#221f1b', borderColor: 'rgba(247,241,228,0.75)' },
+        text: { color: '#f7f1e4', mutedColor: 'rgba(247,241,228,0.66)' },
         formField: {
-          background: '#262423',
-          borderColor: 'rgba(243,242,242,0.35)',
-          hoverBorderColor: 'rgba(243,242,242,0.55)',
-          focusBorderColor: '#ff563c',
-          color: '#f3f2f2',
-          placeholderColor: 'rgba(243,242,242,0.45)',
+          background: '#221f1b',
+          borderColor: 'rgba(247,241,228,0.75)',
+          hoverBorderColor: '#f7f1e4',
+          focusBorderColor: '#ff6a4d',
+          color: '#f7f1e4',
+          placeholderColor: 'rgba(247,241,228,0.5)',
         },
       },
     },
@@ -108,38 +109,44 @@ export const LeadFlowPreset = definePreset(Aura, {
     button: {
       root: {
         borderRadius: '0',
+        borderWidth: '2px',
         paddingX: '18px',
-        paddingY: '11px',
+        paddingY: '12px',
         // 44px minimum touch target, both densities
-        sm: { paddingX: '14px', paddingY: '9px' },
-        label: { fontWeight: '500' },
-        focusRing: { width: '2px', offset: '2px' },
+        sm: { paddingX: '14px', paddingY: '10px' },
+        label: { fontWeight: '600' },
+        focusRing: { width: '3px', offset: '2px' },
       },
     },
-    tag: { root: { borderRadius: '0', fontSize: '12px', padding: '4px 10px' } },
+    tag: { root: { borderRadius: '0', fontSize: '13px', padding: '2px 9px' } },
     card: { root: { borderRadius: '0', shadow: 'none' } },
-    dialog: { root: { borderRadius: '0' } },
-    drawer: { root: { borderRadius: '0' } },
-    toast: { root: { borderRadius: '0', borderWidth: '0 0 0 2px' } },
-    inputtext: { root: { borderRadius: '0' } },
+    dialog: { root: { borderRadius: '0', shadow: 'none', borderWidth: '3px' } },
+    drawer: { root: { borderRadius: '0', shadow: 'none', borderWidth: '3px' } },
+    toast: { root: { borderRadius: '0', borderWidth: '0 0 0 4px', shadow: 'none' } },
+    inputtext: { root: { borderRadius: '0', borderWidth: '2px' } },
     selectbutton: { root: { borderRadius: '0' } },
+    menu: { root: { borderRadius: '0', borderWidth: '2px', shadow: 'none' } },
     datatable: {
-      headerCell: { borderColor: 'rgba(32,30,29,0.40)' },
-      bodyCell: { borderColor: 'rgba(32,30,29,0.25)' },
+      headerCell: { borderColor: '#14110f' },
+      bodyCell: { borderColor: 'rgba(20,17,15,0.22)' },
     },
     tooltip: { root: { borderRadius: '0' } },
   },
 } as never);
 
-/** Pipeline stage presentation. Colour never carries meaning alone — the label always ships with it. */
+/**
+ * Pipeline stage presentation. Colour never carries meaning alone — the Hebrew label
+ * always ships with it, and the ramp reads in greyscale: paper → tan → deep tan → ink → red,
+ * with Lost hatched rather than tinted.
+ */
 export const LEAD_STATUS_STYLE = {
-  new:           { order: 1, rule: '2px',        ruleColor: '#9b9797', bg: '#eae7e7',     fg: '#605d5d' },
-  contacted:     { order: 2, rule: '3px',        ruleColor: '#7d7979', bg: '#d7d3d3',     fg: '#444141' },
-  qualified:     { order: 3, rule: '4px',        ruleColor: '#605d5d', bg: '#bab6b6',     fg: '#2d2b2b' },
-  proposal_sent: { order: 4, rule: '5px',        ruleColor: '#444141', bg: '#7d7979',     fg: '#f8f4f4' },
-  won:           { order: 5, rule: '6px',        ruleColor: '#ec3013', bg: '#ec3013',     fg: '#f3f2f2' },
-  lost:          { order: 6, rule: '2px dashed', ruleColor: '#9b9797', bg: 'transparent', fg: '#605d5d', border: '#9b9797' },
+  new:           { order: 1, bg: 'transparent',  fg: '#14110f', border: '#14110f' },
+  contacted:     { order: 2, bg: '#e8dcc0',      fg: '#14110f', border: '#14110f' },
+  qualified:     { order: 3, bg: '#c9b98f',      fg: '#14110f', border: '#14110f' },
+  proposal_sent: { order: 4, bg: '#14110f',      fg: '#f7f1e4', border: '#14110f' },
+  won:           { order: 5, bg: '#cc1b12',      fg: '#ffffff', border: '#cc1b12' },
+  lost:          { order: 6, bg: 'hatch',        fg: '#6b6358', border: '#6b6358' },
 } as const;
 
-/** Chart.js palette — neutral ramp for the pipeline, accent for outcomes. */
-export const CHART_PALETTE = ['#eae7e7', '#d7d3d3', '#bab6b6', '#7d7979', '#ec3013', '#9b9797'];
+/** Chart.js palette — the paper ramp for pipeline stages, red for outcomes. */
+export const CHART_PALETTE = ['#f7f1e4', '#e8dcc0', '#c9b98f', '#14110f', '#cc1b12', '#a2957a'];

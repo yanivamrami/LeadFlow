@@ -1,60 +1,67 @@
-/* LeadFlow — design tokens.
+/* LeadFlow — design tokens. World: שלט שוק / the market sign.
    Import once in styles.scss, before the PrimeNG theme.
-   Every value here is mirrored in docs/DESIGN-SYSTEM.md and leadflow-preset.ts. */
+   Every value here is mirrored in docs/DESIGN-SYSTEM.md and leadflow-preset.ts.
+
+   Roles, not materials: --lf-ground / --lf-ink / --lf-surface flip with the theme,
+   --lf-day and --lf-red keep their meaning in both. */
 
 :root {
   /* ground */
-  --lf-bg: #f3f2f2;
-  --lf-surface: #eae9e9;
-  --lf-text: #201e1d;
-  --lf-text-muted: #605d5d;
-  --lf-accent: #ec3013;
-  --lf-on-accent: #f3f2f2;
-  --lf-divider: rgba(32, 30, 29, 0.40);
-  --lf-divider-soft: rgba(32, 30, 29, 0.25);
-  --lf-skeleton: #e2dfdf;
+  --lf-ground: #f7f1e4;          /* poster stock — the page */
+  --lf-surface: #efe7d4;         /* raised paper — cards, fields */
+  --lf-ink: #14110f;             /* primary ink */
+  --lf-muted: #6b6358;           /* secondary copy, metadata — 5.3:1 on ground */
+  --lf-on-ink: #f7f1e4;          /* text on an ink fill */
 
-  /* neutral ramp */
-  --lf-n-100: #f8f4f4;
-  --lf-n-200: #eae7e7;
-  --lf-n-300: #d7d3d3;
-  --lf-n-400: #bab6b6;
-  --lf-n-500: #9b9797;
-  --lf-n-600: #7d7979;
-  --lf-n-700: #605d5d;
-  --lf-n-800: #444141;
-  --lf-n-900: #2d2b2b;
+  /* the two committed colours */
+  --lf-day: #ffe000;             /* today. attention. the sheet. 14.5:1 with ink */
+  --lf-on-day: #14110f;
+  --lf-red: #cc1b12;             /* commit: primary action, Won, cleared marks. 5.0:1 with paper */
+  --lf-on-red: #ffffff;
 
-  /* accent ramp */
-  --lf-a-100: #fff2ef;
-  --lf-a-200: #ffe0d9;
-  --lf-a-300: #ffc4b8;
-  --lf-a-400: #ff9783;
-  --lf-a-500: #ff563c;
-  --lf-a-600: #dd2b0f;
-  --lf-a-700: #ae1800;
-  --lf-a-800: #7c1405;
-  --lf-a-900: #4d170e;
+  /* paper ramp — carries pipeline progression, greyscale-legible */
+  --lf-tan: #e8dcc0;
+  --lf-tan-deep: #c9b98f;
 
-  /* pipeline — fill / ink, in stage order */
-  --lf-status-new-bg: var(--lf-n-200);          --lf-status-new-fg: var(--lf-n-700);
-  --lf-status-contacted-bg: var(--lf-n-300);    --lf-status-contacted-fg: var(--lf-n-800);
-  --lf-status-qualified-bg: var(--lf-n-400);    --lf-status-qualified-fg: var(--lf-n-900);
-  --lf-status-proposal-bg: var(--lf-n-600);     --lf-status-proposal-fg: var(--lf-n-100);
-  --lf-status-won-bg: var(--lf-accent);         --lf-status-won-fg: var(--lf-on-accent);
-  --lf-status-lost-bg: transparent;             --lf-status-lost-fg: var(--lf-n-700);
-  --lf-status-lost-border: var(--lf-n-500);
+  /* rules */
+  --lf-rule: var(--lf-ink);
+  --lf-rule-soft: rgba(20, 17, 15, 0.22);
+  --lf-rule-w: 4px;              /* section rule */
+  --lf-rule-w-2: 2px;            /* group rule, control border */
+  --lf-rule-w-3: 1px;            /* row rule */
 
-  /* kanban header rule weights */
-  --lf-rule-stage-1: 2px; --lf-rule-stage-2: 3px; --lf-rule-stage-3: 4px;
-  --lf-rule-stage-4: 5px; --lf-rule-stage-5: 6px; --lf-rule-stage-6: 2px;
+  --lf-skeleton: #e4dbc8;
 
-  /* type */
-  --lf-font-ui: "Fredoka", system-ui, sans-serif;      /* Hebrew + UI */
-  --lf-font-num: "Archivo", ui-monospace, sans-serif;  /* numerals, Latin, labels */
-  --lf-size-display: 44px; --lf-size-h1: 28px; --lf-size-h2: 21px;
-  --lf-size-h3: 17px; --lf-size-body: 15px; --lf-size-small: 13px;
-  --lf-size-label: 11px;
+  /* attention — the flag that replaced the hairline gutter */
+  --lf-flag-w: 10px;
+  --lf-flag-now: var(--lf-day);
+  --lf-flag-drift: repeating-linear-gradient(
+    135deg, transparent 0 5px, rgba(107, 99, 88, 0.5) 5px 6px);
+  --lf-flag-none: transparent;
+
+  /* pipeline stages — fill / ink, in stage order. Label always ships with the colour. */
+  --lf-stage-new-bg: transparent;             --lf-stage-new-fg: var(--lf-ink);
+  --lf-stage-contacted-bg: var(--lf-tan);     --lf-stage-contacted-fg: var(--lf-ink);
+  --lf-stage-qualified-bg: var(--lf-tan-deep);--lf-stage-qualified-fg: var(--lf-ink);
+  --lf-stage-proposal-bg: var(--lf-ink);      --lf-stage-proposal-fg: var(--lf-on-ink);
+  --lf-stage-won-bg: var(--lf-red);           --lf-stage-won-fg: var(--lf-on-red);
+  --lf-stage-lost-bg: repeating-linear-gradient(
+    135deg, transparent 0 5px, rgba(107, 99, 88, 0.35) 5px 6px);
+  --lf-stage-lost-fg: var(--lf-muted);
+  --lf-stage-lost-border: var(--lf-muted);
+
+  /* type — Fredoka carries every Hebrew glyph in the product, at every size.
+     Archivo is figures and Latin only: it has no Hebrew coverage, so Hebrew set in it
+     silently falls back to a system face and breaks the voice. */
+  --lf-font-ui: 'Fredoka', system-ui, sans-serif;
+  --lf-font-num: 'Archivo', ui-monospace, sans-serif;
+  --lf-size-day: 40px;           /* the sheet heading */
+  --lf-size-display: 30px;       /* lead name, desktop */
+  --lf-size-name: 26px;          /* lead name, mobile */
+  --lf-size-h2: 21px;
+  --lf-size-body: 15px;
+  --lf-size-small: 13px;
+  --lf-size-label: 12px;          /* the system's floor — nothing renders below this */
 
   /* space */
   --lf-space-1: 4px;  --lf-space-2: 8px;  --lf-space-3: 12px;
@@ -63,15 +70,14 @@
   /* geometry */
   --lf-radius: 0px;
   --lf-touch: 44px;
-  --lf-row-comfortable: 48px;
-  --lf-row-compact: 36px;
+  --lf-row: 64px;                /* comfortable — register, sheet */
+  --lf-row-compact: 44px;        /* board cards, reminders */
 
-  /* elevation — three steps, no more */
-  --lf-shadow-sm: 0 1px 2px rgba(45, 43, 43, 0.14);
-  --lf-shadow-md: 0 3px 10px rgba(45, 43, 43, 0.16);
-  --lf-shadow-lg: 0 12px 32px rgba(45, 43, 43, 0.22);
+  /* paper does not float — no shadow scale. Depth is overlap, rotation and hatch. */
+  --lf-paste-tilt: -0.4deg;
+  --lf-stamp-tilt: -4deg;
 
-  /* motion */
+  /* motion — one gesture: paper settling */
   --lf-dur-state: 120ms;
   --lf-dur-enter: 180ms;
   --lf-dur-settle: 220ms;
@@ -80,78 +86,146 @@
   --lf-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:root[data-theme="dark"] {
-  --lf-bg: #1a1918;
-  --lf-surface: #262423;
-  --lf-text: #f3f2f2;
-  --lf-text-muted: rgba(243, 242, 242, 0.65);
-  --lf-accent: #ff563c;         /* accent-500 — #ec3013 falls below 3:1 on dark */
-  --lf-on-accent: #1a1918;
-  --lf-divider: rgba(243, 242, 242, 0.35);
-  --lf-divider-soft: rgba(243, 242, 242, 0.18);
-  --lf-skeleton: #302d2c;
+:root[data-theme='dark'] {
+  --lf-ground: #171512;
+  --lf-surface: #221f1b;
+  --lf-ink: #f7f1e4;
+  --lf-muted: rgba(247, 241, 228, 0.66);
+  --lf-on-ink: #171512;
 
-  --lf-status-new-bg: #3a3736;        --lf-status-new-fg: var(--lf-n-300);
-  --lf-status-contacted-bg: #4a4645;  --lf-status-contacted-fg: var(--lf-n-200);
-  --lf-status-qualified-bg: #605d5d;  --lf-status-qualified-fg: var(--lf-n-100);
-  --lf-status-proposal-bg: #8b8785;   --lf-status-proposal-fg: #1a1918;
-  --lf-status-lost-border: rgba(243, 242, 242, 0.4);
+  --lf-day: #ffe000;             /* unchanged — it is the one light in the room */
+  --lf-on-day: #14110f;
+  --lf-red: #ff6a4d;             /* #cc1b12 drops to 3.3:1 on this ground */
+  --lf-on-red: #171512;
 
-  /* no shadows on a dark ground — hairline instead */
-  --lf-shadow-sm: 0 0 0 1px rgba(243, 242, 242, 0.10);
-  --lf-shadow-md: 0 0 0 1px rgba(243, 242, 242, 0.13);
-  --lf-shadow-lg: 0 0 0 1px rgba(243, 242, 242, 0.15);
+  --lf-tan: #3a342a;
+  --lf-tan-deep: #554c39;
+
+  --lf-rule: rgba(247, 241, 228, 0.75);
+  --lf-rule-soft: rgba(247, 241, 228, 0.2);
+  --lf-skeleton: #2c2822;
+
+  --lf-flag-drift: repeating-linear-gradient(
+    135deg, transparent 0 5px, rgba(247, 241, 228, 0.4) 5px 6px);
+
+  --lf-stage-contacted-fg: var(--lf-ink);
+  --lf-stage-qualified-fg: var(--lf-ink);
+  --lf-stage-proposal-bg: var(--lf-ink);
+  --lf-stage-proposal-fg: var(--lf-on-ink);
+  --lf-stage-lost-bg: repeating-linear-gradient(
+    135deg, transparent 0 5px, rgba(247, 241, 228, 0.28) 5px 6px);
 }
 
-html { direction: rtl; }
+html {
+  direction: rtl;
+  background: var(--lf-ground);
+}
 
 body {
   margin: 0;
-  background: var(--lf-bg);
-  color: var(--lf-text);
+  background: var(--lf-ground);
+  color: var(--lf-ink);
   font-family: var(--lf-font-ui);
   font-size: var(--lf-size-body);
-  line-height: 1.6;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* numerals, phone numbers, emails, code — always Archivo, always tabular */
-.lf-num, .lf-ltr {
+/* the poster grain. One layer, fixed, never animated. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* display voice — every lead name, every heading */
+.lf-display {
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+/* figures, phone, email, Latin — always Archivo, always tabular */
+.lf-num,
+.lf-ltr {
   font-family: var(--lf-font-num);
   font-variant-numeric: tabular-nums;
+  font-weight: 800;
 }
-.lf-ltr { direction: ltr; display: inline-block; text-align: end; }
+.lf-ltr {
+  direction: ltr;
+  display: inline-block;
+  text-align: end;
+}
+
+/* Labels carry Hebrew, so they are Fredoka. Tracking stays near zero: Hebrew has no
+   uppercase and letterspacing only pulls its letterforms apart. */
+.lf-label {
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: var(--lf-size-label);
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+/* Latin-only labels — the brand lockup and any Latin abbreviation — keep Archivo's
+   tracked, uppercase register. Never put Hebrew in this class. */
+.lf-label-ltr {
+  font-family: var(--lf-font-num);
+  font-weight: 800;
+  font-size: var(--lf-size-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
 
 /* focus — themed everywhere, never the browser default */
 :focus { outline: none; }
-:focus-visible { outline: 2px solid var(--lf-accent); outline-offset: 2px; }
-::selection { background: color-mix(in srgb, var(--lf-accent) 30%, transparent); }
-
-/* guidance layer — the signature component */
-.lf-guidance {
-  border-inline-start: 2px solid var(--lf-accent);
-  padding-inline-start: var(--lf-space-4);
+:focus-visible {
+  outline: 3px solid var(--lf-red);
+  outline-offset: 2px;
 }
-.lf-guidance--nudge {
-  border: 1px solid var(--lf-divider);
-  border-inline-start: 2px solid var(--lf-accent);
-  background: var(--lf-surface);
-  padding: var(--lf-space-3) var(--lf-space-4);
-}
-.lf-guidance--tip {
-  background: var(--lf-text);
-  color: var(--lf-bg);
-  padding: var(--lf-space-3) var(--lf-space-4);
+::selection {
+  background: var(--lf-day);
+  color: var(--lf-on-day);
 }
 
 /* every interactive row keeps its 44px hit area regardless of density */
-.lf-hit { min-block-size: var(--lf-touch); min-inline-size: var(--lf-touch); }
+.lf-hit {
+  min-block-size: var(--lf-touch);
+  min-inline-size: var(--lf-touch);
+}
+
+/* screen-reader only */
+.lf-sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --lf-dur-state: 80ms; --lf-dur-enter: 80ms;
-    --lf-dur-settle: 80ms; --lf-dur-overlay: 80ms; --lf-stagger: 0ms;
+    --lf-dur-state: 80ms;
+    --lf-dur-enter: 80ms;
+    --lf-dur-settle: 80ms;
+    --lf-dur-overlay: 80ms;
+    --lf-stagger: 0ms;
+    --lf-paste-tilt: 0deg;
+    --lf-stamp-tilt: 0deg;
   }
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 80ms !important;
     transition-duration: 80ms !important;
   }

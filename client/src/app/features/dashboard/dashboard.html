@@ -1,0 +1,79 @@
+<div class="dash">
+  <div class="dash__sheet">
+    <lf-day-sheet />
+  </div>
+
+  <div class="dash__main" id="main">
+    <div class="tools">
+      <label class="tools__search">
+        <span class="lf-sr">{{ copy.shell.search }}</span>
+        <svg lucideSearch aria-hidden="true"></svg>
+        <input
+          type="search"
+          [placeholder]="copy.shell.search"
+          [value]="search()"
+          (input)="setSearch($any($event.target).value)"
+        />
+      </label>
+
+      @if (canBoard()) {
+        <div class="tools__view" role="group" [attr.aria-label]="copy.register.view">
+          <button
+            type="button"
+            class="seg"
+            [class.seg--on]="view() === 'list'"
+            [attr.aria-pressed]="view() === 'list'"
+            (click)="setView('list')"
+          >
+            <svg lucideList aria-hidden="true"></svg>
+            {{ copy.register.viewList }}
+          </button>
+          <button
+            type="button"
+            class="seg"
+            [class.seg--on]="view() === 'board'"
+            [attr.aria-pressed]="view() === 'board'"
+            (click)="setView('board')"
+          >
+            <svg lucideColumns3 aria-hidden="true"></svg>
+            {{ copy.register.viewBoard }}
+          </button>
+        </div>
+      }
+    </div>
+
+    <div class="filters" role="group" [attr.aria-label]="copy.register.title">
+      <button
+        type="button"
+        class="filters__chip"
+        [class.filters__chip--on]="statusFilter() === 'all'"
+        [attr.aria-pressed]="statusFilter() === 'all'"
+        (click)="setFilter('all')"
+      >
+        {{ copy.register.all }}
+        <span class="lf-num">{{ total() }}</span>
+      </button>
+
+      @for (stage of stages; track stage) {
+        <button
+          type="button"
+          class="filters__chip"
+          [class.filters__chip--on]="statusFilter() === stage"
+          [attr.aria-pressed]="statusFilter() === stage"
+          (click)="setFilter(stage)"
+        >
+          {{ statusLabel[stage] }}
+          <span class="lf-num">{{ counts()[stage] }}</span>
+        </button>
+      }
+    </div>
+
+    @if (view() === 'board') {
+      <lf-board />
+    } @else {
+      <lf-register />
+    }
+  </div>
+</div>
+
+<p class="lf-sr" role="status" aria-live="polite">{{ announcement() }}</p>

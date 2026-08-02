@@ -38,13 +38,13 @@ graph LR
 
 ```
 LeadFlow/
-├── client/        # Angular 20 SPA (standalone components, PrimeNG 20)
-├── supabase/      # Supabase CLI project: migrations/, functions/, seed.sql, config.toml
-├── docs/          # PRD, ARCHITECTURE, DESIGN-SYSTEM, DEV-HANDOFF, adr/
-└── (root)         # CLAUDE.md, CHANGELOG.md, STATUS.md, TASKS.md
+├── client/            # Angular 20 SPA (standalone components, PrimeNG 20)
+│   └── supabase/      # Supabase CLI project: migrations/, functions/, config.toml
+├── docs/              # PRD, ARCHITECTURE, DESIGN-SYSTEM, DEV-HANDOFF, adr/
+└── (root)             # CLAUDE.md, CHANGELOG.md, STATUS.md, TASKS.md
 ```
 
-No `api/` folder at launch — the PRD requires no custom backend for core functionality. If server-side logic later warrants a .NET minimal API (see §6), it is added as `api/` alongside the existing folders with an accompanying ADR. **Supabase CLI migrations are the schema source of truth** (SQL files under `supabase/migrations/`), replacing the usual EF Core default.
+No `api/` folder at launch — the PRD requires no custom backend for core functionality. If server-side logic later warrants a .NET minimal API (see §6), it is added as `api/` alongside the existing folders with an accompanying ADR. **Supabase CLI migrations are the schema source of truth** (SQL files under `client/supabase/migrations/`), replacing the usual EF Core default. The CLI sits beside the app as a `client/` devDependency, so it is invoked as `npx supabase <cmd>` from `client/` — there is no global install to keep in sync.
 
 ### Container diagram
 
@@ -192,7 +192,7 @@ Tenant-based from day one — the product is multi-tenant even though launch use
 - Tenant-scoped indexes: `(tenant_id, status)`, `(tenant_id, created_at)` on `leads`; `(tenant_id, due_at)` on `reminders`.
 
 ### Migration strategy
-Supabase CLI: `supabase migration new <name>` → SQL file in `supabase/migrations/` → applied to the dev instance via `supabase db push` (CLI linked to dev project); same files pushed to prod once it exists. Seed data (demo leads for first-run experience) in `supabase/seed.sql`, dev-only.
+Supabase CLI, run from `client/`: `npx supabase migration new <name>` → SQL file in `client/supabase/migrations/` → applied to the dev instance via `npx supabase db push` (CLI linked to dev project); same files pushed to prod once it exists. No `seed.sql` is used — the first-run demo lead is created per user by the signup trigger, not seeded, so it exists in production too.
 
 ### RLS posture
 - RLS **enabled on every table**; no table is exposed without policies.
@@ -209,7 +209,7 @@ Supabase CLI: `supabase migration new <name>` → SQL file in `supabase/migratio
 - Role-sensitive operations (delete tenant, manage members) additionally check `role = 'owner'` in the policy.
 - `memberships`: users can select rows of tenants they belong to; only tenant `owner` can insert/delete memberships.
 - `profiles`: row auto-created by trigger on `auth.users` insert; user can select/update only their own row; tenant co-members can select each other's profiles (for assignment display).
-- Anon key ships in the client — safe only because RLS is the enforcement boundary. **Every migration adding a table must include its policies in the same migration.**
+- The publishable key (`sb_publishable_…`) ships in the client — safe only because RLS is the enforcement boundary. **Every migration adding a table must include its policies in the same migration.**
 
 ## 6. API design
 
@@ -251,7 +251,7 @@ No custom REST API. Data access via Supabase auto-generated PostgREST endpoints 
 | Availability | Supabase + Vercel managed SLAs; no self-hosted components | "high availability" hosting requirement |
 | Scalability | Per-tenant data volumes are small (100s–1000s of leads); Postgres indexes on `(tenant_id, status)`, `(tenant_id, created_at)` | "scalability" |
 | Observability | Vercel analytics + Supabase logs/advisors; client error logging service (console at launch, pluggable Sentry later) | efficiency-gain metrics need usage data |
-| Security | RLS everywhere, Supabase Auth, no secrets in client beyond anon key | "secure... protect user data and ensure privacy" |
+| Security | RLS everywhere, Supabase Auth, no secrets in client beyond the publishable key | "secure... protect user data and ensure privacy" |
 
 ## 9. Compliance & locale
 
@@ -267,7 +267,7 @@ No custom REST API. Data access via Supabase auto-generated PostgREST endpoints 
 ## 10. Cross-cutting concerns
 
 - **Logging:** central client `LoggerService`; Supabase/Postgres logs via dashboard; Edge Functions log to Supabase logs.
-- **Config/secrets:** client gets only `SUPABASE_URL` + anon key via Angular environment files; service-role key exists **only** in Edge Function secrets — never in the repo or client.
+- **Config/secrets:** client gets only `SUPABASE_URL` + the publishable key (`sb_publishable_…`) via Angular environment files; the secret key (`sb_secret_…`) exists **only** in Edge Function secrets — never in the repo or client. Legacy `anon` / `service_role` JWTs are deprecated by end of 2026 and must not be introduced.
 - **Error handling:** one error boundary path — `SupabaseService` normalizes errors → toast service shows Hebrew message → logger records detail.
 - **Auth/authz:** Supabase Auth session in the SDK; Angular route guard redirects unauthenticated users; authorization is 100% RLS — the client never being trusted.
 - **Caching:** signals stores cache per session; realtime keeps them fresh; no service-worker/PWA at launch (candidate later — §12).
@@ -281,7 +281,7 @@ Two environments only:
 | Local (dev) | `ng serve` on developer machine | Supabase cloud **dev** project (shared dev instance — no local Docker stack) |
 | Production (when we get there) | Vercel production | Supabase cloud **prod** project |
 
-- Dev: Angular environment file points at the dev project's URL + anon key; migrations applied to dev via `supabase db push` (CLI linked to the dev project).
+- Dev: Angular environment file points at the dev project's URL + publishable key; migrations applied to dev via `supabase db push` (CLI linked to the dev project).
 - Production (later): separate Supabase project + Vercel deploy from `main`; same migration files pushed to prod when it exists. Additive-first migrations to avoid breaking the live client.
 - No preview environments / branch DBs for now — revisit if team grows.
 

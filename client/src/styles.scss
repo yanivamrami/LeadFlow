@@ -1,4 +1,6 @@
 /* LeadFlow global styles.
    tokens.css defines the design-system custom properties and base element styles;
-   it must load before any PrimeNG component styles (theme is provided in app.config.ts). */
+   it must load before any PrimeNG component styles (theme is provided in app.config.ts).
+   The CDK overlay stylesheet positions popup containers (the per-row lead menu). */
 @import './theme/tokens.css';
+@import '@angular/cdk/overlay-prebuilt.css';

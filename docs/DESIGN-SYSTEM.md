@@ -1,205 +1,214 @@
-# LeadFlow Manager — Design System v1.0
+# LeadFlow Manager — Design System v2.0
 
-> Derived from `documents/Product Requirements Document LeadFlow Manager.md`, `docs/ARCHITECTURE.md` and `documents/Lead Qualification Checklist - PM Decisions.md`.
-> Visual base: **Modernist** — flat, architectural, near-mono red on a light ground, zero radius, strong 2px rules.
-> Interactive spec: `LeadFlow Design System.dc.html`. Implementation: `client/src/theme/leadflow-preset.ts` + `client/src/theme/tokens.css`.
+> Derived from `documents/Product Requirements Document LeadFlow Manager.md`, `docs/ARCHITECTURE.md`, `documents/Lead Qualification Checklist - PM Decisions.md` and `PRODUCT.md`.
+> Visual world: **שלט שוק / the market sign** — Israeli street bill-posting and market-stall signage. Ink on poster stock, one fluorescent field for today, one red for commit.
+> Comps: `.impeccable/mocks/dashboard-market-sign.html`. Implementation: `client/src/theme/tokens.css` + `client/src/theme/leadflow-preset.ts`.
+> **v2.0 replaces the Modernist system of v1.0.** The near-mono ruled register is no longer the product's identity; nothing from it should be reintroduced piecemeal.
 
 ---
 
 ## 0. Principles
 
-1. **Structure over decoration.** Alignment and the weight of the rules organise the page. No gradients, no rounded corners, no colour used decoratively.
-2. **The guidance layer is the product.** Every teaching moment — status tip, "why ask?", checklist nudge, analytics insight — uses one treatment (§8). It is the component that makes this app itself.
-3. **Advisory, never blocking.** Nothing in the visual language may read as a gate. Nudges always offer an exit.
-4. **Mobile-first, RTL-native.** Designed at 390px, scaled to 1440px. Logical CSS properties only.
-5. **Mono discipline.** Red is reserved for: the primary action, the Won status, the guidance rule, and focus. Everywhere else is the neutral ramp.
+1. **Read it in one glance, in sunlight, at arm's length.** The world was chosen because market signage solves exactly the scene this product lives in: a phone, one hand, thirty seconds between jobs. Every decision answers to that.
+2. **The day is a sheet.** What is owed today owns a full-bleed fluorescent field whose height *is* the workload. Clearing an item strikes it through in red and the sheet shortens. An empty sheet is the finish line — it says so rather than disappearing.
+3. **Type is the interface.** Names and figures carry the hierarchy at display scale. Metadata is small and gets out of the way. A market sign never whispers a price.
+4. **Colour owns regions, not edges.** Yellow is a field, red is a band. Neither is used to decorate a border.
+5. **Advisory, never blocking.** Nothing in the visual language may read as a gate. Every nudge carries an exit.
+6. **Mobile-first, RTL-native.** Designed at 390px, scaled to 1440px. Logical CSS properties only.
 
 ---
 
 ## 1. Colour
 
+Roles, not materials — `--lf-ground` / `--lf-ink` / `--lf-surface` flip with the theme; `--lf-day` and `--lf-red` keep their meaning in both.
+
 ### Light (default)
 | Token | Value | Use |
 |---|---|---|
-| `--lf-bg` | `#f3f2f2` | screen ground |
-| `--lf-surface` | `#eae9e9` | cards, inputs, raised rows |
-| `--lf-text` | `#201e1d` | primary ink |
-| `--lf-text-muted` | `#605d5d` | secondary copy, metadata |
-| `--lf-accent` | `#ec3013` | primary action, Won, guidance rule, focus |
-| `--lf-divider` | `rgba(32,30,29,0.40)` | 2px section rules, field borders |
-| `--lf-divider-soft` | `rgba(32,30,29,0.25)` | 1px row rules |
+| `--lf-ground` | `#f7f1e4` | poster stock — the page |
+| `--lf-surface` | `#efe7d4` | raised paper — cards, fields |
+| `--lf-ink` | `#14110f` | primary ink, masthead, rules |
+| `--lf-muted` | `#6b6358` | metadata — 5.3:1 on ground |
+| `--lf-day` | `#ffe000` | today. attention. the sheet. 14.5:1 with ink |
+| `--lf-red` | `#cc1b12` | commit: primary action, Won, cleared marks. 5.0:1 with white |
+| `--lf-tan` | `#e8dcc0` | pipeline ramp, step 2 |
+| `--lf-tan-deep` | `#c9b98f` | pipeline ramp, step 3 |
+| `--lf-rule-soft` | `rgba(20,17,15,.22)` | 1px row rules |
 
 ### Dark
 | Token | Value | Note |
 |---|---|---|
-| `--lf-bg` | `#1a1918` | |
-| `--lf-surface` | `#262423` | |
-| `--lf-text` | `#f3f2f2` | |
-| `--lf-text-muted` | `rgba(243,242,242,0.65)` | |
-| `--lf-accent` | `#ff563c` | accent-500 — `#ec3013` drops below 3:1 on dark ground |
-| `--lf-divider` | `rgba(243,242,242,0.35)` | |
+| `--lf-ground` | `#171512` | |
+| `--lf-surface` | `#221f1b` | |
+| `--lf-ink` | `#f7f1e4` | |
+| `--lf-day` | `#ffe000` | unchanged — it is the one light in the room |
+| `--lf-red` | `#ff6a4d` | `#cc1b12` drops to 3.3:1 on this ground |
+| `--lf-tan` / `--lf-tan-deep` | `#3a342a` / `#554c39` | ramp inverts, order preserved |
 
-Text on an accent fill is `--lf-bg` in light, `#1a1918` in dark. Shadows do not exist in dark mode — replace with a `1px` border at 15% white.
+**Contrast is a system property, not a per-screen check.** `#cc1b12` was chosen over a brighter signage red precisely because white-on-it reaches 5.0:1; a brighter red would fail body-size text on fills. Do not "warm it up" without recomputing.
 
-### Ramps
-Neutral `100…900`: `#f8f4f4 #eae7e7 #d7d3d3 #bab6b6 #9b9797 #7d7979 #605d5d #444141 #2d2b2b`
-Accent `100…900`: `#fff2ef #ffe0d9 #ffc4b8 #ff9783 #ff563c #dd2b0f #ae1800 #7c1405 #4d170e`
-
-Body-size text in the accent uses **accent-700** (`#ae1800`), never accent-500 — contrast.
+### Rules
+`--lf-rule-w: 4px` section · `2px` group and control border · `1px` row. There is **no shadow scale**: paper does not float. Depth is overlap, rotation (`--lf-paste-tilt`, `--lf-stamp-tilt`) and hatching.
 
 ---
 
 ## 2. Typography
 
-**Fredoka** for Hebrew and UI, **Archivo** for numerals, Latin and labels.
+**Fredoka carries every Hebrew glyph in the product, at every size.** **Archivo** is figures and Latin only.
 
-Archivo (Modernist's base) carries no Hebrew glyphs. Fredoka is rounded and warm — a deliberate counterpoint to the square corners that serves the PRD's "forgiving, beginner-friendly" promise. Figures stay in Archivo with `tabular-nums` so money columns align.
+This is a hard rule, not a preference: **Archivo has no Hebrew coverage**, so any Hebrew string set in it silently falls back to a system face — the text still renders, which is exactly why the bug survives review. If a string can contain Hebrew, it is Fredoka. Use `.lf-label` (Fredoka) for Hebrew labels and `.lf-label-ltr` (Archivo, tracked, uppercase) only for Latin ones such as the brand lockup.
+
+Fredoka is rounded and warm — a deliberate counterpoint to the hard edges, serving the PRD's "forgiving, beginner-friendly" promise. It carries the display voice at 26–52px, which is what makes this world a sign rather than a table. Figures stay in Archivo 800 with `tabular-nums` so money columns align.
+
+Hebrew takes no tracking: it has no uppercase and letterspacing only pulls its letterforms apart. Hebrew labels sit at `0.01em`; the `.12em` register belongs to Latin only.
 
 | Role | Family | Size / weight | Line height |
 |---|---|---|---|
-| Display | Fredoka | 44 / 600 | 1.1 |
-| H1 — screen title | Fredoka | 28 / 600 | 1.2 |
-| H2 — section | Fredoka | 21 / 600 | 1.25 |
-| H3 — lead name | Fredoka | 17 / 500 | 1.3 |
-| Body | Fredoka | 15 / 400 | 1.6 |
-| Small — metadata, guidance | Fredoka | 13 / 400 | 1.5 |
-| Label | Archivo | 11 / 800, uppercase, `.1em` | 1.4 |
-| Numeral | Archivo | 800, `tabular-nums` | — |
+| Day heading (`היום`, count) | Fredoka | 40 / 600 · 52 desktop | 0.85 |
+| Lead name — mobile | Fredoka | 26 / 600 | 1.05 |
+| Lead name — desktop | Fredoka | 30 / 600 | 1.05 |
+| Register title | Fredoka | 28 / 600 · 34 desktop | 1.0 |
+| Board column | Fredoka | 20 / 600 | 1.05 |
+| Body | Fredoka | 15 / 400 | 1.55 |
+| Small — metadata | Fredoka | 13 / 400 | 1.4 |
+| Label — Hebrew | Fredoka | 12 / 600, `.01em` | 1.35 |
+| Label — Latin only | Archivo | 12 / 800, `.12em`, caps | 1.3 |
+| Figure | Archivo | 800, `tabular-nums`, 17–30 | 1.05 |
+| Hebrew monogram (avatar) | Fredoka | 16 / 600 | 1 |
 
-Mobile: display drops to 32, H1 to 24. Nothing below 13px anywhere.
-
----
-
-## 3. Space, grid, edges
-
-Scale: `4 · 8 · 12 · 16 · 24 · 32 · 48`. Screen padding 16 (mobile) / 32 (desktop). Section gap 32 / 48.
-
-- **Radius: 0** on every element — buttons, inputs, cards, dialogs, avatars, tags.
-- **2px rule** — section separators, nav underline, table header.
-- **1px rule** — table rows, list items, field borders.
-- **1px dashed** — Kanban drop zones and empty states only.
-- **Shadow** — three steps only: `sm` dragged card, `md` floating menu, `lg` dialog. Everything else uses rules.
+Nothing below 12px anywhere — including labels and stamps, which is why the label size is a token (`--lf-size-label`) rather than a literal. The brand lockup is Latin-only (`LeadFlow` + `MANAGER` in Archivo 800 caps) per `PRODUCT.md`.
 
 ---
 
-## 4. Density
+## 3. Space, geometry, material
 
-| | Comfortable (default) | Compact |
+Scale: `4 · 8 · 12 · 16 · 24 · 32 · 48`. Screen padding 16 (mobile) / 32 (desktop).
+
+- **Radius: 0** on every element.
+- **Touch targets ≥44×44px** in every density, via transparent padding.
+- **Grain**: one fixed noise layer at 5% opacity on `body::before`. Never animated, never repeated per component.
+- **Rotation** is the world's depth cue: pasted strips sit at `-0.4°`, stamps at `-4°`, a dragged card at `-2°`. All collapse to `0deg` under `prefers-reduced-motion`.
+
+---
+
+## 4. Attention — the flag
+
+The signature device. A 10px tab stuck to the inline-start edge of a row (at the screen edge, not inside the padding). It replaces v1's hairline gutter.
+
+| State | Treatment | Meaning |
 |---|---|---|
-| Where | dashboard, lead detail, forms, analytics | Kanban cards, tables, reminders list |
-| Row height | 48px | 36px |
-| Padding | 16px | 10px |
-| Body size | 15px | 14px |
-| Meta size | 13px | 11px |
+| `now` | solid `--lf-day` + 2px ink border | overdue reminder, silent proposal, or an unqualified new lead |
+| `drift` | 135° hatch, `--lf-muted` at 50% | no contact past the stage's threshold |
+| `none` | transparent | nothing owed — most rows, most days |
 
-**Touch targets stay ≥44×44px in both densities**, achieved with transparent padding — density changes padding and type, never the hit area.
+Solid versus hatch is a **texture** difference, not a hue difference, so the distinction survives greyscale and colour blindness. Board cards use the same vocabulary: `now` fills the card yellow, `drift` hatches its ground.
+
+**Thresholds** (`DRIFT_DAYS` in `client/src/app/core/lead.model.ts`): `new` 3 · `contacted` 7 · `qualified` 7 · `proposal_sent` 3 · Won/Lost never. These are product decisions — change them there, not in CSS.
 
 ---
 
 ## 5. Pipeline statuses
 
-The neutral ramp darkens as the lead advances, so pipeline state is legible in a fast scan and in greyscale. Red is the only colour in the pipeline and is reserved for success. Lost is a hollow outline — present but muted, not punished with colour.
+The paper ramp darkens as the lead advances, so pipeline state is legible in a fast scan and in greyscale. Red is reserved for success; Lost is hatched rather than tinted — present, not punished.
 
 | # | `lead_status` | Hebrew | Fill | Text |
 |---|---|---|---|---|
-| 1 | `new` | ליד חדש | `#eae7e7` (n-200) | `#605d5d` |
-| 2 | `contacted` | יצרנו קשר | `#d7d3d3` (n-300) | `#444141` |
-| 3 | `qualified` | כשיר | `#bab6b6` (n-400) | `#2d2b2b` |
-| 4 | `proposal_sent` | נשלחה הצעה | `#7d7979` (n-600) | `#f8f4f4` |
-| 5 | `won` | נסגר בהצלחה | `#ec3013` | `#f3f2f2` |
-| 6 | `lost` | לא יצא לפועל | transparent, 1px `#9b9797` | `#605d5d` |
+| 1 | `new` | ליד חדש | transparent, 2px ink border | ink |
+| 2 | `contacted` | יצרנו קשר | `--lf-tan` | ink |
+| 3 | `qualified` | כשיר | `--lf-tan-deep` | ink |
+| 4 | `proposal_sent` | נשלחה הצעה | `--lf-ink` | ground |
+| 5 | `won` | נסגר בהצלחה | `--lf-red` | white |
+| 6 | `lost` | לא יצא לפועל | 135° hatch, muted border | muted |
 
-**Lead sources** (`website · referral · social_media · phone · other`) are neutral outline tags — descriptive, not ranked. Only `is_demo` leads carry an accent-100 tint plus a sparkle icon, so it is obvious they are deletable.
+**Status is never carried by colour alone** — the tag always ships its Hebrew label. Lead sources are plain text, never tagged: they describe, they do not rank. Demo leads tint their row with `--lf-day` at 16% and carry a rotated `לדוגמה` stamp, so it is obvious they are deletable.
 
 ---
 
-## 6. Kanban
+## 6. The board
 
-Column identity is carried by **header rule weight + stage index**, not by colour:
+Six posted bills, right-to-left, stage 1 at the inline-start edge. Column identity is the **header block**, not a rule weight:
 
-| Stage | Rule |
+| Stage | Header |
 |---|---|
-| 1 new | 2px `#9b9797` |
-| 2 contacted | 3px `#7d7979` |
-| 3 qualified | 4px `#605d5d` |
-| 4 proposal_sent | 5px `#444141` |
-| 5 won | 6px `#ec3013` |
-| 6 lost | 2px dashed `#9b9797` |
+| 1–4 | ink block, ground text |
+| 5 won | red block, white text |
+| 6 lost | transparent, 2px dashed muted border |
 
-- Dragged card: `shadow-sm` + 1.5° tilt, no colour change.
-- Drop zone: 1px dashed border + accent at 4% — the only weak red fill permitted in the system.
-- Won cards carry a 3px accent border on the inline-start edge; Lost cards drop to 70% opacity with no fill.
-- **Every card has a "move to stage" menu.** Drag is never the only path (WCAG 2.1 AA).
-- Board flows right-to-left: stage 1 sits at the right edge.
+- Dragged card: `-2°` rotation, 3px border, ground fill. No shadow — paper peeled off a wall, not a card lifted off a surface.
+- Drop placeholder: 3px dashed red on a 6% red wash. The only weak red fill the system permits.
+- Won cards take a red border and a red figure. **They take no side tab** — the column header already carries the meaning, and a thick coloured edge border is the single most recognisable tell of generated UI.
+- **Every card carries the same stage menu the register uses.** Drag is never the only path (WCAG 2.1 AA).
+- The board activates at ≥768px only. Below that the register is the view; a toggle is not offered where six columns cannot honestly fit.
 
 ---
 
 ## 7. Components
 
-Built on Modernist classes; PrimeNG mapping in §11.
+**Buttons** — min-height 44px, 2px ink border, radius 0, no shadow. Solid: ink fill (or `--lf-day` on the sheet). Primary commit: `--lf-red` fill. Bare: transparent border, underline on hover. Labels align to the inline start in wide buttons.
 
-**Buttons** — min-height 44px. Primary: accent fill, `accent-600` hover, `accent-700` active. Secondary: 1px divider border. Ghost: `accent-700` text. Icon: 44×44. **Labels in wide buttons align to the inline start, never centred.**
+**The action band** — on mobile the add-lead action is a full-width red band above the tab bar, 60px, with a 4px ink rule above it. This is the one place red owns a whole region. There is **no round FAB**; radius 0 is systemic.
 
-**Fields** — 44px min-height, surface fill, 1px divider border, radius 0, accent caret. Focus: `2px solid var(--lf-accent)`, `outline-offset: 0`. Error: accent border + inline message with an alert icon, stating the fix. Labels 12px muted; a help icon opens the field tooltip the PRD asks for.
+**Fields** — 44px min-height, surface fill, 2px ink border, radius 0. Focus is `3px solid var(--lf-red)` with `outline-offset: 2px` — on `:focus-within` for composite fields.
 
-**Tri-state checklist row** — three 44px segments (כן / לא / ?) in one bordered group. Selected `yes` = accent fill. Selected `unknown` = `n-300` fill — filled, not empty, so "not asked" reads as an answer rather than a skipped field. The five items appear in PM order: interest → need → budget → authority → timeline.
+**Filter chips** — a scrolling strip under a 3px ink rule. Selected chip is an ink fill. Counts in Archivo 800.
 
-**Activity timeline** — 28px square icon nodes on a 1px vertical rule. System-generated `status_changed` entries use an accent-filled node; user entries use an outlined node.
+**View toggle** — two segments in a 2px ink frame; the selected segment fills `--lf-day`.
 
-**Avatars** — 44px squares, monogram in Archivo 800, tint derived deterministically from the row id across the neutral ramp. Accent is reserved for the signed-in user. No photographs anywhere in the product.
+**Row menu** (`lf-lead-menu`) — 3px ink border, no shadow, opens on the row's inline-end edge. Carries all six stages plus log-activity, snooze, and delete-for-demo. Closes on outside click and Escape, returning focus to its trigger.
 
-**Skeletons** — opaque `#e2dfdf` bars, 1.2s fade, no shimmer sweep.
+**Stamps** — provenance and guidance marks: 3px border, Archivo 800 at 11px, `.1em` tracking, rotated off-axis. Never a rounded pill, never an emoji.
 
 ---
 
-## 8. The guidance layer — signature component
+## 8. The guidance layer
 
-One treatment, three intensities. `<lf-guidance mode="note|nudge|tip">`.
+One vocabulary, three intensities. It is the component that makes this app itself.
 
 | Mode | Form | Behaviour |
 |---|---|---|
-| **note** | 2px accent rule on the inline-start edge, no fill, no border | inline, always visible, not dismissible |
-| **nudge** | note + 1px divider border + surface fill + action row | offers an action, always has an exit ("לא עכשיו") |
-| **tip** | ink ground `#201e1d`, light text, accent inline-start rule | appears once after a stage change, auto-dismisses at 6s |
+| **explainer** | ink strip pasted at `-0.4°` on the day sheet, ground text, yellow emphasis | teaches the sheet once; dismissible, and stays dismissed |
+| **nudge** | ink block pasted at the corner of the viewport, yellow title, two buttons | follows an action, never precedes it; always carries `לא עכשיו` |
+| **status line** | plain sentence in the row or empty state | always visible, never dismissible |
 
-Never a filled callout box, never an icon-in-a-circle, never a rounded panel. It reads as an annotation in the margin.
+Never a filled callout box, never an icon-in-a-circle, never a rounded panel, never a modal. Guidance is annotation, not interruption.
 
 ### Copy tone
-- **Stage tips and empty states** may be energetic: "ליד חדש — הזמן להכשיר!"
-- **Checklist questions stay plain and conversational**: "אתם מדברים עם מי שמחליט?"
-- **Errors are factual and offer the fix.**
-- No emoji anywhere in the interface. No sales jargon.
+- Stage tips and empty states may be energetic: `ליד חדש — הזמן להכשיר!`
+- Checklist questions stay plain and conversational: `אתם מדברים עם מי שמחליט?`
+- Errors are factual and offer the fix.
+- No emoji anywhere. No sales jargon. All strings live in `client/src/app/core/copy.ts`.
 
 ---
 
 ## 9. Empty states
 
-Dashed 1px container + a geometric diagram made of empty rectangles hinting at the missing structure + exactly one action. No illustration, no photography, no mascot.
+Dashed 2px container, a geometric mark of empty rectangles hinting at the missing rows, one sentence of guidance, and at most one action. No illustration, no photography, no mascot. The day sheet's empty state is a statement of completion, not an absence — it never collapses to nothing.
 
 ---
 
 ## 10. Icons and motion
 
-**Lucide only**, 2px stroke, sizes 16 / 20 / 24. Directional icons (arrows, chevrons) mirror in RTL; object icons (phone, mail, calendar) do not.
+**Lucide only**, 2.4px stroke, sizes 17 / 19 / 21 / 22. Directional icons mirror in RTL; object icons (phone, bell, clipboard) do not. Icons are sized in CSS, never by attribute.
+
+One authored gesture: **paper settling**.
 
 | Token | Value |
 |---|---|
-| item enter — fade + 8px slide | 180ms ease-out |
-| stagger between items | 60ms, capped at 8 items |
-| component state (colour, border) | 120ms linear |
-| Kanban card settle | 220ms ease-out |
-| dialog / drawer | 240ms ease-out |
+| row / item enter — fade + 6px rise | `--lf-dur-enter` 180ms `--lf-ease` |
+| stagger between items | `--lf-stagger` 60ms, capped at 8 |
+| control state | `--lf-dur-state` 120ms linear |
+| card settle after drop | `--lf-dur-settle` 220ms |
+| pasted nudge | 220ms, resolving into its `-0.4°` rest angle |
 
-"Animated icons" from the PRD means **state transitions only**: the check draws itself on select, the bell tilts 8° when a reminder lands. No running loops. Under `prefers-reduced-motion` all motion collapses to an 80ms fade and stagger is removed.
+Under `prefers-reduced-motion` every duration collapses to 80ms, stagger goes to 0, and both tilt tokens go to `0deg`.
 
 ---
 
 ## 11. Formats and RTL
 
-- Currency: `₪12,500` — symbol first, no decimals in lists; full precision only in the edit field. Over a million: `₪1.2מ׳`.
-- Dates: `he-IL`. Relative within 7 days ("לפני יומיים"), absolute after ("2 באוגוסט 2026").
-- Phone, email, URL: wrapped `dir="ltr"`, aligned to the inline end, set in Archivo.
-- Percentages and all figures: Archivo, `tabular-nums`.
+- Currency: `₪12,500` via `Intl` `he-IL`, no decimals in lists. Over a million: `₪1.2מ׳`.
+- Dates: relative inside a week (`אתמול`, `לפני יומיים`, `לפני 5 ימים`), absolute after (`2 באוגוסט`). Hebrew dual is handled explicitly — `יומיים`, never `2 ימים`.
+- Phone, email, URL: `dir="ltr"`, aligned to the inline end, set in Archivo.
 - **Logical CSS properties only** — `margin-inline-start`, `padding-block`, `border-inline-end`. No `left`/`right`.
 - Charts run their time axis right-to-left.
 
@@ -207,27 +216,46 @@ Dashed 1px container + a geometric diagram made of empty rectangles hinting at t
 
 ## 12. PrimeNG 20 mapping
 
-Custom preset on the **Aura** base, fed by the tokens above (`client/src/theme/leadflow-preset.ts`).
+Custom preset on the **Aura** base, fed by the tokens above (`client/src/theme/leadflow-preset.ts`). Primitive ramps are `red` and `paper`; `primary` maps to red.
 
 | System element | PrimeNG | Override |
 |---|---|---|
-| buttons | `p-button` | radius 0, label aligned to start, 44px |
-| status tag | `p-tag` | six custom severities from the neutral ramp |
-| text field | `pInputText` | radius 0, 2px accent focus ring |
-| view toggle | `p-selectbutton` | accent fill on selected |
-| lead list | `p-dataview` / `p-table` | compact density, 1px row rules |
-| Kanban drag | **Angular CDK DragDrop** | not `pDraggable` — no touch support |
-| add-lead (mobile) | `p-drawer` bottom | no top radius; `p-dialog` on desktop |
-| stage tip | `p-toast` | custom template: ink ground + accent rule |
-| analytics | `p-chart` (Chart.js) | neutral-ramp palette + accent; RTL axis |
-| guidance layer | — | bespoke `<lf-guidance>` component |
+| buttons | `p-button` | radius 0, 2px border, 44px, weight 600 |
+| status tag | `p-tag` | six stage styles from §5 |
+| text field | `pInputText` | radius 0, 2px border, 3px red focus ring |
+| view toggle | `p-selectbutton` | `--lf-day` fill on selected |
+| add-lead (mobile) | `p-drawer` bottom | 3px border, no shadow; `p-dialog` on desktop |
+| stage tip | `p-toast` | ink ground, 4px inline-start rule, no shadow |
+| row menu | bespoke `lf-lead-menu` | — |
+| board drag | **Angular CDK DragDrop** | not `pDraggable` — no touch support |
+| analytics | `p-chart` (Chart.js) | `CHART_PALETTE`, RTL axis |
+| guidance | bespoke, per §8 | — |
 
 ---
 
 ## 13. Accessibility
 
-- WCAG 2.1 AA. Accent-on-ground is ≥3:1 — fine for icons, large text and chrome; body copy in accent uses accent-700.
-- Focus is always `2px solid var(--lf-accent)` with `outline-offset: 2px`. Never removed, never the browser default.
-- Kanban has a full keyboard path via the per-card stage menu.
-- Status is never communicated by colour alone — the tag always carries its label, and the ramp is greyscale-legible.
-- `prefers-reduced-motion` honoured globally.
+- WCAG 2.1 AA. Every text-on-fill pair in §1 and §5 was computed, not eyeballed.
+- Focus is always `3px solid var(--lf-red)`, offset 2px. Never removed, never the browser default.
+- The board has a full keyboard path via the per-card stage menu; a skip link opens the shell.
+- Status and attention are never colour-only: labels ship with tags, hatch distinguishes drift, and screen-reader-only text names the attention state on every flagged row.
+- Stage moves announce through a polite live region.
+- Navigation items that are not built yet are marked `aria-disabled` and visibly muted rather than linking nowhere.
+- `prefers-reduced-motion` honoured globally, including rotation.
+
+---
+
+## 14. Implementation map
+
+| Concern | File |
+|---|---|
+| tokens | `client/src/theme/tokens.css` |
+| PrimeNG preset, stage styles, chart palette | `client/src/theme/leadflow-preset.ts` |
+| Hebrew copy and formatters | `client/src/app/core/copy.ts` |
+| domain model, drift thresholds, sheet cap | `client/src/app/core/lead.model.ts` |
+| dashboard state | `client/src/app/core/leads.store.ts` |
+| shell (masthead, tabs, action band) | `client/src/app/app.html` · `app.scss` |
+| day sheet | `client/src/app/features/dashboard/day-sheet.*` |
+| register | `client/src/app/features/dashboard/register.*` |
+| board | `client/src/app/features/dashboard/board.*` |
+| stage tag, row menu | `client/src/app/shared/` |

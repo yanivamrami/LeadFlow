@@ -1,0 +1,58 @@
+<div class="board" cdkDropListGroup>
+  @for (column of columns(); track column.status) {
+    <section class="col" [class]="'col--' + column.status" [attr.aria-label]="statusLabel[column.status]">
+      <header class="col__hd">
+        <h3 class="col__name">{{ statusLabel[column.status] }}</h3>
+        <span class="col__count lf-num">{{ column.leads.length }}</span>
+      </header>
+
+      <div
+        class="col__drop"
+        cdkDropList
+        [cdkDropListData]="column.status"
+        (cdkDropListDropped)="drop($event, column.status)"
+      >
+        @for (lead of column.leads; track lead.id) {
+          <article
+            class="card"
+            [class]="'card--' + attention(lead)"
+            [class.card--won]="lead.status === 'won'"
+            [class.card--lost]="lead.status === 'lost'"
+            cdkDrag
+            [cdkDragData]="lead"
+          >
+            <div class="card__ph" *cdkDragPlaceholder>{{ copy.board.dropHere }}</div>
+
+            <div class="card__l1">
+              <h4 class="card__name">{{ lead.name }}</h4>
+              <lf-lead-menu
+                [lead]="lead"
+                (moveTo)="move(lead, $event)"
+                (logActivity)="log(lead)"
+                (snooze)="snooze(lead)"
+                (deleteLead)="remove(lead)"
+              />
+            </div>
+
+            <div class="card__l2">
+              @if (lead.company) {
+                <span class="card__co">{{ lead.company }}</span>
+              }
+              <span class="card__value lf-num">{{ formatValue(lead.estimatedValue) }}</span>
+            </div>
+
+            <p class="card__when">
+              @if (lead.checklistAnswered < checklistTotal && lead.status !== 'won' && lead.status !== 'lost') {
+                {{ copy.board.checklistProgress(lead.checklistAnswered, checklistTotal) }}
+              } @else {
+                {{ when(lead) }}
+              }
+            </p>
+          </article>
+        } @empty {
+          <p class="col__empty">{{ copy.board.emptyColumn }}</p>
+        }
+      </div>
+    </section>
+  }
+</div>

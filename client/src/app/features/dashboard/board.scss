@@ -1,0 +1,185 @@
+/* Six posted bills. Column identity is an ink header block — red at Won, dashed at Lost. */
+
+:host {
+  display: block;
+}
+
+.board {
+  display: flex;
+  gap: 14px;
+  padding: var(--lf-space-6) var(--lf-space-8) var(--lf-space-8);
+  align-items: flex-start;
+  overflow-x: auto;
+}
+
+.col {
+  flex: 1 1 0;
+  min-inline-size: 200px;
+}
+
+.col__hd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lf-space-2);
+  padding: 8px var(--lf-space-3) 9px;
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+}
+
+.col__name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.05;
+}
+
+.col__count {
+  margin-inline-start: auto;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.col--won .col__hd {
+  background: var(--lf-red);
+  color: var(--lf-on-red);
+}
+
+.col--lost .col__hd {
+  background: transparent;
+  color: var(--lf-muted);
+  border: 2px dashed var(--lf-muted);
+}
+
+.col__drop {
+  min-block-size: 92px;
+  padding-block-end: var(--lf-space-2);
+}
+
+.col__empty {
+  margin: 10px 0 0;
+  border: 2px dashed var(--lf-rule-soft);
+  padding: var(--lf-space-4) var(--lf-space-3);
+  font-size: 13px;
+  color: var(--lf-muted);
+  text-align: center;
+}
+
+.card {
+  background: var(--lf-surface);
+  border: 2px solid var(--lf-ink);
+  padding: 9px 11px 10px;
+  margin-block-start: 10px;
+  cursor: grab;
+}
+
+.card__l1 {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lf-space-2);
+}
+
+.card__name {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  font-weight: 600;
+  font-size: 21px;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card__l2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lf-space-2);
+  margin-block-start: 5px;
+}
+
+.card__co {
+  min-inline-size: 0;
+  font-size: 12px;
+  color: var(--lf-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card__value {
+  margin-inline-start: auto;
+  font-size: 17px;
+  white-space: nowrap;
+}
+
+.card__when {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--lf-muted);
+}
+
+/* attention reads the same here as in the register: fill vs hatch, never hue alone */
+.card--now {
+  background: var(--lf-day);
+  color: var(--lf-on-day);
+}
+.card--now .card__co,
+.card--now .card__when {
+  color: var(--lf-on-day);
+}
+
+.card--drift {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--lf-surface) 0 6px,
+    color-mix(in srgb, var(--lf-muted) 22%, transparent) 6px 8px
+  );
+}
+
+/* Won needs no side tab — its column header is already the red block. The card just
+   changes ink: red border all round, red figure. */
+.card--won {
+  border-color: var(--lf-red);
+}
+.card--won .card__value {
+  color: var(--lf-red);
+}
+
+.card--lost {
+  border-style: dashed;
+  border-color: var(--lf-muted);
+  background: transparent;
+  opacity: 0.75;
+}
+
+/* the drag itself: paper peeled off the wall, not a floating card */
+.cdk-drag-preview {
+  background: var(--lf-ground);
+  border: 3px solid var(--lf-ink);
+  padding: 9px 11px 10px;
+  transform: rotate(-2deg);
+  box-shadow: none;
+}
+
+.cdk-drag-placeholder,
+.card__ph {
+  display: grid;
+  place-items: center;
+  min-block-size: 76px;
+  margin-block-start: 10px;
+  border: 3px dashed var(--lf-red);
+  background: color-mix(in srgb, var(--lf-red) 6%, transparent);
+  color: var(--lf-red);
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.cdk-drag-animating,
+.cdk-drop-list-dragging .card:not(.cdk-drag-placeholder) {
+  transition: transform var(--lf-dur-settle) var(--lf-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cdk-drag-preview { transform: none; }
+}
