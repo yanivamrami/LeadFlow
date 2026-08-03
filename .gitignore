@@ -32,3 +32,7 @@ yarn-error.log*
 # Supabase local
 client/supabase/.temp/
 .branches/
+
+# Agent worktrees — these are live git checkouts, not project files.
+# Committing them would nest a working tree inside history.
+.claude/worktrees/
