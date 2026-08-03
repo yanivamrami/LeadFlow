@@ -437,6 +437,10 @@ export class LeadsStore {
               tenant_id: tenantId,
               title: COPY.notify.snoozed,
               due_at: tomorrow,
+              // Every reminder records who scheduled it, on all three write paths — this
+              // one, RemindersStore.create, and save_lead's auth.uid(). It cannot be
+              // backfilled later without inventing history.
+              assigned_to: this.supabase.user()?.id ?? null,
             }) as never,
           );
         }

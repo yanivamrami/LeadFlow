@@ -268,9 +268,13 @@ the email digest, which PRODUCT.md defers. At that point a scheduled job is genu
 because a client-side rule cannot send mail, and it should read the explicit rows rather than
 regenerate them.
 
-**`reminders.assigned_to` (G-7):** written with `auth.uid()` on every reminder the client
-creates, and read nowhere yet. Deliberate — it cannot be backfilled once rows exist without
-inventing history, and it costs one column value now. It becomes meaningful with team invites.
+**`reminders.assigned_to` (G-7):** every write path records who scheduled the reminder — the
+reminders store's insert, the day-sheet snooze, and `save_lead`, which uses `auth.uid()` so the
+server decides rather than trusting a client-supplied id. Nothing reads it yet, and nothing
+should while a tenant has one member: "assigned to <the only member>" on every row is noise.
+Writing it now is what makes the display possible later, because it cannot be backfilled once
+rows exist without inventing history. The read side — assignee name on the row, a member picker,
+an assigned-to-me filter — arrives with invites (§5, SCREENS 8.3).
 
 ## 7. Frontend architecture
 
