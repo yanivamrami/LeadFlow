@@ -1,9 +1,25 @@
 <section class="sheet" [class.sheet--empty]="allItems().length === 0" aria-labelledby="sheet-title">
+  <!-- Above the title, not beside it: the count owns the far edge of the header row, and a
+       third item in there would compete with the day's headline figure. -->
+  <div class="sheet__why">
+    <button
+      type="button"
+      class="why lf-hit"
+      [attr.aria-expanded]="helpOpen()"
+      (click)="helpOpen.set(true)"
+    >
+      <svg lucideCircleQuestionMark aria-hidden="true"></svg>
+      <span>{{ copy.sheet.help.trigger }}</span>
+    </button>
+  </div>
+
   <header class="sheet__hd">
     <h2 class="sheet__title" id="sheet-title">{{ copy.sheet.title }}</h2>
     <span class="sheet__unit lf-label">{{ copy.sheet.open }}</span>
     <span class="sheet__count lf-num">{{ allItems().length }}</span>
   </header>
+
+  <lf-day-sheet-help [(open)]="helpOpen" />
 
   @if (loading() && !loaded()) {
     @for (row of [0, 1]; track row) {
