@@ -44,6 +44,7 @@ import {
   LeadSource,
   NOTE_TYPES,
   QualificationAnswer,
+  Stage,
   ActivityType,
   ReminderAction,
 } from '../../core/lead.model';
@@ -169,7 +170,24 @@ export class LeadSheet {
   protected readonly footerMode = signal<FooterMode>('default');
   protected readonly saving = signal(false);
   protected readonly submitted = signal(false);
-  protected readonly whyOpen = signal<ChecklistItem | null>(null);
+  /**
+   * All five "why ask?" lines at once rather than one signal per question. Five separate
+   * toggles cost a 44px row each and answered the same question — someone who wants the
+   * reasoning wants the set, not the third one. Forced open by the verbose guidance setting,
+   * the same way every field's help is.
+   */
+  protected readonly whyAllOpen = signal(false);
+  protected readonly whyShown = computed(() => this.guidance.verbose() || this.whyAllOpen());
+
+  /**
+   * Below 900px in edit mode the identity fields fold behind a read grid: they are typed once
+   * and then read for months, so they are reference rather than the task. Opening is one-way
+   * for the life of the sheet — having asked to edit, nobody wants it folding back under them.
+   * Create has nothing to read, so its facts block never renders, and above 900px the second
+   * column removes the reason to fold at all (see the stylesheet).
+   */
+  protected readonly factsOpen = signal(false);
+  protected readonly folded = computed(() => !this.create() && !this.factsOpen());
   /**
    * One-at-a-time, same as `whyOpen` — but a separate signal, deliberately not shared with
    * it. A field's help and a checklist question's "why ask?" are different questions; if
@@ -193,6 +211,8 @@ export class LeadSheet {
   /** Landing happens once per arrival, never on every later render. */
   private landed = false;
   private landedNote = false;
+  /** Which lead the draft was filled from — see the hydrate effect. */
+  private hydratedFor: string | null = null;
 
   constructor() {
     // A fresh lead defaults to the first-open stage once the pipeline has loaded — which
@@ -214,9 +234,16 @@ export class LeadSheet {
     }
 
     // Fill the form once the lead arrives — on a deep link the store may still be reading.
+    //
+    // Once per lead, not on every store emission. `lead()` is derived from the store, so any
+    // reload hands back a new object and re-ran this: adding a note reloads the store, which
+    // would have re-hydrated the draft and silently thrown away whatever the user had typed
+    // into the fields but not saved. The timeline still updates live, because it reads
+    // `lead().activities` directly rather than through the draft.
     effect(() => {
       const lead = this.lead();
-      if (!lead) return;
+      if (!lead || this.hydratedFor === lead.id) return;
+      this.hydratedFor = lead.id;
       untracked(() => this.hydrate(lead));
     });
 
@@ -328,9 +355,39 @@ export class LeadSheet {
     this.touchedAnswers.update((current) => ({ ...current, [item]: answer }));
   }
 
-  protected toggleWhy(item: ChecklistItem): void {
-    this.whyOpen.update((open) => (open === item ? null : item));
+  /* ---------- the stage strip ---------- */
+
+  /**
+   * A stop's label. `shortName` is the pipeline's own abbreviation where the tenant set one,
+   * which is exactly what a six-across strip wants; the full name is the fallback, never a
+   * truncation of our own invention. The header's stage tag always carries the full name, so
+   * nothing is lost by abbreviating here.
+   */
+  protected stageLabel(stage: Stage): string {
+    return stage.shortName ?? stage.name;
   }
+
+  /* ---------- the value field, which changes job on a `won` stage ---------- */
+
+  /**
+   * Closing as won must not let an estimate stand in for revenue, so the field asks for the
+   * final amount by name. It stays the *same* field: a second input bound to the same signal
+   * is how a typed figure gets overwritten by whichever control the user did not look at.
+   */
+  protected readonly valueLabel = computed(() =>
+    this.selectedKind() === 'won' ? COPY.lead.wonAmount : COPY.lead.fields.value,
+  );
+  protected readonly valueHelp = computed(() =>
+    this.selectedKind() === 'won' ? COPY.lead.wonAmountHint : null,
+  );
+
+  /** The value as the read grid shows it: currency, or a word saying it is not filled in. */
+  protected readonly valueRead = computed(() => {
+    const raw = this.value().trim();
+    if (!raw.length) return COPY.lead.factsEmpty;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? formatValue(parsed) : raw;
+  });
 
   /** Same one-at-a-time act as `toggleWhy`, kept on its own signal — see `fieldHelpOpen`. */
   protected toggleFieldHelp(field: LeadFieldKey): void {
@@ -429,7 +486,13 @@ export class LeadSheet {
       if (this.create()) {
         const id = await this.store.createLead(this.draft());
         // Null means the write did not happen. Stay open so nothing typed is lost.
-        if (id) this.close();
+        if (!id) return;
+        // A new lead can carry its first note. It cannot be appended before the lead exists,
+        // so unlike the edit case it rides along with the save rather than having its own
+        // button — and it is written after the insert, against the id we just got back.
+        const body = this.note().trim();
+        if (body) await this.store.logActivity(id, this.noteType(), body);
+        this.close();
         return;
       }
 
@@ -499,6 +562,41 @@ export class LeadSheet {
 
   protected setNoteType(type: ActivityType): void {
     this.noteType.set(type);
+  }
+
+  /* ---------- the composer, which commits on its own ---------- */
+
+  /** Busy state for the composer's own button, kept apart from `saving` so the footer's save
+   *  is not disabled while a note is being appended and vice versa. */
+  protected readonly addingNote = signal(false);
+  protected readonly canAddNote = computed(
+    () => this.note().trim().length > 0 && !this.addingNote() && !this.saving(),
+  );
+
+  /**
+   * Appends the typed note to the activity log immediately, without closing the sheet.
+   *
+   * Clearing `note` on success is what stops the footer's save from writing it a second time:
+   * `save()` only sends a note when the textarea still holds one, so there is exactly one
+   * insert per typed note and no way to duplicate it by saving afterwards. On failure the
+   * text stays exactly where it is — the store has already reported why — so nothing typed
+   * is lost and the button can simply be pressed again.
+   *
+   * This is the one place the sheet's "one save" rule is deliberately relaxed, because an
+   * append-only log entry is not a field edit: it cannot conflict, and a note the user has
+   * finished writing is more useful in the log than held hostage by the rest of the form.
+   */
+  protected async addNote(): Promise<void> {
+    const id = this.id();
+    const body = this.note().trim();
+    if (!id || !body.length || this.addingNote() || this.saving()) return;
+
+    this.addingNote.set(true);
+    try {
+      if (await this.store.logActivity(id, this.noteType(), body)) this.note.set('');
+    } finally {
+      this.addingNote.set(false);
+    }
   }
 
   /* ---------- follow-up ---------- */

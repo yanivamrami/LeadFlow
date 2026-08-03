@@ -1,8 +1,138 @@
-/* The lead sheet. Bottom drawer on a phone so the composer and the save sit under the
-   thumb; centred dialog above 900px. Paper on a darkened wall — no shadow, no radius. */
+/* The lead sheet. Two topologies, one DOM.
+
+   Under 900px it is a bottom drawer reading in task order: what to do next, the stage, the
+   lead's facts, the follow-up, then the work — note first, because the commonest reason this
+   sheet opens is that something just happened to the lead. The identity fields fold behind a
+   read grid, since they are typed once and then read for months.
+
+   At 900px and up an edit sheet becomes two bills side by side on a bounded centred dialog —
+   the lead on one, the work on the other, each scrolling on its own. That is the whole reason
+   for the split: the checklist can no longer push the activity log out of view, and the
+   composer never leaves the screen. A create sheet gets no second column, because it has no
+   checklist, log or history to put there, so it stays narrow.
+
+   DOM order equals visual order in both, at every width. Nothing is reordered by CSS.
+
+   Paper on a darkened wall — no shadow, no radius. */
 
 :host {
   display: contents;
+}
+
+/* This app has no global border-box reset — styles.scss imports only tokens.css and the CDK
+   overlay sheet — so every `inline-size: 100%` control on this sheet was overflowing its
+   container by its own padding and border: the note composer by 28px, which is why the
+   textarea sat wider than the form it belongs to. Scoped here rather than made global,
+   because PrimeNG's Aura preset is sized against content-box and is not ours to reflow. */
+.sheet *,
+.sheet *::before,
+.sheet *::after {
+  box-sizing: border-box;
+}
+
+/* Every pressable thing on this sheet is the same object at different sizes: a hard-edged
+   block of paper you can push. Declared once, up here, so the specific rules further down
+   always win — a shared base placed after `.strip__b--on` would have re-set its colour and
+   quietly taken the yellow off the selected stage. */
+.chip,
+.strip__b,
+.seg__b,
+.more,
+.b,
+.kill,
+.add__b {
+  min-block-size: var(--lf-touch);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
+}
+.chip,
+.strip__b,
+.more,
+.b,
+.add__b {
+  border: 2px solid var(--lf-ink);
+}
+.chip:disabled,
+.strip__b:disabled,
+.seg__b:disabled,
+.b:disabled,
+.kill:disabled,
+.add__b:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* The small red affordances — a field's "why is this here?", the read grid's way into the
+   fields — are one act with one look, padded to a full touch target though the words are
+   small. */
+.why,
+.facts__edit {
+  flex: 0 0 auto;
+  min-block-size: var(--lf-touch);
+  padding-inline: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--lf-red-text, var(--lf-red));
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.why { display: inline-flex; align-items: center; }
+
+/* and the annotation each one reveals */
+.why-text,
+.q__whytext {
+  padding-inline-start: var(--lf-space-3);
+  border-inline-start: 2px solid var(--lf-red);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--lf-muted);
+}
+.why-text { margin: 8px 0 0; }
+
+/* Metadata is muted, everywhere. One rule rather than the same declaration nine times;
+   anything that needs to override it (a label on the yellow reminder line) says so later. */
+.stage__label,
+.pick__label,
+.facts__t,
+.facts__k,
+.facts__none,
+.follow__label,
+.follow__none,
+.block__count,
+.block__lead,
+.sub,
+.ent__stamp,
+.ent__type,
+.tl__emptyHint,
+.next__l,
+.add__hint {
+  color: var(--lf-muted);
+}
+
+/* An ink fill with paper on it: a chosen chip, a chosen answer, the machine's own log entry. */
+.chip--on,
+.seg__b--on,
+.ent--sys .ent__type {
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+}
+.more:hover,
+.b:hover:not(:disabled) {
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+}
+
+/* one focus ring, everywhere a control can take it */
+.hd__name:focus-visible,
+.pick__select:focus-visible,
+.bare input:focus-visible,
+.bare textarea:focus-visible {
+  outline: 3px solid var(--lf-red);
+  outline-offset: 2px;
 }
 
 .scrim {
@@ -31,11 +161,24 @@
 .hd {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--lf-space-3);
   padding: var(--lf-space-4);
   border-block-end: 3px solid var(--lf-ink);
   background: var(--lf-ground);
+}
+
+.hd__id {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.hd__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--lf-space-3);
+  margin-block-start: var(--lf-space-2);
+  min-inline-size: 0;
 }
 
 /* The drag grip. Pointer-only convenience for moving the dialog off whatever it is
@@ -47,17 +190,21 @@
   display: none;
 }
 
+/* Still one line with an ellipsis — but now it is a line of its own rather than one shared
+   with a tag, a figure, a grip and a close button, which is what had reduced a real Hebrew
+   name to "דנה כהן...". At 314px it fits whole, and the ellipsis stays as the honest fallback
+   for a name nothing could fit. */
 .hd__name {
-  flex: 1 1 auto;
-  min-inline-size: 0;
   margin: 0;
   font-weight: 600;
   font-size: var(--lf-size-name);
-  line-height: 1.05;
+  line-height: 1.1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Its focus ring is the shared one near the top of this file: it receives focus when the
+   sheet opens (cdkFocusInitial), and a heading that takes focus must show it. */
 
 .hd__value {
   flex: 0 0 auto;
@@ -98,7 +245,7 @@
   border-block-end: 2px solid var(--lf-ink);
 }
 .next--urgent { background: var(--lf-day); color: var(--lf-fixed-ink); }
-.next__l { flex: 0 0 auto; color: var(--lf-muted); }
+.next__l { flex: 0 0 auto; }
 .next--urgent .next__l { color: var(--lf-fixed-ink); }
 .next__t {
   flex: 1 1 auto;
@@ -110,25 +257,127 @@
 .sub {
   margin: var(--lf-space-4) 0 0;
   font-size: 14px;
-  color: var(--lf-muted);
 }
 
 .gone {
   padding: var(--lf-space-8) 0;
   text-align: center;
 }
-.gone__title {
+.gone__title,
+.block__title {
   margin: 0;
   font-weight: 600;
   font-size: var(--lf-size-h2);
 }
 
-/* status + source sit together: two picks, one row */
+/* ---------- the stage strip ---------- */
+
+/* The pipeline as a row of posted stops rather than a closed select. Each stop carries its
+   own 2px frame with a gap between, which is the board's vocabulary (six posted bills) and —
+   unlike one continuous frame with shared borders — survives wrapping onto a second row.
+   The stops flex, so a three-stage pipeline fills the row and an eleven-stage one wraps
+   instead of truncating anybody's stage name. */
+.stage {
+  padding-block-start: var(--lf-space-3);
+}
+.stage__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lf-space-2);
+  margin-block-end: 6px;
+}
+.stage__label { display: block; }
+
+/* A tight gap on purpose: the default six short stops then fit one row in the 380px desktop
+   column as well as at 390px, instead of wrapping 5 + 1 and letting `flex-grow` stretch a lone
+   "לא יצא" across the full width — which read as a large button for losing the deal. */
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lf-space-1);
+}
+.strip__b {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  padding-inline: var(--lf-space-1);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.strip__b:hover:not(:disabled):not(.strip__b--on) { background: var(--lf-surface); }
+/* Selection, not identity: the stage's own swatch stays on the header's tag, so this one
+   fill means "currently on this stop" and nothing else. --lf-day and --lf-on-day are fixed
+   in both themes, so the pair stays legible in dark. */
+.strip__b--on {
+  background: var(--lf-day);
+  color: var(--lf-on-day);
+  font-weight: 600;
+}
+.strip__b:disabled { opacity: 0.6; cursor: default; }
+
+/* ---------- the facts, read and written ---------- */
+
+/* Read: one line per fact instead of one 154px field per fact. Reference, not the task. */
+.facts {
+  margin-block-start: var(--lf-space-4);
+  border-block-start: 3px solid var(--lf-ink);
+}
+.facts__hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lf-space-3);
+  padding-block-end: var(--lf-space-1);
+}
+.facts__t { display: block; }
+
+.facts__g {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--lf-space-3);
+  margin: 0;
+}
+.facts__i {
+  min-inline-size: 0;
+  padding-block: 7px;
+  border-block-start: 1px solid var(--lf-rule-soft);
+}
+/* the address is the one fact that never fits half a column */
+.facts__i--wide { grid-column: 1 / -1; }
+
+.facts__k {
+  margin: 0;
+  color: var(--lf-muted);
+}
+.facts__v {
+  margin: 0;
+  font-size: var(--lf-size-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.facts__v.lf-num { font-size: 17px; }
+/* A phone number read on a phone should be diallable. Marked by a rule rather than a
+   text-decoration underline, so it matches every other line on this surface. */
+.facts__link {
+  color: inherit;
+  text-decoration: none;
+  border-block-end: 1px solid var(--lf-rule-soft);
+}
+/* Which of the two the reader gets. Both classes are always on .body, exactly one of them
+   true, so the desktop override further down has something of equal weight to beat. */
+.body--folded .fields { display: none; }
+.body--open .facts { display: none; }
+
+/* source + value: two picks, one row. The stage used to be here and no longer is, which is
+   what makes the row safe — a tenant's stage name never fitted a half column at 390px. */
 .pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--lf-space-3);
-  padding-block: var(--lf-space-3) var(--lf-space-4);
+  align-items: start;
+  padding-block-end: var(--lf-space-2);
 }
 @media (max-width: 380px) {
   .pair { grid-template-columns: 1fr; }
@@ -142,54 +391,39 @@
   gap: var(--lf-space-2);
   margin-block-end: 6px;
 }
-.pick__label {
-  display: block;
-  color: var(--lf-muted);
-}
+.pick__label { display: block; }
 
-/* the per-field "why?" toggle beside status/source — same act, same look, as the
-   text-field's own (those two fields use a native select, not lf-text-field). */
-.why {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  min-block-size: var(--lf-touch);
-  padding-inline: 4px;
-  border: 0;
-  background: transparent;
-  color: var(--lf-red-text, var(--lf-red));
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
-.why-text {
-  margin: 8px 0 0;
-  padding-inline-start: var(--lf-space-3);
-  border-inline-start: 2px solid var(--lf-red);
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--lf-muted);
-}
-.pick__select {
+/* `.why` and `.why-text` are declared once near the top of this file — the same act beside a
+   native select as beside an lf-text-field, so it is one rule rather than two that drift. */
+/* The native select and the bare inputs are the same control at heart — a 48px ruled box at
+   17px, which is also the floor that stops iOS zooming the page on focus. Only the ground and
+   the padding differ, so only those are said twice. */
+.pick__select,
+.bare input,
+.bare textarea {
   inline-size: 100%;
   min-block-size: 48px;
-  padding-inline: var(--lf-space-3);
   border: 2px solid var(--lf-ink);
   border-radius: 0;
-  background: var(--lf-surface);
   color: var(--lf-ink);
   font: inherit;
   font-size: 17px;
+}
+.pick__select {
+  padding-inline: var(--lf-space-3);
+  background: var(--lf-surface);
   cursor: pointer;
 }
-.pick__select:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
 
 /* closing block: appears inside the form when the stage says it should */
+.close-block,
+.follow {
+  border: 2px solid var(--lf-ink);
+  background: var(--lf-surface);
+}
 .close-block {
   margin-block: var(--lf-space-2) var(--lf-space-4);
   padding: var(--lf-space-4);
-  border: 2px solid var(--lf-ink);
-  background: var(--lf-surface);
 }
 .close-block__q {
   margin: 0 0 var(--lf-space-3);
@@ -209,22 +443,14 @@
   margin-block-end: var(--lf-space-3);
 }
 
+/* A full touch target, stated rather than inherited: at 40px this only reached 44px because
+   content-box added the border on top, so the border-box reset at the top of this file would
+   have quietly cut every chip below the 44px floor the design system sets. */
 .chip {
-  min-block-size: 40px;
   padding-inline: var(--lf-space-3);
-  border: 2px solid var(--lf-ink);
-  background: transparent;
-  color: var(--lf-ink);
-  font: inherit;
   font-size: 14px;
-  cursor: pointer;
-  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
 }
-.chip--on {
-  background: var(--lf-ink);
-  color: var(--lf-on-ink);
-  font-weight: 500;
-}
+.chip--on { font-weight: 500; }
 .chip--bare {
   border-color: transparent;
   color: var(--lf-muted);
@@ -239,54 +465,95 @@
 .bare { display: block; }
 .bare input,
 .bare textarea {
-  inline-size: 100%;
-  min-block-size: 48px;
   padding: 12px var(--lf-space-3);
-  border: 2px solid var(--lf-ink);
-  border-radius: 0;
   background: var(--lf-ground);
-  color: var(--lf-ink);
-  font: inherit;
-  font-size: 17px;
 }
 .bare textarea { resize: vertical; min-block-size: 92px; line-height: 1.5; }
-.bare input:focus-visible,
-.bare textarea:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
 
-/* the follow-up line: a field, not a section — it belongs with the lead's own facts */
-.follow {
-  margin-block: var(--lf-space-2) var(--lf-space-4);
-  padding: var(--lf-space-3) var(--lf-space-4);
-  border: 2px solid var(--lf-ink);
-  background: var(--lf-surface);
+/* The composer commits on its own, so it needs its own action and its own explanation of why
+   there are suddenly two buttons on one sheet: this one appends to the log now, the footer's
+   save still commits the fields. Right-aligned under the textarea, so it reads as belonging
+   to the box above it rather than to the sheet. */
+.add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lf-space-2) var(--lf-space-3);
+  margin-block-start: var(--lf-space-2);
 }
-.follow__label {
-  margin: 0 0 6px;
-  color: var(--lf-muted);
+.add__hint {
+  flex: 1 1 12ch;
+  margin: 0;
+  font-size: 13px;
+}
+.add__b { padding-inline: var(--lf-space-4); font-weight: 600; }
+
+/* ---------- the follow-up ---------- */
+
+/* A line, not a panel. It takes the fluorescent field only when something is actually owed:
+   yellow means "owed" everywhere else in this product, and an empty reminder claiming it
+   would teach the wrong thing on every other screen. */
+.follow {
+  margin-block-start: var(--lf-space-4);
+  padding: var(--lf-space-2) var(--lf-space-3);
+}
+.follow--set {
+  background: var(--lf-day);
+  color: var(--lf-on-day);
+  border-color: var(--lf-fixed-ink);
+}
+
+.follow__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lf-space-2) var(--lf-space-3);
 }
 .follow__when {
-  display: flex;
-  align-items: baseline;
-  gap: var(--lf-space-2);
-  margin: 0;
+  flex: 1 1 auto;
   font-size: 17px;
-  font-weight: 600;
-}
-.follow__pending {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--lf-red-text);
 }
 .follow__none {
-  margin: 0;
+  flex: 1 1 auto;
   font-size: 14px;
-  color: var(--lf-muted);
 }
+.follow__pending { font-size: 12px; color: var(--lf-red-text); }
 .follow__acts {
   display: flex;
   flex-wrap: wrap;
   gap: var(--lf-space-2);
-  margin-block-start: var(--lf-space-3);
+}
+
+/* --lf-day is a fixed material: it does not flip with the theme. Anything drawn on it must
+   take its colour from this ground rather than from --lf-ink, or the dark palette inverts a
+   light "ink" onto yellow and produces exactly the illegible pairing the theme was meant to
+   prevent. `inherit` and `currentColor` do that in one rule instead of five. */
+.follow--set .follow__label,
+.follow--set .follow__pending,
+.follow--set .chip {
+  color: inherit;
+  border-color: currentColor;
+}
+.follow--set .follow__label { opacity: 0.75; }
+.follow--set .chip:hover:not(:disabled) {
+  background: var(--lf-fixed-ink);
+  color: var(--lf-fixed-paper);
+}
+.follow--set .chip--bare { border-color: transparent; }
+
+/* Destructive, so it sits at the end of the reading order rather than in the footer strip,
+   where the thumb rests and שמור lives. The confirmation still replaces the footer, so
+   nothing stacks a second dialog on the first. */
+.kill {
+  inline-size: 100%;
+  margin-block-start: var(--lf-space-4);
+  border: 2px solid transparent;
+  color: var(--lf-muted);
+  font-size: 14px;
+}
+.kill:hover:not(:disabled) {
+  color: var(--lf-red-text, var(--lf-red));
+  border-color: var(--lf-red-text, var(--lf-red));
 }
 
 /* a titled region: checklist, timeline, composer all share it */
@@ -300,16 +567,12 @@
   gap: var(--lf-space-2);
   padding-block: var(--lf-space-3);
 }
-.block__title {
-  margin: 0;
-  font-weight: 600;
-  font-size: var(--lf-size-h2);
-  line-height: 1.1;
-}
+.block__title { line-height: 1.1; }
 .block__count {
   font-size: 13px;
-  color: var(--lf-muted);
 }
+/* the one "why ask?" for the whole set, pushed to the end of the heading row */
+.block__why { margin-inline-start: auto; }
 
 /* what the section is for, before the first question. "שאלות הכשרה" is jargon to
    someone who has never qualified a lead — which is precisely this audience. */
@@ -317,62 +580,43 @@
   margin: 0 0 var(--lf-space-3);
   font-size: 14px;
   line-height: 1.5;
-  color: var(--lf-muted);
 }
 
-/* one checklist question */
+/* One checklist question: question and answer on one row. The label still carries the answer
+   and the segment is still 44px, so only the empty vertical goes — a question drops from
+   ~130px to ~66px, and the set of five from a full extra screen to about half of one. */
 .q {
-  margin: 0;
-  padding: var(--lf-space-3) 0;
-  border: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  align-items: center;
+  gap: var(--lf-space-3);
+  padding-block: var(--lf-space-2);
   border-block-start: 1px solid var(--lf-rule-soft);
 }
 .q__text {
-  padding: 0 0 var(--lf-space-3);
-  font-size: var(--lf-size-body);
-  line-height: 1.4;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 /* three hard segments. The label carries the answer — colour never does it alone. */
 .seg {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border: 2px solid var(--lf-ink);
 }
 .seg__b {
-  min-block-size: var(--lf-touch);
   border: 0;
-  background: transparent;
-  color: var(--lf-ink);
-  font: inherit;
   font-weight: 500;
-  cursor: pointer;
-  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
 }
 .seg__b + .seg__b { border-inline-start: 2px solid var(--lf-ink); }
-.seg__b--on {
-  background: var(--lf-ink);
-  color: var(--lf-on-ink);
-}
 .seg__b:disabled { opacity: 0.6; cursor: default; }
 
-.q__why {
-  margin-block-start: var(--lf-space-2);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--lf-red-text, var(--lf-red));
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
+/* Spans the row, so a revealed reason sits under both the question and its segments rather
+   than squeezing into the label column. */
 .q__whytext {
-  margin: var(--lf-space-2) 0 0;
-  padding-inline-start: var(--lf-space-3);
-  border-inline-start: 2px solid var(--lf-red);
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--lf-muted);
+  grid-column: 1 / -1;
+  margin: 0 0 var(--lf-space-1);
 }
 
 /* timeline: the register's row grammar, with the date as a margin stamp */
@@ -390,7 +634,6 @@
 }
 .ent__stamp {
   font-size: 12px;
-  color: var(--lf-muted);
   line-height: 1.5;
 }
 .ent__body { min-inline-size: 0; }
@@ -398,7 +641,6 @@
   display: inline-block;
   font-size: 12px;
   font-weight: 500;
-  color: var(--lf-muted);
 }
 .ent__text {
   margin: 4px 0 0;
@@ -422,21 +664,13 @@
   text-align: center;
 }
 .tl__emptyTitle { margin: 0; font-weight: 600; }
-.tl__emptyHint { margin: 6px 0 0; font-size: 13px; color: var(--lf-muted); }
+.tl__emptyHint { margin: 6px 0 0; font-size: 13px; }
 
 .more {
   inline-size: 100%;
-  min-block-size: var(--lf-touch);
   margin-block-start: var(--lf-space-2);
-  border: 2px solid var(--lf-ink);
-  background: transparent;
-  color: var(--lf-ink);
-  font: inherit;
   font-weight: 500;
-  cursor: pointer;
 }
-.more:hover { background: var(--lf-ink); color: var(--lf-on-ink); }
-
 /* footer: one strip that changes job, so a confirm never stacks a second dialog */
 .ft {
   flex: 0 0 auto;
@@ -457,19 +691,9 @@
 
 .b {
   flex: 1 1 auto;
-  min-block-size: var(--lf-touch);
   padding-inline: var(--lf-space-4);
-  border: 2px solid var(--lf-ink);
-  background: transparent;
-  color: var(--lf-ink);
-  font: inherit;
   font-weight: 500;
-  cursor: pointer;
-  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
 }
-.b:hover:not(:disabled) { background: var(--lf-ink); color: var(--lf-on-ink); }
-.b:disabled { opacity: 0.6; cursor: default; }
-
 .b--red {
   background: var(--lf-red);
   border-color: var(--lf-red);
@@ -565,6 +789,70 @@
     cursor: grabbing;
   }
 
+  /* room for one row again: name, stage and figure on a line, as they were */
+  .hd { align-items: center; }
+  .hd__id {
+    display: flex;
+    align-items: center;
+    gap: var(--lf-space-3);
+  }
+  .hd__name {
+    min-inline-size: 0;
+  }
+  .hd__meta {
+    flex: 0 0 auto;
+    margin-block-start: 0;
+  }
+
+  /* ---- the two bills ---- */
+
+  /* Wide enough for both and no wider: a definite size, not a filled window. Centring stays
+     on the auto margins above — the translate trick is not available here and must not come
+     back, because `sheet-rise` animates `translate` and CDK's drag owns `transform`.
+
+     block-size rather than max-block-size, because the two columns scroll independently and
+     an independent scroller needs a definite height to be a scroller at all. That is safe
+     against the shifting this file warns about only because the block axis is anchored at
+     `inset-block: 6vh auto`: the position is not a function of the height, so a growing
+     column cannot move the dialog. It pairs with the same 88vh ceiling. */
+  .sheet--split {
+    inline-size: min(1000px, calc(100vw - 64px));
+    block-size: min(760px, 88vh);
+  }
+
+  .sheet--split .body {
+    display: grid;
+    grid-template-columns: 380px minmax(0, 1fr);
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .sheet--split .lead,
+  .sheet--split .work {
+    min-block-size: 0;
+    overflow-y: auto;
+    padding: 0 var(--lf-space-6) var(--lf-space-6);
+  }
+  /* the divider between the two bills — the sheet's own 3px rule, stood on its end */
+  .sheet--split .lead { border-inline-end: 3px solid var(--lf-ink); }
+
+  /* Above 900px the fold buys nothing: the identity fields have a column of their own and no
+     longer compete with the work for the first screen. Same specificity as the base rules
+     further up and declared later, so these win without !important. */
+  .sheet--split .body--folded .fields,
+  .sheet--split .body--open .fields { display: block; }
+  .sheet--split .body--folded .facts,
+  .sheet--split .body--open .facts { display: none; }
+
+  /* the composer heads its own column, so the rule that separated it from the lead's facts
+     on a phone would now be a rule under nothing */
+  .sheet--split .block--first {
+    margin-block-start: 0;
+    border-block-start: 0;
+  }
+  .sheet--split .stage { padding-block-start: var(--lf-space-4); }
+  /* the next-step line spans the lead column's padding, so it needs its own top margin back */
+  .sheet--split .next { margin-block-start: var(--lf-space-4); }
 }
 
 @media (prefers-reduced-motion: reduce) {

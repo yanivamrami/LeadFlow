@@ -508,6 +508,15 @@ export const COPY = {
     nextStep: 'מה עושים עכשיו',
     nextStepDone: 'הליד סגור. אין מה לעשות איתו.',
 
+    /**
+     * The read grid. Below 900px the identity fields are shown as facts until asked for, so
+     * they need a heading, a way in, and a word for "nothing here yet" — a bare dash reads
+     * as a glyph to a screen reader and as a mistake to everyone else.
+     */
+    factsTitle: 'הפרטים',
+    factsEdit: 'ערוך פרטים',
+    factsEmpty: 'לא מולא',
+
     /** The per-field help toggle. Same words as the checklist's, because it is the same act. */
     fieldHelpShow: 'למה זה חשוב?',
     fieldHelpHide: 'סגור',
@@ -556,6 +565,16 @@ export const COPY = {
       label: 'הוסיפו הערה',
       placeholder: 'מה קרה? מה הצעד הבא?',
       type: 'סוג',
+      /**
+       * The composer commits on its own now, which is the one place this sheet has two commit
+       * buttons — so the hint says which does what. Without it, "הוסף" beside "שמור" reads as
+       * two words for the same act.
+       */
+      add: 'הוסף',
+      adding: 'מוסיף…',
+      addHint: 'נרשם מיד ביומן, בלי לסגור. השמירה למטה שומרת את שדות הליד.',
+      /** Create mode: there is no lead to append to yet, so the note rides along with the save. */
+      addOnCreate: 'ההערה תיווסף ליומן עם הליד.',
     },
 
     /** Destructive, so it names the blast radius before asking. */
