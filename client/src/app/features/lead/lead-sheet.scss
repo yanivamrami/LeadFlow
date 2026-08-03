@@ -163,6 +163,14 @@
   color: var(--lf-on-ink);
   font-weight: 500;
 }
+.chip--bare {
+  border-color: transparent;
+  color: var(--lf-muted);
+}
+.chip--bare:hover:not(:disabled) {
+  background: transparent;
+  color: var(--lf-red-text);
+}
 .chip:disabled { opacity: 0.6; cursor: default; }
 
 /* bare inputs: used where lf-text-field's label block would be redundant */
@@ -182,6 +190,42 @@
 .bare textarea { resize: vertical; min-block-size: 92px; line-height: 1.5; }
 .bare input:focus-visible,
 .bare textarea:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
+
+/* the follow-up line: a field, not a section — it belongs with the lead's own facts */
+.follow {
+  margin-block: var(--lf-space-2) var(--lf-space-4);
+  padding: var(--lf-space-3) var(--lf-space-4);
+  border: 2px solid var(--lf-ink);
+  background: var(--lf-surface);
+}
+.follow__label {
+  margin: 0 0 6px;
+  color: var(--lf-muted);
+}
+.follow__when {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lf-space-2);
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.follow__pending {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--lf-red-text);
+}
+.follow__none {
+  margin: 0;
+  font-size: 14px;
+  color: var(--lf-muted);
+}
+.follow__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lf-space-2);
+  margin-block-start: var(--lf-space-3);
+}
 
 /* a titled region: checklist, timeline, composer all share it */
 .block {

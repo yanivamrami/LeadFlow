@@ -83,7 +83,7 @@ graph TB
 1. User drags a card between stage columns (touch drag-and-drop).
 2. Optimistic UI move; `update leads set status = ...` behind it.
 3. A DB trigger appends a `status_changed` entry to `activities`.
-4. Status-guidance copy for the new stage is shown; if the stage implies follow-up (e.g. "Proposal Sent"), a reminder row is created (trigger or client-side rule).
+4. Status-guidance copy for the new stage is shown. ~~If the stage implies follow-up (e.g. "Proposal Sent"), a reminder row is created (trigger or client-side rule).~~ **Superseded 2026-08-03 — see §6.1: no reminder row is written on a stage move.**
 5. Qualification checklist is **advisory, never blocking**: stage moves are always allowed; if checklist items are unanswered at move time, a gentle dismissible nudge offers to fill them in ("2 questions unanswered — fill in now?").
 
 ## 4. Stack decisions
@@ -223,9 +223,54 @@ No custom REST API. Data access via Supabase auto-generated PostgREST endpoints 
   - **Supabase Edge Functions (Deno/TS)** — default for small, Supabase-native tasks: scheduled jobs, DB webhooks, simple public endpoints. Zero extra infrastructure.
   - **.NET minimal API** — if the logic becomes complex, needs the .NET ecosystem (rich libraries, strong typing, testability), integrations, or long-running/background work. Would live in a new `api/` folder in the monorepo and record an ADR when introduced.
 - **Candidate server-side tasks (initial set):**
-  - `reminders-due` — scheduled (pg_cron → function or Supabase Cron) computation of due follow-up reminders based on status + last activity. Likely Edge Function. **Notification channel (decided): in-app only at launch** — reminders list + badge + toast on login; email digest is a later add, push/PWA out of scope for v1.
+  - ~~`reminders-due` — scheduled (pg_cron → function or Supabase Cron) computation of due follow-up reminders based on status + last activity. Likely Edge Function.~~ **Withdrawn 2026-08-03 — see §6.1.** The notification-channel decision stands: **in-app only at launch** — reminders list + badge + toast on login; email digest is a later add, push/PWA out of scope for v1.
   - `capture-form` (future) — public endpoint for embeddable web forms; rate-limited, validates + inserts lead for the form's owner.
 - **Idempotency / rate limiting:** relevant only to `capture-form`; design it with a per-form token + basic rate limit when built.
+
+### 6.1 Reminders: derived urgency, not a generated row (decision, 2026-08-03)
+
+This section replaces the reminder-generating trigger promised in §3 step 4 and the
+`reminders-due` scheduled job listed above. Neither was ever built. What shipped instead is
+better, and the difference is worth writing down because the original design is the obvious
+one and someone will propose it again.
+
+**The product has two distinct things**, and only one is a row:
+
+| | Explicit reminder | Derived urgency |
+|---|---|---|
+| Source | a `public.reminders` row with `due_at` | `openReason()` in `leads.store.ts`, recomputed on every read |
+| Written by | the user — lead detail, the reminders list's suggestion band, snooze | nobody; it is a function of `status` and `last_touch_at` |
+| Examples | "call Thursday" | `proposal_silent` (3 silent days), `unqualified` (new, unanswered, 1 day), `drifting` (`DRIFT_DAYS`) |
+| Can be completed | yes — `done_at` | no; it stops being true when the lead changes |
+| Can be rescheduled | yes | meaningless |
+
+**Why the generator is not built.** A row that restates what the client already computes
+creates a second source of truth for the same fact, and the two drift: the row says "this
+proposal is silent" on the strength of yesterday's data, the rule says otherwise today, and
+the user sees both. A derived rule cannot go stale, cannot double-fire on a retried cron run,
+needs no scheduling infrastructure, and costs nothing to change — the thresholds live in one
+client constant rather than in a deployed function's history of rows.
+
+**What each surface therefore shows:**
+
+- **`/reminders`** — the explicit rows: overdue, today, upcoming. Completable and
+  reschedulable, because those verbs are what makes a list a reminders list. Below a rule, a
+  capped **suggestions** band lists leads that derived urgency flags and that have no reminder
+  of their own, each offering one tap to turn a vague nudge into a dated commitment. Those
+  suggestions are never counted anywhere.
+- **The masthead badge** — `overdue + due-today rows` only. Five drifting leads produce no
+  badge: nothing is *scheduled*. The bell is the user's own calendar; derived urgency already
+  has the day sheet, the register's attention flags and the urgency sort.
+- **The day sheet (2.1)** — derived urgency, as it always has.
+
+**Revisit when, and only when,** a reminder must reach someone who is not looking at the app —
+the email digest, which PRODUCT.md defers. At that point a scheduled job is genuinely required,
+because a client-side rule cannot send mail, and it should read the explicit rows rather than
+regenerate them.
+
+**`reminders.assigned_to` (G-7):** written with `auth.uid()` on every reminder the client
+creates, and read nowhere yet. Deliberate — it cannot be backfilled once rows exist without
+inventing history, and it costs one column value now. It becomes meaningful with team invites.
 
 ## 7. Frontend architecture
 

@@ -26,5 +26,12 @@ module.exports = function (config) {
       },
     },
     restartOnFileChange: true,
+    // The socket drops under load on this host — a dropped ping is not a failing test, so
+    // give it room to reconnect instead of reporting a red suite that passes on rerun.
+    pingTimeout: 30_000,
+    browserDisconnectTimeout: 20_000,
+    browserDisconnectTolerance: 2,
+    browserNoActivityTimeout: 60_000,
+    captureTimeout: 120_000,
   });
 };

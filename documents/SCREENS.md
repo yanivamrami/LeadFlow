@@ -4,6 +4,7 @@
 > ~~Struck through~~ = built and running. Everything else is unbuilt.
 > The **TODO** column is never struck through: it is what is still open on that screen,
 > whether the screen is built or not. "Whole screen" means nothing exists yet.
+> Cross-cutting open work — doc-vs-code drift, deploy debt — lives in `documents/GAPS.md`.
 > Last updated: 2026-08-03
 
 Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYSTEM.md` v2.0.
@@ -15,8 +16,8 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 
 | # | Screen | Notes | TODO |
 |---|---|---|---|
-| 1.1 | ~~**App shell — masthead**~~ | ~~Ink masthead, brand lockup, reminders bell + badge, tenant monogram. Desktop adds inline nav. The monogram is a link to the profile.~~ | Badge count is the literal `3` (`shell.ts:49`) although the store now loads reminders and exposes `openItems` — a small wiring job. Bell opens nothing until 4.1. Desktop `+ ליד חדש` has no target until 3.1. |
-| 1.2 | ~~**App shell — bottom tabs**~~ | ~~Four tabs under 900px; active item marked by the yellow rule and `aria-current="page"`. Unbuilt destinations are `aria-disabled`, not dead links.~~ | Reminders and Insights are still `aria-disabled` spans; promote to links when 4.1 and 5.1 land. |
+| 1.1 | ~~**App shell — masthead**~~ | ~~Ink masthead, brand lockup, reminders bell + badge, tenant monogram. Desktop adds inline nav. The monogram is a link to the profile.~~ | Nothing open. Badge is `RemindersStore.openCount` — overdue + due today, and hidden at zero. Bell links to `/reminders`; the desktop action reaches `/lead/new`. |
+| 1.2 | ~~**App shell — bottom tabs**~~ | ~~Four tabs under 900px; active item marked by the ink rule and `aria-current="page"`.~~ | Nothing open. No `aria-disabled` navigation remains anywhere in the shell. |
 | 1.3 | ~~**App shell — primary action band**~~ | ~~Full-width red band above the tabs on mobile; red button in the masthead on desktop.~~ | Still a button with no target. Blocked on 3.1. |
 | 1.4 | **Tenant switcher** | Only matters once a user belongs to more than one tenant. Post-launch with invites. | Whole screen. Blocked on 8.3. |
 | 1.5 | ~~**Global notifications — critical popup**~~ | ~~Fires for one case only: a write that did not persist. Torn-sheet mark, structured text, `נסה שוב` re-runs the failed mutation, always dismissible.~~ | The one rule it runs on (`costsData`) has unit cover in `supabase.service.spec.ts`. Nothing open. |
@@ -48,7 +49,7 @@ One save commits fields, note and checklist answers together through the `save_l
 | # | Screen | Notes | TODO |
 |---|---|---|---|
 | 3.1 | ~~**Add lead**~~ | ~~Create mode: fields only, no timeline or checklist because there is nothing to show yet. **Name is the only requirement** — contact details stay optional so a lead can be captured before the number is known.~~ | Not visually verified. Per-field tooltips from the PRD are not built; the labels and one help line carry it for now. |
-| 3.2 | ~~**Lead detail**~~ | ~~Header, fields, checklist, timeline, composer, one save. Opens from the register row, board card and day-sheet item — all three by name, so the kebab is not swallowed.~~ | Not visually verified. Reminders are read but not managed here (4.2). |
+| 3.2 | ~~**Lead detail**~~ | ~~Header, fields, checklist, timeline, composer, one save. Opens from the register row, board card and day-sheet item — all three by name, so the kebab is not swallowed. Carries the follow-up line: set, change or clear a reminder, committed by the same one save via `save_lead`'s reminder parameters.~~ | Not visually verified. Per-field tooltips (GAPS G-23) are still the open guidance gap here. |
 | 3.3 | ~~**Edit lead**~~ | ~~Same component, edit mode. The open question is closed: an inline mode on 3.2, not a separate route.~~ | — |
 | 3.4 | ~~**Qualification checklist**~~ | ~~5 rows in PM order, each a radiogroup of three segments (כן / לא / ?) where the selected one takes an ink fill. A per-row "why ask?" carries the teaching. Answers commit with the one save; untouched items stay absent, so "not asked" stays distinct from "unknown".~~ | Not visually verified. |
 | 3.5 | ~~**Log activity**~~ | ~~Composer with four type chips (שיחה · אימייל · פגישה · הערה) above the textarea. Part of the save, not a second action.~~ | Not visually verified. Notes are append-only by design — no edit, no delete. |
@@ -59,9 +60,9 @@ One save commits fields, note and checklist answers together through the `save_l
 
 | # | Screen | Notes | TODO |
 |---|---|---|---|
-| 4.1 | **Reminders list** | Compact density. Due / overdue / upcoming. | Whole screen. Unblocks the masthead bell, the hardcoded badge, and two `aria-disabled` tabs. Rows already come back nested on the leads query. |
-| 4.2 | **Snooze / reschedule** | | Whole screen. Replaces the one-tap "tomorrow" the store writes today. |
-| 4.3 | **Login toast** | In-app only at launch — no email digest, no push (`docs/ARCHITECTURE.md` §6). | Whole screen. `NotifyService` already carries the surface it needs. |
+| 4.1 | ~~**Reminders list**~~ | ~~Compact density, four bands — באיחור · היום · בהמשך, then a rule and בלי תזכורת (capped suggestions from derived urgency). All four states: skeleton, empty, load failure with retry, populated. Overdue is carried by the band heading and a red stamp, never a red row. Per-row busy, complete and reschedule.~~ | Not visually verified. The screen is the **explicit** reminders; derived urgency stays on the day sheet and appears here only as promotable suggestions — reasoning in `docs/ARCHITECTURE.md` §6.1. |
+| 4.2 | ~~**Snooze / reschedule**~~ | ~~Inline expansion in the row, never a modal: three chips (מחר · בעוד 3 ימים · בעוד שבוע), a native `<input type="date">` with `min` = today, save and cancel. Writes 09:00 local — the product reasons in whole days everywhere. `lf-due-picker`, shared with lead detail.~~ | Not visually verified. The day sheet's `דחה` still pushes a fixed one day; pointing it at this control is `PLAN-gaps.md` §1c, not this screen. |
+| 4.3 | ~~**Login toast**~~ | ~~One per browser session, on the first successful read, when overdue + today > 0. Overdue takes precedence; the action lands on `/reminders`. Never the critical popup. In-app only at launch — no email digest, no push (`docs/ARCHITECTURE.md` §6).~~ | Nothing open. The rule is a pure function (`reminder-digest.ts`) with all six suppression cases under unit cover. |
 
 ## 5. Analytics (PRD pillar 4)
 

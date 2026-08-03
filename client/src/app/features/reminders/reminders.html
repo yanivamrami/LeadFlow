@@ -1,0 +1,239 @@
+<section class="rem" aria-labelledby="rem-title">
+  <header class="rem__hd">
+    <h1 class="rem__title" id="rem-title">{{ copy.reminders.title }}</h1>
+    <p class="rem__sub">{{ copy.reminders.subtitle }}</p>
+  </header>
+
+  @if (failed()) {
+    <div class="failed" role="alert">
+      <p class="failed__title">{{ copy.reminders.failedTitle }}</p>
+      <p class="failed__body">{{ copy.reminders.failedBody }}</p>
+      <button type="button" class="act" [disabled]="loading()" (click)="retry()">
+        {{ loading() ? copy.reminders.loading : copy.reminders.retry }}
+      </button>
+    </div>
+  } @else if (loading() && !loaded()) {
+    <p class="lf-sr" role="status" aria-live="polite">{{ copy.reminders.loading }}</p>
+    @for (row of skeletonRows; track row) {
+      <div class="row" aria-hidden="true">
+        <div class="row__main">
+          <span class="lf-sk sk-name"></span>
+          <span class="lf-sk sk-meta"></span>
+        </div>
+        <span class="lf-sk sk-due"></span>
+      </div>
+    }
+  } @else if (isEmpty()) {
+    <div class="none">
+      <div class="none__mark" aria-hidden="true"><i></i><i></i><i></i></div>
+      <p class="none__title">{{ copy.reminders.emptyTitle }}</p>
+      <p class="none__body">{{ copy.reminders.emptyBody }}</p>
+      <a class="act" routerLink="/">{{ copy.reminders.emptyAction }}</a>
+    </div>
+  } @else {
+    <!-- bands, each omitted entirely when empty -->
+    @if (overdue().length) {
+      <section class="band" aria-labelledby="band-overdue">
+        <h2 class="band__title" id="band-overdue">
+          {{ copy.reminders.overdue }}
+          <span class="band__count lf-num">{{ overdue().length }}</span>
+        </h2>
+
+        @for (item of overdue(); track item.id) {
+          <article class="row" [class.row--busy]="busy(item.id)" [class.lf-sweep]="busy(item.id)">
+            <div class="row__main">
+              <h3 class="row__name">
+                <a [routerLink]="['/lead', item.leadId]">{{ item.leadName }}</a>
+              </h3>
+              <p class="row__meta">
+                <span class="row__note">{{ title(item) }}</span>
+                <lf-stage-tag [status]="item.leadStatus" [short]="true" />
+              </p>
+            </div>
+
+            <!-- overdue is carried by the band and a red stamp, never a red row -->
+            <span class="row__due row__due--late lf-num">{{ due(item) }}</span>
+
+            <div class="row__acts">
+              <button type="button" class="b" [disabled]="busy(item.id)" (click)="complete(item)">
+                {{ busy(item.id) ? copy.reminders.working : copy.reminders.complete }}
+              </button>
+              <button
+                type="button"
+                class="b b--bare"
+                [attr.aria-expanded]="openPicker() === item.id"
+                [disabled]="busy(item.id)"
+                (click)="togglePicker(item.id)"
+              >
+                {{ copy.reminders.reschedule }}
+              </button>
+            </div>
+
+            @if (openPicker() === item.id) {
+              <lf-due-picker
+                class="row__picker"
+                [busy]="busy(item.id)"
+                (picked)="move(item, $event)"
+                (cancel)="togglePicker(item.id)"
+              />
+            }
+          </article>
+        }
+      </section>
+    }
+
+    @if (today().length) {
+      <section class="band" aria-labelledby="band-today">
+        <h2 class="band__title" id="band-today">
+          {{ copy.reminders.today }}
+          <span class="band__count lf-num">{{ today().length }}</span>
+        </h2>
+
+        @for (item of today(); track item.id) {
+          <article class="row" [class.row--busy]="busy(item.id)" [class.lf-sweep]="busy(item.id)">
+            <div class="row__main">
+              <h3 class="row__name">
+                <a [routerLink]="['/lead', item.leadId]">{{ item.leadName }}</a>
+              </h3>
+              <p class="row__meta">
+                <span class="row__note">{{ title(item) }}</span>
+                <lf-stage-tag [status]="item.leadStatus" [short]="true" />
+              </p>
+            </div>
+
+            <span class="row__due lf-num">{{ due(item) }}</span>
+
+            <div class="row__acts">
+              <button type="button" class="b" [disabled]="busy(item.id)" (click)="complete(item)">
+                {{ busy(item.id) ? copy.reminders.working : copy.reminders.complete }}
+              </button>
+              <button
+                type="button"
+                class="b b--bare"
+                [attr.aria-expanded]="openPicker() === item.id"
+                [disabled]="busy(item.id)"
+                (click)="togglePicker(item.id)"
+              >
+                {{ copy.reminders.reschedule }}
+              </button>
+            </div>
+
+            @if (openPicker() === item.id) {
+              <lf-due-picker
+                class="row__picker"
+                [busy]="busy(item.id)"
+                (picked)="move(item, $event)"
+                (cancel)="togglePicker(item.id)"
+              />
+            }
+          </article>
+        }
+      </section>
+    }
+
+    @if (upcoming().length) {
+      <section class="band" aria-labelledby="band-upcoming">
+        <h2 class="band__title" id="band-upcoming">
+          {{ copy.reminders.upcoming }}
+          <span class="band__count lf-num">{{ upcoming().length }}</span>
+        </h2>
+
+        @for (item of upcoming(); track item.id) {
+          <article class="row" [class.row--busy]="busy(item.id)" [class.lf-sweep]="busy(item.id)">
+            <div class="row__main">
+              <h3 class="row__name">
+                <a [routerLink]="['/lead', item.leadId]">{{ item.leadName }}</a>
+              </h3>
+              <p class="row__meta">
+                <span class="row__note">{{ title(item) }}</span>
+                <lf-stage-tag [status]="item.leadStatus" [short]="true" />
+              </p>
+            </div>
+
+            <span class="row__due lf-num">{{ due(item) }}</span>
+
+            <div class="row__acts">
+              <button type="button" class="b" [disabled]="busy(item.id)" (click)="complete(item)">
+                {{ busy(item.id) ? copy.reminders.working : copy.reminders.complete }}
+              </button>
+              <button
+                type="button"
+                class="b b--bare"
+                [attr.aria-expanded]="openPicker() === item.id"
+                [disabled]="busy(item.id)"
+                (click)="togglePicker(item.id)"
+              >
+                {{ copy.reminders.reschedule }}
+              </button>
+            </div>
+
+            @if (openPicker() === item.id) {
+              <lf-due-picker
+                class="row__picker"
+                [busy]="busy(item.id)"
+                (picked)="move(item, $event)"
+                (cancel)="togglePicker(item.id)"
+              />
+            }
+          </article>
+        }
+      </section>
+    }
+
+    <!-- below a rule: the pipeline's own nudges, promotable into real commitments -->
+    @if (suggestions().length) {
+      <section class="band band--suggest" aria-labelledby="band-suggest">
+        <h2 class="band__title" id="band-suggest">
+          {{ copy.reminders.suggestions }}
+          <span class="band__count lf-num">{{ allSuggestions().length }}</span>
+        </h2>
+        <p class="band__lead">{{ copy.reminders.suggestionsLead }}</p>
+
+        @for (item of suggestions(); track item.lead.id) {
+          <article
+            class="row row--suggest"
+            [class.row--busy]="busy(item.lead.id)"
+            [class.lf-sweep]="busy(item.lead.id)"
+          >
+            <div class="row__main">
+              <h3 class="row__name">
+                <a [routerLink]="['/lead', item.lead.id]">{{ item.lead.name }}</a>
+              </h3>
+              <p class="row__meta">
+                <span class="row__note">{{ reasonLabel[item.reason] }}</span>
+                <lf-stage-tag [status]="item.lead.status" [short]="true" />
+              </p>
+            </div>
+
+            <div class="row__acts">
+              <button
+                type="button"
+                class="b"
+                [attr.aria-expanded]="openPicker() === item.lead.id"
+                [disabled]="busy(item.lead.id)"
+                (click)="togglePicker(item.lead.id)"
+              >
+                {{ busy(item.lead.id) ? copy.reminders.working : copy.reminders.setReminder }}
+              </button>
+            </div>
+
+            @if (openPicker() === item.lead.id) {
+              <lf-due-picker
+                class="row__picker"
+                [busy]="busy(item.lead.id)"
+                (picked)="schedule(item, $event)"
+                (cancel)="togglePicker(item.lead.id)"
+              />
+            }
+          </article>
+        }
+
+        @if (truncated()) {
+          <p class="band__cap">
+            {{ copy.reminders.suggestionsCapped(suggestions().length, allSuggestions().length) }}
+          </p>
+        }
+      </section>
+    }
+  }
+</section>

@@ -158,6 +158,52 @@
       }
 
       @if (!create()) {
+        <!-- follow-up: read and managed here, committed by the one save like everything
+             else on this sheet -->
+        <div class="follow">
+          <p class="follow__label lf-label">{{ copy.lead.reminder }}</p>
+
+          @if (reminderLabel(); as when) {
+            <p class="follow__when">
+              <span class="lf-num">{{ when }}</span>
+              @if (reminderAction() === 'set') {
+                <span class="follow__pending">{{ copy.lead.reminderPending }}</span>
+              }
+            </p>
+          } @else {
+            <p class="follow__none">{{ copy.lead.reminderNone }}</p>
+          }
+
+          @if (!pickingReminder()) {
+            <div class="follow__acts">
+              <button
+                type="button"
+                class="chip"
+                [disabled]="saving()"
+                (click)="pickingReminder.set(true)"
+              >
+                {{ reminderLabel() ? copy.lead.reminderChange : copy.lead.reminderSet }}
+              </button>
+              @if (reminderLabel()) {
+                <button
+                  type="button"
+                  class="chip chip--bare"
+                  [disabled]="saving()"
+                  (click)="clearReminder()"
+                >
+                  {{ copy.lead.reminderClear }}
+                </button>
+              }
+            </div>
+          } @else {
+            <lf-due-picker
+              [busy]="saving()"
+              (picked)="pickReminder($event)"
+              (cancel)="pickingReminder.set(false)"
+            />
+          }
+        </div>
+
         <!-- checklist -->
         <section class="block" aria-labelledby="cl-title">
           <header class="block__hd">

@@ -25,6 +25,7 @@ import {
   SOURCE_LABEL,
   STATUS_LABEL,
   formatValue,
+  formatDue,
 } from '../../core/copy';
 import {
   Activity,
@@ -39,11 +40,13 @@ import {
   QualificationAnswer,
   STAGE_ORDER,
   ActivityType,
+  ReminderAction,
 } from '../../core/lead.model';
 import { hasErrors, validateLeadForm } from '../../core/lead-validation';
 import { LeadsStore } from '../../core/leads.store';
 import { FormError } from '../../shared/form-error';
 import { StageTag } from '../../shared/stage-tag';
+import { DuePicker } from '../../shared/due-picker';
 import { TextField } from '../../shared/text-field';
 
 /** How many history entries show before the timeline asks to be expanded. */
@@ -68,7 +71,7 @@ type FooterMode = 'default' | 'dirty' | 'delete';
 @Component({
   selector: 'lf-lead-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, A11yModule, LucideX, TextField, FormError, StageTag],
+  imports: [FormsModule, A11yModule, LucideX, TextField, FormError, StageTag, DuePicker],
   templateUrl: './lead-sheet.html',
   styleUrl: './lead-sheet.scss',
 })
@@ -121,6 +124,14 @@ export class LeadSheet {
 
   protected readonly note = signal('');
   protected readonly noteType = signal<ActivityType>('note');
+
+  /**
+   * Follow-up intent for this save. Default `keep`, so an ordinary save never touches the
+   * reminder — the sheet only changes it when the user says so.
+   */
+  protected readonly reminderAction = signal<ReminderAction>('keep');
+  protected readonly reminderDue = signal<Date | null>(null);
+  protected readonly pickingReminder = signal(false);
   /** Only what the user touched this session — absent stays absent. */
   protected readonly touchedAnswers = signal<ChecklistAnswers>({});
 
@@ -272,6 +283,9 @@ export class LeadSheet {
         note: this.note().trim() || null,
         noteType: this.noteType(),
         answers: this.touchedAnswers(),
+        reminderAction: this.reminderAction(),
+        reminderDue: this.reminderDue(),
+        reminderTitle: null,
       });
       if (saved) this.close();
     } finally {
@@ -329,5 +343,29 @@ export class LeadSheet {
 
   protected setNoteType(type: ActivityType): void {
     this.noteType.set(type);
+  }
+
+  /* ---------- follow-up ---------- */
+
+  /** What the reminder line shows: the pending choice if any, else what the lead has. */
+  protected readonly reminderLabel = computed(() => {
+    if (this.reminderAction() === 'clear') return null;
+    const pending = this.reminderDue();
+    if (pending) return formatDue(pending, this.store.now());
+    const existing = this.lead()?.reminderDueAt;
+    return existing ? formatDue(existing, this.store.now()) : null;
+  });
+
+  protected pickReminder(due: Date): void {
+    this.reminderDue.set(due);
+    this.reminderAction.set('set');
+    this.pickingReminder.set(false);
+  }
+
+  /** Clears on save, not immediately — nothing here is written until the user saves. */
+  protected clearReminder(): void {
+    this.reminderDue.set(null);
+    this.reminderAction.set('clear');
+    this.pickingReminder.set(false);
   }
 }

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import {
   LucideBell,
@@ -13,6 +13,13 @@ import {
 
 import { APP_NAME, APP_SUB, COPY } from '../../core/copy';
 import { HelpService } from '../../core/help.service';
+import {
+  digestAlreadyShown,
+  digestMessage,
+  markDigestShown,
+} from '../../core/reminder-digest';
+import { NotifyService } from '../../core/notify.service';
+import { RemindersStore } from '../../core/reminders.store';
 import { SupabaseService } from '../../core/supabase.service';
 import { LegendDialog } from '../../shared/legend-dialog';
 import { OfflineBanner } from '../../shared/offline-banner';
@@ -49,12 +56,49 @@ import { OfflineBanner } from '../../shared/offline-banner';
 export class Shell {
   private readonly supabase = inject(SupabaseService);
   private readonly help = inject(HelpService);
+  private readonly reminders = inject(RemindersStore);
+  private readonly notify = inject(NotifyService);
+  private readonly router = inject(Router);
+
+  constructor() {
+    // Once, on shell init rather than per navigation: the badge must be right on every
+    // route, including the ones that never load the pipeline.
+    void this.reminders.load().then(() => this.announceDigest());
+  }
+
+  /**
+   * 4.3 — one toast per session when something is due, and nothing otherwise. Never the
+   * critical popup: `failedToPersist` takes a FailedWrite and a digest is not one, so
+   * that door stays shut.
+   */
+  private announceDigest(): void {
+    const message = digestMessage({
+      overdue: this.reminders.overdue().length,
+      today: this.reminders.today().length,
+      alreadyShown: digestAlreadyShown(),
+      loaded: this.reminders.loaded(),
+      online: this.notify.online(),
+      onRemindersRoute: this.router.url.startsWith('/reminders'),
+    });
+    if (!message) return;
+
+    markDigestShown();
+    this.notify.info(message, {
+      label: COPY.reminders.toastAction,
+      run: () => void this.router.navigate(['/reminders']),
+    });
+  }
 
   protected readonly appName = APP_NAME;
   protected readonly appSub = APP_SUB;
   protected readonly copy = COPY;
-  /** Open reminders. Wired to the store once reminders get their own route. */
-  protected readonly reminderCount = 3;
+
+  /**
+   * Scheduled work only — overdue plus due today. Five drifting leads produce no badge,
+   * because nothing is scheduled: the bell is the user's own calendar, and pipeline
+   * attention already has the day sheet, the flags and the urgency sort.
+   */
+  protected readonly reminderCount = this.reminders.openCount;
 
   protected readonly displayName = this.supabase.displayName;
 

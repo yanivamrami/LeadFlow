@@ -518,6 +518,11 @@ export class LeadsStore {
           p_note: extras.note,
           p_note_type: extras.noteType,
           p_answers: answers,
+          // Reminder intent travels with the same save, so a follow-up cannot land
+          // while the note beside it is lost.
+          p_reminder_action: extras.reminderAction,
+          p_reminder_due: extras.reminderDue ? extras.reminderDue.toISOString() : null,
+          p_reminder_title: extras.reminderTitle,
         }),
       () => {
         this.notify.succeeded(COPY.lead.saved);

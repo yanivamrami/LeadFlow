@@ -8,11 +8,13 @@
       <svg lucideList aria-hidden="true"></svg>
       {{ copy.nav.dashboard }}
     </a>
-    <span class="soon" aria-disabled="true">
+    <a routerLink="/reminders" routerLinkActive="on" ariaCurrentWhenActive="page">
       <svg lucideClipboardList aria-hidden="true"></svg>
       {{ copy.nav.reminders }}
-      <span class="soon__n lf-num">{{ reminderCount }}</span>
-    </span>
+      @if (reminderCount() > 0) {
+        <span class="soon__n lf-num">{{ reminderCount() }}</span>
+      }
+    </a>
     <a routerLink="/insights" routerLinkActive="on" ariaCurrentWhenActive="page">
       <svg lucideChartNoAxesColumn aria-hidden="true"></svg>
       {{ copy.nav.insights }}
@@ -34,10 +36,19 @@
     <svg lucideCircleQuestionMark aria-hidden="true"></svg>
   </button>
 
-  <button type="button" class="mast__bell lf-hit" [attr.aria-label]="copy.shell.remindersBadge">
+  <a
+    class="mast__bell lf-hit"
+    routerLink="/reminders"
+    routerLinkActive="on"
+    ariaCurrentWhenActive="page"
+    [attr.aria-label]="copy.shell.remindersBadge(reminderCount())"
+  >
     <svg lucideBell aria-hidden="true"></svg>
-    <span class="mast__badge lf-num">{{ reminderCount }}</span>
-  </button>
+    <!-- a 0 in a red dot is noise -->
+    @if (reminderCount() > 0) {
+      <span class="mast__badge lf-num" aria-hidden="true">{{ reminderCount() }}</span>
+    }
+  </a>
 
   <a
     class="mast__me"
@@ -68,10 +79,10 @@
     <svg lucideList aria-hidden="true"></svg>
     {{ copy.nav.dashboard }}
   </a>
-  <span class="soon" aria-disabled="true">
+  <a routerLink="/reminders" routerLinkActive="on" ariaCurrentWhenActive="page">
     <svg lucideClipboardList aria-hidden="true"></svg>
     {{ copy.nav.reminders }}
-  </span>
+  </a>
   <a routerLink="/insights" routerLinkActive="on" ariaCurrentWhenActive="page">
     <svg lucideChartNoAxesColumn aria-hidden="true"></svg>
     {{ copy.nav.insights }}

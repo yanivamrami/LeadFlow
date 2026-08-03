@@ -164,7 +164,9 @@ export const COPY = {
     search: 'חיפוש לפי שם, חברה או טלפון',
     addLead: 'ליד חדש',
     openMenu: 'פעולות על הליד',
-    remindersBadge: 'תזכורות פתוחות',
+    /** The count belongs in the label: a red dot alone tells a screen reader nothing. */
+    remindersBadge: (n: number) =>
+      n === 0 ? 'תזכורות' : n === 1 ? 'תזכורת אחת מחכה' : `${n} תזכורות מחכות`,
     skipToContent: 'דלג לתוכן',
   },
   sheet: {
@@ -259,6 +261,10 @@ export const COPY = {
     snoozed: 'נדחה למחר',
     activityLogged: 'הפעילות נרשמה',
     leadDeleted: 'הליד נמחק',
+    reminderDone: 'התזכורת סומנה כבוצעה',
+    reminderMoved: (when: string) => `התזכורת נדחתה ל${when}`,
+    reminderSet: (when: string) => `נקבעה תזכורת ל${when}`,
+    reminderRemoved: 'התזכורת נמחקה',
     checklistFilled: 'שאלות ההכשרה סומנו',
   },
   /**
@@ -302,6 +308,54 @@ export const COPY = {
       '"הכשרה" זה פשוט לבדוק אם שווה להשקיע בליד הזה — לפני שאתם משקיעים בו שעות. חמש שאלות קצרות: יש עניין אמיתי? הם צריכים את מה שאתם מציעים? יש תקציב? אתם מדברים עם מי שמחליט? ומתי זה אמור לקרות?',
     qualifyNote:
       'אף שאלה לא חוסמת אתכם. אתם יכולים להזיז ליד לכל שלב בכל רגע — השאלות רק עוזרות לדעת איפה אתם עומדים.',
+  },
+  /**
+   * Reminders — §4. The explicit ones: rows a person scheduled, which can be completed
+   * and moved. Derived urgency keeps its home on the day sheet; it appears here only as
+   * suggestions the user can promote into a dated commitment.
+   */
+  reminders: {
+    title: 'תזכורות',
+    subtitle: 'מה קבעתם לעצמכם, ומה כדאי לקבוע.',
+
+    overdue: 'באיחור',
+    today: 'היום',
+    upcoming: 'בהמשך',
+    suggestions: 'בלי תזכורת',
+    suggestionsLead: 'לידים שכדאי לקבוע להם משהו, לפני שהם נשכחים.',
+    suggestionsCapped: (shown: number, total: number) =>
+      `מוצגים ${shown} מתוך ${total}. טפלו באלה, והשאר יופיעו כאן.`,
+
+    complete: 'בוצע',
+    reschedule: 'דחה',
+    setReminder: 'קבע תזכורת',
+    removeReminder: 'מחק תזכורת',
+    working: 'רגע…',
+
+    /** The reschedule control, reused on the list, on suggestions and on lead detail. */
+    pickTomorrow: 'מחר',
+    pick3: 'בעוד 3 ימים',
+    pickWeek: 'בעוד שבוע',
+    pickDate: 'תאריך',
+    pickCancel: 'ביטול',
+    pickSave: 'קבע',
+    /** min is a hint, not a validator, so the store guards it too and says why. */
+    pastDate: 'אי אפשר לקבוע תזכורת לתאריך שעבר.',
+
+    emptyTitle: 'אין תזכורות פתוחות',
+    emptyBody: 'הצינור שלכם נקי כרגע. כשתקבעו תזכורת היא תופיע כאן.',
+    emptyAction: 'חזרה ללוח',
+
+    loading: 'טוען תזכורות…',
+    failedTitle: 'לא הצלחנו לטעון את התזכורות',
+    failedBody: 'שום דבר לא נמחק — רק הטעינה נכשלה. נסו שוב.',
+    retry: 'נסה שוב',
+
+    /** Fires once per session. States the count and offers the list — nothing else. */
+    toastOverdue: (n: number) =>
+      n === 1 ? 'תזכורת אחת באיחור.' : `${n} תזכורות באיחור.`,
+    toastToday: (n: number) => (n === 1 ? 'תזכורת אחת להיום.' : `${n} תזכורות להיום.`),
+    toastAction: 'הצג',
   },
   /**
    * Insights — §5. The PRD's fourth pillar exists to *educate*, so no figure appears
@@ -385,6 +439,15 @@ export const COPY = {
     lostReasonPlaceholder: 'בכמה מילים',
     wonAmount: 'הסכום הסופי',
     wonAmountHint: 'זה המספר שיופיע בתובנות. שנו אותו אם סגרתם אחרת.',
+
+    /** The follow-up, read and managed here — the one save commits it with everything else. */
+    reminder: 'תזכורת',
+    reminderNone: 'אין תזכורת פתוחה לליד הזה.',
+    reminderSet: 'קבע תזכורת',
+    reminderChange: 'שנה תאריך',
+    reminderClear: 'בטל תזכורת',
+    /** Says the choice is not written yet, because on this sheet nothing is until save. */
+    reminderPending: 'יישמר בשמירה',
 
     checklist: {
       title: 'שאלות הכשרה',
@@ -585,6 +648,26 @@ export function formatWhen(date: Date | null, now: Date): string {
   if (days === 1) return 'אתמול';
   if (days === 2) return 'לפני יומיים';
   if (days <= 7) return `לפני ${days} ימים`;
+  return DAY_MONTH.format(date);
+}
+
+/**
+ * Future-facing sibling of formatWhen. That one is past-tense ("אתמול", "לפני יומיים")
+ * and cannot be reused for a due date without reading as though the work already happened.
+ * Overdue is stated as a fact, never as a scolding.
+ */
+export function formatDue(date: Date, now: Date): string {
+  const days = daysBetween(date, now);
+  if (days > 0) {
+    if (days === 1) return 'באיחור יום';
+    if (days === 2) return 'באיחור יומיים';
+    return `באיחור ${days} ימים`;
+  }
+  if (days === 0) return 'היום';
+  const ahead = -days;
+  if (ahead === 1) return 'מחר';
+  if (ahead === 2) return 'בעוד יומיים';
+  if (ahead <= 7) return `בעוד ${ahead} ימים`;
   return DAY_MONTH.format(date);
 }
 

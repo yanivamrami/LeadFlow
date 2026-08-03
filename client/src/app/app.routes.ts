@@ -40,6 +40,14 @@ export const routes: Routes = [
         ],
       },
       {
+        // A destination, not an overlay: unmounting the board is right here, unlike the
+        // lead sheet which is a child of the dashboard.
+        path: 'reminders',
+        pathMatch: 'full',
+        title: 'תזכורות · LeadFlow Manager',
+        loadComponent: () => import('./features/reminders/reminders').then((m) => m.Reminders),
+      },
+      {
         path: 'insights',
         pathMatch: 'full',
         title: 'תובנות · LeadFlow Manager',

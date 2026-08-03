@@ -1,0 +1,474 @@
+# Manual test scenarios
+
+> For the screens that are code-complete but have **never been opened by a human**
+> (`documents/GAPS.md` G-17 for §3/§6, G-33 for the reminders screens), plus a by-hand
+> validation of the insights arithmetic (G-16).
+>
+> Written to be run by someone learning the app. Steps are literal; every "expected" line is
+> what the code actually does as of 2026-08-03, not what it ought to do. **If reality differs
+> from an expected line, that is a finding — log it, don't fix it mid-run.**
+>
+> Report template at the bottom (§6).
+
+---
+
+## 0. Setup
+
+```bash
+cd client
+npm start          # ng serve → http://localhost:4200
+```
+
+- The dev build points at the **cloud dev** Supabase project
+  (`src/environments/environment.development.ts`). Writes are real; there is no local emulator
+  in play.
+- Use a **throwaway account** for anything destructive. Sign-up creates a personal tenant plus
+  one Hebrew demo lead automatically.
+- Test on a phone-sized viewport **first** — devtools at 390×844 — then repeat the marked
+  scenarios at ~1440px. The board only activates at ≥768px, the desktop nav at ≥900px.
+- Keep the browser console open. An error there during a passing scenario is still a finding.
+- SQL for the checks in §3 and §5: Supabase dashboard → SQL Editor.
+
+**Suggested order:** §2 (auth, so you have an account) → §1 (leads) → §4b (reminders — needs a
+lead or two to schedule against) → §3 (insights) → §4 → §5.
+
+---
+
+## 1. Lead screens (SCREENS §3 — seven screens, one component)
+
+### S1 — Add a lead with a name only
+1. On mobile: tap the red band at the bottom. On desktop: `+ ליד חדש` in the masthead.
+2. Type a name. Touch nothing else.
+3. Save.
+
+**Expected:** the form shows **fields only** — no timeline, no checklist (there is nothing to
+show yet). Save succeeds, the sheet closes, you land on the board, a success toast appears, and
+the lead is in the register. Name is the only required field — no complaint about the missing
+phone or email.
+
+### S2 — Validation refuses only what it should
+Open `/lead/new` and try each, one at a time:
+
+| Input | Expected |
+|---|---|
+| Empty name → Save | Hebrew error under the name field. Nothing saved. |
+| Anything typed before the first Save | **No errors visible.** Errors appear only after a save attempt, never while typing. |
+| Email `abc@` → Save | Email error. |
+| Email `a@b.co` | Accepted. |
+| Value `12abc` → Save | Value error. |
+| Value `0` | **Accepted** — zero is a real estimate. |
+| Value empty | Accepted — empty is not zero. |
+
+### S3 — Open a lead from all three places
+Open the same lead from: a **register row** (list view), a **board card** (≥768px), and a **day
+sheet item**.
+
+**Expected:** all three open the same sheet, all three by tapping the **lead's name**. Fields are
+pre-filled. Tapping a row's kebab/menu does **not** open the sheet — the two targets do not
+swallow each other.
+
+### S4 — Timeline reads correctly
+On a lead with several activities.
+
+**Expected:** newest entry first. Anything from today is stamped `היום HH:MM`; yesterday
+`אתמול HH:MM`; older shows a date like `5 באוגוסט`. Two entries on the same day are tellable
+apart by time. Past 20 entries, an expand control appears.
+
+### S5 — Checklist answers persist, untouched stays untouched
+1. Open a lead. Answer 2 of the 5 questions (`כן` / `לא` / `?`).
+2. Note the answered counter. Save.
+3. Re-open the lead.
+
+**Expected:** the selected segment carries an ink fill; the counter reads 2 of 5; after save and
+re-open the two answers are still there and the other three are **still blank** — not `?`.
+"Not asked" and "asked, unknown" are different states and must stay different.
+
+### S6 — "Why ask?" opens one at a time
+Tap the per-question "why ask?" on question 1, then on question 3.
+
+**Expected:** question 1's explanation closes when 3 opens. Tapping the same one again closes it.
+
+### S7 — Log an activity
+1. Open a lead. Pick a type chip (`שיחה` · `אימייל` · `פגישה` · `הערה`), type a note.
+2. Save **once**.
+
+**Expected:** one save commits fields, note and any checklist answers together — there is no
+second "add note" button. The note appears in the timeline with its type. No edit and no delete
+on notes: they are append-only by design.
+
+**Known gap (G-26):** an open reminder on this lead is **not** cleared by saving a note here,
+even though the day sheet's action does clear it. Expected-to-be-wrong; confirm and move on.
+
+### S8 — Close a lead as won
+1. Open a lead, change status to `נסגר בהצלחה`.
+
+**Expected:** an extra block appears **inline** (never a second dialog) asking to confirm the
+final amount, pre-filled with the estimate. Editing it changes the value that lands — so the
+conversion figures report real revenue, not a guess.
+
+### S9 — Close a lead as lost
+1. Change status to `לא יצא לפועל`. Try to save with no reason.
+2. Then tap one of the reason chips.
+
+**Expected:** save is refused with an error — a reason is required on a lost lead. Chips write
+their text into the free-text field, which stays editable. Switching the status away from lost
+clears the reason on save.
+
+### S10 — Unsaved changes guard
+1. Open a lead, change a field (or just type in the note box).
+2. Tap the X / close.
+
+**Expected:** the **footer strip changes job** and asks — no modal over the sheet. Cancel returns
+you to editing with everything intact. Confirm discards and closes. Typing only in the note box
+counts as unsaved.
+
+### S11 — Delete a lead
+Use a throwaway lead.
+1. Open it → delete.
+
+**Expected:** a two-step confirm in the footer strip, naming the blast radius **including how
+many activities go with it**. Cancel is always available. Confirm deletes and returns to the
+board.
+
+### S12 — Field tooltips (expected to FAIL — G-23)
+Look for a per-field explanation on the lead form.
+
+**Expected today:** labels and one help line only. The PRD's per-field tooltips are not built.
+Record what you wish each field explained — that copy is the deliverable for G-23.
+
+### S13 — Deep link to a lead that does not exist
+Visit `/lead/00000000-0000-0000-0000-000000000000`.
+
+**Expected:** a clear "not found" state after the read finishes. Not a spinner forever, not an
+empty form.
+
+### S14 — Save with no network
+1. Open a lead, change something.
+2. Devtools → Network → Offline.
+3. Save.
+
+**Expected:** an offline banner under the masthead pushing content down, and a toast saying the
+write was blocked. **The sheet stays open and your typed text is still there** — nothing was
+attempted, so nothing was lost. Go back online: the banner confirms reconnection, and saving
+now works.
+
+### S15 — Stage move from the board (desktop, ≥768px)
+1. Drag a card to another column. Then do the same via the card's stage menu.
+
+**Expected:** both paths work — drag is never the only route. A `status_changed` entry appears in
+that lead's timeline (written by a database trigger, not the form). If the lead has unanswered
+checklist questions, a dismissible nudge appears counting them, always with `לא עכשיו`; it
+informs only — it does not offer to mark them answered. If the checklist is complete, you get the
+stage's guidance line instead. **The move is never blocked.**
+
+---
+
+## 2. Auth screens (SCREENS §6)
+
+### A1 — Sign up
+1. `/auth/sign-up`. Name, email, password (min 8 characters).
+
+**Expected:** account created, you land straight on the board, and the board is **not empty** —
+one Hebrew demo lead exists, visibly labelled as demo. A personal tenant was created for you.
+
+### A2 — Sign-up validation
+Empty name; malformed email; 7-character password; mismatched confirmation (if present).
+
+**Expected:** a Hebrew message per field, all before any request is sent.
+
+### A3 — Sign in, wrong password
+Correct email, wrong password.
+
+**Expected:** an error that does **not** reveal which of the two was wrong — that would tell an
+attacker which addresses are registered. Deliberate.
+
+### A4 — returnUrl works
+1. Sign out. Visit `/insights` directly.
+2. Sign in.
+
+**Expected:** bounced to sign-in with a `returnUrl` in the address bar, and after signing in you
+land on `/insights` — not the board.
+
+### A5 — returnUrl cannot leave the app *(security)*
+Signed out, visit `/auth/sign-in?returnUrl=//example.com` and sign in.
+
+**Expected:** you land on the board (`/`). The app must never navigate off-origin from a query
+parameter. Also try `?returnUrl=/profile` → lands on the profile. If A5 ever sends you to
+another site, stop and report it immediately.
+
+### A6 — Signed-in users cannot reach the auth screens
+While signed in, visit `/auth/sign-in`.
+
+**Expected:** bounced to the board.
+
+### A7 — Password reset request
+`/auth/reset` → submit a registered address, then an unregistered one.
+
+**Expected:** the **same** confirmation both times — it never reveals whether an address exists.
+No email will actually arrive: there is no SMTP sender (G-15). Confirm the screen's behaviour
+only.
+
+### A8 — Reset link landing without a token
+Visit `/auth/reset/new` directly with no token.
+
+**Expected:** an "expired / invalid link" state that offers to request a fresh one. Note this
+route sits **outside** the signed-out guard on purpose — a real recovery link creates a session
+before the new password is chosen.
+
+### A9 — Profile screen
+`/profile`: change the display name; switch theme light → dark → system; then change the password.
+
+**Expected:** the name updates in the masthead monogram. Theme change is immediate and survives a
+reload. Password change asks you to re-authenticate first. Email is **read-only** (needs a sender
+— G-15). There is **no field for the business name** at all (G-24).
+
+### A10 — Sign out
+Sign out from the profile.
+
+**Expected:** you land on a signed-out screen, and pressing Back does not show the board with
+data.
+
+### A11 — Sign in with no network (expected to be POOR — G-25)
+Devtools → Offline, then attempt sign-in.
+
+**Expected today:** one toast, no offline banner — the banner lives inside the signed-in shell.
+You cannot tell "wrong password" from "no internet". Confirm this; it is the finding.
+
+---
+
+## 3. Validating the insights numbers (G-16)
+
+The aggregate `lead_stats` was accepted by Postgres but has never been run against real rows.
+Validate by computing the same numbers a second way and comparing.
+
+**Run G-18's fix first** (`PLAN-gaps.md` §1) — otherwise the demo lead is counted and you will be
+comparing two wrong numbers. If you validate before the fix, use the second query below (which
+excludes demo leads) and expect the screen to be **higher** than SQL by exactly the demo lead.
+
+### 3a. Find your tenant id
+
+```sql
+select t.id as tenant_id, t.name, u.email
+  from public.tenants t
+  join public.memberships m on m.tenant_id = t.id
+  join auth.users u        on u.id = m.user_id;
+```
+
+### 3b. What the app calls
+
+```sql
+select public.lead_stats('<tenant_id>'::uuid);
+```
+
+### 3c. The independent count — plain SQL, no function
+
+```sql
+-- headline figures
+select count(*)                                             as total,
+       count(*) filter (where status = 'won')                as won,
+       count(*) filter (where status = 'lost')               as lost,
+       count(*) filter (where status in ('won','lost'))      as decided,
+       count(*) filter (where status not in ('won','lost'))  as open,
+       coalesce(sum(estimated_value) filter
+         (where status not in ('won','lost')), 0)            as open_value,
+       coalesce(sum(estimated_value) filter
+         (where status = 'won'), 0)                          as won_value
+  from public.leads
+ where tenant_id = '<tenant_id>'::uuid
+   and is_demo = false;
+
+-- source breakdown
+select source,
+       count(*)                                as total,
+       count(*) filter (where status = 'won')  as won,
+       count(*) filter (where status = 'lost') as lost
+  from public.leads
+ where tenant_id = '<tenant_id>'::uuid and is_demo = false
+ group by source
+ order by won desc, total desc;
+
+-- stage reach: is it there now, or did history say it entered
+select s.status,
+       (select count(distinct l.id)
+          from public.leads l
+         where l.tenant_id = '<tenant_id>'::uuid
+           and l.is_demo = false
+           and (l.status = s.status
+                or exists (select 1 from public.activities a
+                            where a.lead_id = l.id
+                              and a.type = 'status_changed'
+                              and a.to_status = s.status))) as reached
+  from unnest(enum_range(null::public.lead_status)) as s(status);
+-- 'new' is special: every lead reached it, because creation writes no history row.
+```
+
+### 3d. Compare against the screen
+
+| On `/insights` | Must equal |
+|---|---|
+| Total leads | `total` |
+| Conversion % | `round(won / decided * 100)` — **not** `won / total`. Deliberate (G-11); the screen names its own denominator. |
+| Value in play | `open_value` |
+| Closed value | `won_value` |
+| Each pipeline bar | matching `reached` row. Bars are relative to the widest bar, so check the **numbers**, not bar lengths. |
+| Source rows | the source query, sorted by close rate — best-closing source first |
+| Below 10 decided leads | **no ratio between sources appears at all** — not even caveated. Deliberate (SCREENS 5.4). |
+
+### 3e. Deliberately move a lead and re-check
+Move a lead `new → contacted → qualified`, then close it as won with a final amount.
+
+**Expected:** `total` unchanged. `decided` +1, `won` +1, conversion recomputed. `open_value` drops
+by that lead's estimate; `closed value` rises by the **final** amount you confirmed, not the
+estimate. `reached` gains 1 on contacted, qualified and won — and keeps its count on `new`,
+because reach is cumulative history, not current position.
+
+**Also check:** a lead that skips stages (`new` straight to `proposal_sent`) increments
+`proposal_sent` reach but **not** `contacted` or `qualified`. That asymmetry is the entire point
+of the pipeline ramp — it is how "where do I lose them" becomes readable.
+
+---
+
+## 4. Source filter from insights (expected to FAIL — G-27)
+
+1. `/insights` → tap a lead-source row.
+
+**Expected today:** you land on the board with the address bar showing `?source=…` and the board
+shows **every lead, unfiltered**. Nothing errors — the answer is just silently wrong.
+
+**After G-27 is fixed:** only that source's leads are listed, a removable chip names the active
+filter, the stage counts reflect it, and `?source=nonsense` falls back to showing everything
+rather than an empty board.
+
+---
+
+## 4b. Reminders (SCREENS §4 — new, never opened by a human: GAPS G-33)
+
+Everything here is **explicit** reminders — rows somebody scheduled. Derived urgency (drifting,
+silent proposal, unqualified) stays on the day sheet and shows up here only as *suggestions*.
+That distinction is the point of the screen, so R3 and R4 are the two that matter most.
+
+### R1 — The badge tells the truth
+1. Sign in. Look at the bell in the masthead before opening anything.
+2. Note the number. Then open `/reminders` (tap the bell).
+
+**Expected:** the badge equals **overdue + due-today rows only**. Add up the `באיחור` and
+`היום` band counts on the screen — it must match exactly. `בהמשך` and `בלי תזכורת` are **not**
+in it. With nothing scheduled there is **no badge at all**, not a `0`.
+
+### R2 — Empty state, and the one case where there is none
+1. On an account with no reminders at all and no drifting leads → open `/reminders`.
+2. Then, on an account with drifting leads but still no reminders → open it again.
+
+**Expected:** first time, a dashed empty container whose copy says the pipeline is clear (not
+that the feature is unused) with one action back to the board. Second time, **no empty state** —
+the `בלי תזכורת` suggestions band *is* the page.
+
+### R3 — Set a reminder from a suggestion
+1. `/reminders` → in `בלי תזכורת`, pick a lead and tap `קבע תזכורת`.
+2. The picker opens **inside the row** — no popup. Tap `בעוד 3 ימים`, then save.
+
+**Expected:** a success toast naming the date it landed on. The row leaves the suggestions band
+and appears under `בהמשך`. The badge does **not** change (it is not due today). Reload — it is
+still there.
+
+### R4 — Set a reminder from the lead sheet, with the one save
+1. Open any lead → find the follow-up line in the fields area (`מעקב`).
+2. Tap `קבע תזכורת` → `מחר` → save the *picker*. Do **not** save the sheet yet.
+3. Read the line, then **close the sheet with `ביטול`**.
+4. Reopen the same lead.
+
+**Expected:** after step 2 the line shows tomorrow's date plus `יישמר בשמירה` — the reminder is
+staged, not written. Closing without saving triggers the unsaved-changes guard. After discarding,
+the reopened lead has **no** reminder. Repeat, but press the sheet's `שמור` at step 3: now the
+reminder persists and `/reminders` shows it under `היום`/`בהמשך`.
+
+### R5 — Complete a reminder, and watch the day sheet
+1. Have one reminder due **today**. Note the badge and the yellow day sheet's contents.
+2. `/reminders` → tap `בוצע` on that row.
+3. Without reloading, go back to the board.
+
+**Expected:** the row goes; the band's count drops; the badge drops by one and disappears at
+zero. On the day sheet that lead is **gone or struck through, with no manual refresh** — one
+write, both surfaces. A toast confirms.
+
+### R6 — Reschedule across bands
+1. Have one **overdue** reminder. Open `/reminders`.
+2. Tap `דחה` on it → `בעוד שבוע` → save.
+
+**Expected:** the row moves out of `באיחור` into `בהמשך` immediately; both counts change; the
+badge drops. The stamp reads `בעוד 7 ימים`, never a past-tense phrase.
+
+### R7 — The past cannot be scheduled
+1. Tap `דחה` → use the **date field** and type yesterday.
+
+**Expected:** the native input's `min` should refuse it; if you get it in anyway (typing rather
+than picking), the save is refused with a Hebrew message and **nothing is written**. Also try
+**today** — that must be *accepted*: today is not the past.
+
+### R8 — Cancel writes nothing
+1. Open `דחה`, pick a chip, then press the cancel action instead of save.
+
+**Expected:** the row is unchanged, no toast, no reload flicker.
+
+### R9 — Clear a reminder
+1. Lead sheet → follow-up line → `הסר תזכורת`, then save the sheet.
+
+**Expected:** the line goes back to "no follow-up" copy, and the lead disappears from
+`/reminders`. It may reappear under `בלי תזכורת` as a *suggestion* if the pipeline thinks it is
+drifting — that is correct, not a duplicate.
+
+### R10 — The login digest, and its silence
+1. Sign in with at least one **overdue** reminder, landing anywhere except `/reminders`.
+2. Reload the page.
+3. Sign out and back in.
+
+**Expected:** step 1 shows **one** toast naming the overdue count, with `הצג` that lands on the
+list. Step 2 is **silent** (once per browser session). Step 3 announces again. With reminders due
+today but none overdue, the message names the today count instead; with both, **overdue wins**.
+With nothing due, **no toast ever**. Sign in with the network off, or land directly on
+`/reminders`, and there is no toast either.
+
+### R11 — Load failure, not a false empty
+1. Open `/reminders`, then break the network in devtools and reload.
+
+**Expected:** a load-failure state with a retry that replaces the whole list — **never** "you
+have no reminders" and never a partial list plus an error. Restore the network, tap retry, the
+list comes back.
+
+### R12 — Keyboard and touch (run at 390px, then ~1440px)
+1. Tab through a populated list.
+
+**Expected:** the lead name is a link and reaching it does not require passing through the two
+action buttons, and vice versa — neither swallows the other. Every target is at least 44×44 even
+though the density is compact. Reduce motion at the OS level: the per-row busy sweep must
+**stop**, not strobe.
+
+---
+
+## 5. Cross-cutting checks (run once, anywhere)
+
+| # | Check | Expected |
+|---|---|---|
+| X1 | Keyboard only — no mouse, no touch — through the board, the register and the lead sheet | Every action reachable. Focus always shows a visible ring. Drag is never the only path to a stage move. |
+| X2 | OS setting → reduce motion, then reload | No stagger, no sliding. Loading skeletons **stop pulsing entirely** rather than speeding up. |
+| X3 | Screenshot in greyscale (or a colour-blind simulator) | Every stage tag and attention flag still readable — status is never carried by colour alone. |
+| X4 | Zoom the browser to 200% at 390px width | Nothing clipped, nothing horizontally scrolling. |
+| X5 | Reload the dashboard | Skeletons appear on the **first** read only, never after a save. |
+| X6 | Break the network, then reload the dashboard | A load-failure state with a retry — **not** "you have no leads yet". |
+| X7 | Search for a string that matches nothing | "Nothing matched" — different copy from "no leads yet". |
+| X8 | Any RTL check: numbers, dates, currency | `he-IL` formats, `₪`, and no Latin-first layout leaking in. |
+
+---
+
+## 6. How to report a finding
+
+One line each, in a list you hand back:
+
+```
+[S7] Expected the note to appear in the timeline; it appeared twice.
+     Mobile 390px, Chrome. Console: none.
+[A11] Confirmed — no offline banner on sign-in. Matches G-25.
+```
+
+Include: scenario id, what you expected, what happened, viewport, and anything in the console.
+Do not fix anything mid-run — a half-fixed app makes the remaining scenarios untrustworthy.

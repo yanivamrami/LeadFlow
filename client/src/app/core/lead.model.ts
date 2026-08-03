@@ -124,12 +124,22 @@ export interface LeadDraft {
   lostReason: string | null;
 }
 
+/**
+ * What the sheet intends for the lead's follow-up. Three states, distinguishable:
+ * `keep` touches nothing (most saves), `set` creates or reschedules, `clear` completes
+ * every open reminder on the lead.
+ */
+export type ReminderAction = 'keep' | 'set' | 'clear';
+
 /** The optional extras a save may carry alongside the fields. */
 export interface LeadSaveExtras {
   note: string | null;
   noteType: ActivityType;
   /** Only the items the user touched in this session. */
   answers: ChecklistAnswers;
+  reminderAction: ReminderAction;
+  reminderDue: Date | null;
+  reminderTitle: string | null;
 }
 
 export interface OpenItem {
