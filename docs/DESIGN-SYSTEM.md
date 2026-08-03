@@ -31,6 +31,7 @@ Roles, not materials — `--lf-ground` / `--lf-ink` / `--lf-surface` flip with t
 | `--lf-muted` | `#6b6358` | metadata — 5.3:1 on ground |
 | `--lf-day` | `#ffe000` | today. attention. the sheet. 14.5:1 with ink |
 | `--lf-red` | `#cc1b12` | commit: primary action, Won, cleared marks. 5.0:1 with white |
+| `--lf-red-ink` | `#ae1800` | red as *text* on ground — error messages, destructive labels. 6.6:1. `--lf-red` is a fill colour and only reaches 4.0:1 as text |
 | `--lf-tan` | `#e8dcc0` | pipeline ramp, step 2 |
 | `--lf-tan-deep` | `#c9b98f` | pipeline ramp, step 3 |
 | `--lf-rule-soft` | `rgba(20,17,15,.22)` | 1px row rules |
@@ -43,6 +44,7 @@ Roles, not materials — `--lf-ground` / `--lf-ink` / `--lf-surface` flip with t
 | `--lf-ink` | `#f7f1e4` | |
 | `--lf-day` | `#ffe000` | unchanged — it is the one light in the room |
 | `--lf-red` | `#ff6a4d` | `#cc1b12` drops to 3.3:1 on this ground |
+| `--lf-red-ink` | `#ff8a72` | error text on the dark ground |
 | `--lf-tan` / `--lf-tan-deep` | `#3a342a` / `#554c39` | ramp inverts, order preserved |
 
 **Contrast is a system property, not a per-screen check.** `#cc1b12` was chosen over a brighter signage red precisely because white-on-it reaches 5.0:1; a brighter red would fail body-size text on fills. Do not "warm it up" without recomputing.
@@ -148,7 +150,15 @@ Six posted bills, right-to-left, stage 1 at the inline-start edge. Column identi
 
 **The action band** — on mobile the add-lead action is a full-width red band above the tab bar, 60px, with a 4px ink rule above it. This is the one place red owns a whole region. There is **no round FAB**; radius 0 is systemic.
 
-**Fields** — 44px min-height, surface fill, 2px ink border, radius 0. Focus is `3px solid var(--lf-red)` with `outline-offset: 2px` — on `:focus-within` for composite fields.
+**Fields** (`lf-text-field`) — 44px min-height (48px on the auth screens, where the field is the whole task), surface fill, 2px ink border, radius 0. Focus is `3px solid var(--lf-red)` with `outline-offset: 2px` — on `:focus-within` for composite fields. Stacked fields pull up `-2px` so adjacent borders collapse into one shared rule. Input font-size stays ≥16px or iOS zooms the page on focus. Email and password inputs are `dir="ltr"` islands inside the RTL page.
+
+**Field error** (`lf-form-error`) — a `--lf-red-ink` line under the field behind a 3px red block, `role="alert"` so it is announced when it appears. Never a colour-only signal.
+
+**The posted bill** (`lf-auth-page`) — the signed-out surface. A single sheet on the poster ground: full-bleed under 900px, a 460px bordered bill above it. It owns the `<form>`, so a screen only supplies fields. Children reach the sheet edge with `margin-inline: var(--lf-bleed)` — an inherited custom property, because content projection means a child cannot know its parent's padding.
+
+**Commit band** (`lf-commit-band`) — the auth screens' submit: the same 60px red band as the action band, pinned to the bottom of the bill with `margin-block-start: auto`. Signing in and adding a lead are the same gesture, so they look the same.
+
+**Paste strip** (`lf-paste-strip`) — secondary routes out of a screen (create an account, forgot the password), as an ink-filled strip rotated by `--lf-paste-tilt` with yellow links. The rotation collapses under `prefers-reduced-motion`.
 
 **Filter chips** — a scrolling strip under a 3px ink rule. Selected chip is an ink fill. Counts in Archivo 800.
 
@@ -254,8 +264,13 @@ Custom preset on the **Aura** base, fed by the tokens above (`client/src/theme/l
 | Hebrew copy and formatters | `client/src/app/core/copy.ts` |
 | domain model, drift thresholds, sheet cap | `client/src/app/core/lead.model.ts` |
 | dashboard state | `client/src/app/core/leads.store.ts` |
-| shell (masthead, tabs, action band) | `client/src/app/app.html` · `app.scss` |
+| shell (masthead, tabs, action band) | `client/src/app/features/shell/shell.*` — a routed layout, so the signed-out screens render without it |
+| theme choice (light/dark/system) | `client/src/app/core/theme.service.ts` · pre-paint boot script in `client/src/index.html` |
+| route guards | `client/src/app/core/auth.guard.ts` |
+| auth screens (sign in, sign up, reset) | `client/src/app/features/auth/` |
+| profile, account deletion | `client/src/app/features/profile/` |
+| account deletion, server side | `client/supabase/functions/delete-account/index.ts` |
 | day sheet | `client/src/app/features/dashboard/day-sheet.*` |
 | register | `client/src/app/features/dashboard/register.*` |
 | board | `client/src/app/features/dashboard/board.*` |
-| stage tag, row menu | `client/src/app/shared/` |
+| stage tag, row menu, text field, form error | `client/src/app/shared/` |

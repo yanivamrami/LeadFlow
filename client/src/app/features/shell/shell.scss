@@ -1,0 +1,226 @@
+/* The signed-in shell: ink masthead everywhere, bottom tabs and a red action band
+   under 900px. The signed-out screens deliberately have none of this. */
+
+:host {
+  display: block;
+  position: relative;
+  z-index: 1;
+  min-block-size: 100vh;
+  padding-block-end: 118px; /* clears the fixed band + tabs */
+}
+
+.skip {
+  position: absolute;
+  inset-block-start: -100px;
+  inset-inline-start: var(--lf-space-4);
+  z-index: 60;
+  padding: var(--lf-space-3) var(--lf-space-4);
+  background: var(--lf-day);
+  color: var(--lf-on-day);
+  font-weight: 500;
+  text-decoration: none;
+}
+.skip:focus { inset-block-start: var(--lf-space-2); }
+
+/* ---------- masthead ---------- */
+.mast {
+  display: flex;
+  align-items: center;
+  gap: var(--lf-space-3);
+  min-block-size: 60px;
+  padding-inline: var(--lf-space-4);
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+}
+
+.mast__brand {
+  margin: 0;
+  margin-inline-end: auto;
+  direction: ltr;
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.mast__brand i {
+  font-style: normal;
+  font-family: var(--lf-font-num);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  margin-inline-start: 8px;
+}
+
+.mast__nav,
+.mast__cta {
+  display: none;
+}
+
+.mast__bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.mast__bell svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
+
+.mast__badge {
+  position: absolute;
+  inset-block-start: 5px;
+  inset-inline-start: 4px;
+  min-inline-size: 18px;
+  block-size: 18px;
+  padding-inline: 3px;
+  background: var(--lf-red);
+  color: var(--lf-on-red);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.mast__me {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  inline-size: 34px;
+  block-size: 34px;
+  background: var(--lf-day);
+  color: var(--lf-on-day);
+  /* a Hebrew monogram — Archivo has no glyph for it */
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: 16px;
+  position: relative;
+  text-decoration: none;
+  outline-offset: 3px;
+}
+/* the mark is 34px because the masthead is tight; the hit area is not */
+.mast__me::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  translate: 50% -50%;
+  inline-size: var(--lf-touch);
+  block-size: var(--lf-touch);
+}
+
+/* ---------- mobile action band + tabs ---------- */
+.band {
+  position: fixed;
+  inset-block-end: 58px;
+  inset-inline: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-block-size: 60px;
+  border: 0;
+  border-block-start: var(--lf-rule-w) solid var(--lf-ink);
+  background: var(--lf-red);
+  color: var(--lf-on-red);
+  font: inherit;
+  font-weight: 600;
+  font-size: 19px;
+  cursor: pointer;
+}
+.band svg { inline-size: 22px; block-size: 22px; stroke-width: 2.6; }
+
+.tabs {
+  position: fixed;
+  inset-block-end: 0;
+  inset-inline: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--lf-ink);
+}
+.tabs a,
+.tabs .soon {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  min-block-size: 58px;
+  padding-block: 8px;
+  border-block-start: var(--lf-rule-w) solid transparent;
+  color: color-mix(in srgb, var(--lf-on-ink) 70%, transparent);
+  font-size: 11px;
+  text-decoration: none;
+}
+.tabs svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
+.tabs a.on {
+  color: var(--lf-on-ink);
+  border-block-start-color: var(--lf-day);
+  font-weight: 500;
+}
+
+/* not built yet — said plainly rather than linked to nothing */
+.soon { cursor: default; opacity: 0.55; }
+
+/* ---------- desktop ---------- */
+@media (min-width: 900px) {
+  :host { padding-block-end: 0; }
+
+  .mast {
+    min-block-size: 76px;
+    gap: var(--lf-space-6);
+    padding-inline: var(--lf-space-8);
+  }
+  .mast__brand { font-size: 34px; margin-inline-end: 0; }
+
+  .mast__nav {
+    display: flex;
+    align-self: stretch;
+  }
+  .mast__nav a,
+  .mast__nav .soon {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding-inline: var(--lf-space-4);
+    border-block-end: 5px solid transparent;
+    color: color-mix(in srgb, var(--lf-on-ink) 72%, transparent);
+    text-decoration: none;
+  }
+  .mast__nav svg { inline-size: 19px; block-size: 19px; stroke-width: 2.4; }
+  .mast__nav a.on {
+    color: var(--lf-on-ink);
+    border-block-end-color: var(--lf-day);
+    font-weight: 500;
+  }
+  .soon__n {
+    font-size: 12px;
+    padding: 3px 6px;
+    background: color-mix(in srgb, var(--lf-on-ink) 16%, transparent);
+  }
+
+  .mast__cta {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-inline-start: auto;
+    min-block-size: var(--lf-touch);
+    padding-inline: var(--lf-space-4);
+    border: 0;
+    background: var(--lf-red);
+    color: var(--lf-on-red);
+    font: inherit;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .mast__cta svg { inline-size: 19px; block-size: 19px; stroke-width: 2.6; }
+  .mast__cta:hover { background: color-mix(in srgb, var(--lf-red) 82%, var(--lf-ink)); }
+
+  .mast__me { inline-size: 40px; block-size: 40px; font-size: 15px; }
+
+  .band,
+  .tabs { display: none; }
+}

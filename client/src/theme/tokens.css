@@ -18,6 +18,7 @@
   --lf-on-day: #14110f;
   --lf-red: #cc1b12;             /* commit: primary action, Won, cleared marks. 5.0:1 with paper */
   --lf-on-red: #ffffff;
+  --lf-red-ink: #ae1800;         /* accent set as body copy — 6.6:1 on ground. Never --lf-red */
 
   /* paper ramp — carries pipeline progression, greyscale-legible */
   --lf-tan: #e8dcc0;
@@ -97,6 +98,7 @@
   --lf-on-day: #14110f;
   --lf-red: #ff6a4d;             /* #cc1b12 drops to 3.3:1 on this ground */
   --lf-on-red: #171512;
+  --lf-red-ink: #ff8a72;         /* 7.4:1 on the dark ground; the light accent is unreadable here */
 
   --lf-tan: #3a342a;
   --lf-tan-deep: #554c39;

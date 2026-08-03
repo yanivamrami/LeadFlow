@@ -1,66 +1,6 @@
-<a class="skip" href="#main">{{ copy.shell.skipToContent }}</a>
-
-<header class="mast">
-  <p class="mast__brand">{{ appName }}<i>{{ appSub }}</i></p>
-
-  <nav class="mast__nav" [attr.aria-label]="copy.nav.dashboard">
-    <a routerLink="/" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: true }">
-      <svg lucideList aria-hidden="true"></svg>
-      {{ copy.nav.dashboard }}
-    </a>
-    <span class="soon" aria-disabled="true">
-      <svg lucideClipboardList aria-hidden="true"></svg>
-      {{ copy.nav.reminders }}
-      <span class="soon__n lf-num">{{ reminderCount }}</span>
-    </span>
-    <span class="soon" aria-disabled="true">
-      <svg lucideChartNoAxesColumn aria-hidden="true"></svg>
-      {{ copy.nav.insights }}
-    </span>
-  </nav>
-
-  <button type="button" class="mast__cta">
-    <svg lucidePlus aria-hidden="true"></svg>
-    {{ copy.shell.addLead }}
-  </button>
-
-  <button type="button" class="mast__bell lf-hit" [attr.aria-label]="copy.shell.remindersBadge">
-    <svg lucideBell aria-hidden="true"></svg>
-    <span class="mast__badge lf-num">{{ reminderCount }}</span>
-  </button>
-
-  <span class="mast__me" aria-hidden="true">ר</span>
-</header>
-
 <lf-offline-banner />
 
-<main class="content">
-  <router-outlet />
-</main>
+<router-outlet />
 
 <lf-toast-stack />
 <lf-alert-dialog />
-
-<button type="button" class="band">
-  <svg lucidePlus aria-hidden="true"></svg>
-  {{ copy.shell.addLead }}
-</button>
-
-<nav class="tabs" [attr.aria-label]="copy.nav.dashboard">
-  <a routerLink="/" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: true }">
-    <svg lucideList aria-hidden="true"></svg>
-    {{ copy.nav.dashboard }}
-  </a>
-  <span class="soon" aria-disabled="true">
-    <svg lucideClipboardList aria-hidden="true"></svg>
-    {{ copy.nav.reminders }}
-  </span>
-  <span class="soon" aria-disabled="true">
-    <svg lucideChartNoAxesColumn aria-hidden="true"></svg>
-    {{ copy.nav.insights }}
-  </span>
-  <span class="soon" aria-disabled="true">
-    <svg lucideUser aria-hidden="true"></svg>
-    {{ copy.nav.profile }}
-  </span>
-</nav>

@@ -2,7 +2,7 @@
 
 > Derived from the PRD's four pillars, `docs/ARCHITECTURE.md` §7 (route map), and `PRODUCT.md`.
 > ~~Struck through~~ = built and running. Everything else is unbuilt.
-> Last updated: 2026-08-02
+> Last updated: 2026-08-03
 
 Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYSTEM.md` v2.0.
 "Screen" here means a route or a full-surface overlay (drawer/dialog), not a component.
@@ -65,13 +65,13 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 
 | # | Screen | Notes |
 |---|---|---|
-| 6.1 | **Sign in** | Email/password at launch; OAuth toggleable later without code changes. |
-| 6.2 | **Sign up** | Trigger creates the personal tenant plus the demo lead. |
-| 6.3 | **Password reset — request** | |
-| 6.4 | **Password reset — set new** | Deep-linked from the email. |
-| 6.5 | **Email confirmation landing** | |
-| 6.6 | **Profile / account settings** | Display name, theme, delete account. |
-| 6.7 | **First-run welcome** | Optional. The demo lead plus the sheet explainer may already cover activation — decide before building. |
+| 6.1 | ~~**Sign in**~~ | ~~Email/password posted bill, red commit band, footer strip to sign-up and reset. OAuth toggleable later without code changes.~~ |
+| 6.2 | ~~**Sign up**~~ | ~~Name/email/password; the DB trigger creates the personal tenant plus the demo lead. Lands straight on the board.~~ |
+| 6.3 | ~~**Password reset — request**~~ | ~~Confirmation never reveals whether an address is registered.~~ |
+| 6.4 | ~~**Password reset — set new**~~ | ~~Deep-linked from the email; outside `guestGuard` because the recovery link mints a real session. Dead links land on an expired state that offers a fresh one.~~ |
+| 6.5 | **Email confirmation landing** | Not needed yet — `enable_confirmations = false`, and no SMTP sender is configured. Build when email exists. |
+| 6.6 | ~~**Profile / account settings**~~ | ~~Display name, password change (reauth first), theme (light/dark/system), sign out, and the entry to account deletion.~~ |
+| 6.7 | **First-run welcome** | **Dropped** (2026-08-03). The demo lead and the day-sheet explainer the trigger creates already carry activation; a welcome screen would only stand between someone and their board. |
 
 ## 7. Legal & compliance
 
@@ -79,7 +79,7 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 |---|---|---|
 | 7.1 | **Privacy notice** | Required by Israeli Amendment 13 (`docs/ARCHITECTURE.md` §9): what lead data is stored, why, where, and how it is deleted. |
 | 7.2 | **Terms** | |
-| 7.3 | **Delete account / tenant** | Cascade delete of all tenant data. Destructive and irreversible — confirms explicitly. |
+| 7.3 | ~~**Delete account / tenant**~~ | ~~Its own route, not a modal, so the two steps are genuinely separate. Counts the real rows before asking. The `delete-account` Edge Function removes the `auth.users` row; the FK cascades and the orphan-tenant trigger do the rest.~~ |
 
 ## 8. Deferred (do not design as if shipped)
 
@@ -96,8 +96,9 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 
 | State | Screens |
 |-------|---------|
-| Built | 9 |
-| Remaining in scope (§1–§7) | 27 |
+| Built | 15 |
+| Remaining in scope (§1–§7) | 20 |
+| Dropped (6.7) | 1 |
 | Deferred (§8) | 4 |
 
 **Nearest useful next screen: 3.2 lead detail** — every row, card and day-sheet item already points at it, and today they point at nothing.

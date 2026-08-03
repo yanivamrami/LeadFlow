@@ -1,0 +1,50 @@
+<div class="page">
+  <a class="back" routerLink="/profile">
+    <svg lucideArrowRight aria-hidden="true"></svg>
+    {{ copy.profile.title }}
+  </a>
+
+  <h1 class="ttl">{{ copy.profile.delete.title }}</h1>
+  <p class="lead">{{ copy.profile.delete.lead }}</p>
+
+  <section class="what">
+    <h2 class="what__h lf-label">{{ copy.profile.delete.whatGoes }}</h2>
+
+    @if (counting()) {
+      <p class="counting">{{ copy.profile.delete.counting }}</p>
+    } @else {
+      <ul class="list">
+        @for (line of lines(); track line) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+    }
+  </section>
+
+  <form novalidate (ngSubmit)="submit()">
+    <label class="ack">
+      <input type="checkbox" [checked]="acknowledged()" (change)="toggle($event)" />
+      <span class="ack__box" aria-hidden="true">
+        @if (acknowledged()) {
+          <svg lucideCheck></svg>
+        }
+      </span>
+      <span class="ack__t">{{ copy.profile.delete.confirmLabel }}</span>
+    </label>
+
+    <lf-form-error [message]="serverProblem()" />
+
+    <div class="acts">
+      <button
+        type="submit"
+        class="b b--commit"
+        [disabled]="!acknowledged() || busy()"
+        [attr.aria-busy]="busy() ? 'true' : null"
+      >
+        {{ busy() ? copy.auth.working : copy.profile.delete.submit }}
+      </button>
+
+      <a class="b" routerLink="/profile">{{ copy.profile.delete.cancel }}</a>
+    </div>
+  </form>
+</div>
