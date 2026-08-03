@@ -143,6 +143,8 @@
   font: inherit;
   font-weight: 600;
   font-size: 19px;
+  /* it is an anchor, not a button — it routes. Anchors underline unless told not to. */
+  text-decoration: none;
   cursor: pointer;
 }
 .band svg { inline-size: 22px; block-size: 22px; stroke-width: 2.6; }
@@ -228,6 +230,7 @@
     font: inherit;
     font-weight: 600;
     font-size: 16px;
+    text-decoration: none;
     cursor: pointer;
   }
   .mast__cta svg { inline-size: 19px; block-size: 19px; stroke-width: 2.6; }

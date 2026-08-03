@@ -229,7 +229,12 @@ lf-lead-menu { grid-area: menu; justify-self: end; }
   font-size: 14px;
   color: var(--lf-muted);
 }
+/* one of the two is an anchor (add lead) and the other a button (clear filters),
+   so this has to kill the anchor underline as well as match their look */
 .none__act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-block-size: var(--lf-touch);
   margin-block-start: var(--lf-space-4);
   padding-inline: var(--lf-space-4);
@@ -238,6 +243,7 @@ lf-lead-menu { grid-area: menu; justify-self: end; }
   color: var(--lf-ink);
   font: inherit;
   font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
 }
 .none__act:hover { background: var(--lf-ink); color: var(--lf-on-ink); }
