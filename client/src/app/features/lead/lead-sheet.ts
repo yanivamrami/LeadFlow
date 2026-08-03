@@ -28,6 +28,7 @@ import {
   LOST_REASONS,
   SOURCE_LABEL,
   STATUS_LABEL,
+  STATUS_SHORT,
   formatValue,
   formatDue,
 } from '../../core/copy';
@@ -94,6 +95,13 @@ export class LeadSheet {
 
   protected readonly copy = COPY;
   protected readonly statusLabel = STATUS_LABEL;
+  /**
+   * The stage strip's stop labels. Short forms are documented for places where the column
+   * is already the context; here the context is the header's own stage tag, which always
+   * carries the full label — so the strip can afford `הצעה` where a select needed
+   * `נשלחה הצעה` and never fitted it.
+   */
+  protected readonly statusShort = STATUS_SHORT;
   protected readonly sourceLabel = SOURCE_LABEL;
   protected readonly activityLabel = ACTIVITY_LABEL;
   protected readonly question = CHECKLIST_QUESTION;
@@ -149,7 +157,22 @@ export class LeadSheet {
   protected readonly footerMode = signal<FooterMode>('default');
   protected readonly saving = signal(false);
   protected readonly submitted = signal(false);
-  protected readonly whyOpen = signal<ChecklistItem | null>(null);
+  /**
+   * All five "why ask?" lines at once, rather than one signal per question. Five separate
+   * toggles cost a 44px row each and answered the same question — someone who wants the
+   * reasoning wants the set, not the third one.
+   */
+  protected readonly whyAllOpen = signal(false);
+
+  /**
+   * Below 900px in edit mode the identity fields fold behind a read grid: they are typed
+   * once and then read for months, so they are reference rather than the task. Opening is
+   * one-way for the life of the sheet — having asked to edit, nobody wants it folding back
+   * under them. Create has nothing to read, so its facts block never renders, and above
+   * 900px the second column removes the reason to fold at all (see the stylesheet).
+   */
+  protected readonly factsOpen = signal(false);
+  protected readonly folded = computed(() => !this.create() && !this.factsOpen());
   /**
    * One-at-a-time, same as `whyOpen` — but a separate signal, deliberately not shared with
    * it. A field's help and a checklist question's "why ask?" are different questions; if
@@ -249,9 +272,27 @@ export class LeadSheet {
     this.touchedAnswers.update((current) => ({ ...current, [item]: answer }));
   }
 
-  protected toggleWhy(item: ChecklistItem): void {
-    this.whyOpen.update((open) => (open === item ? null : item));
-  }
+  /* ---------- the value field, which changes job on `won` ---------- */
+
+  /**
+   * `won` must not let an estimate stand in for revenue, so the field asks for the final
+   * amount by name. It stays the *same* field: a second input bound to the same signal is
+   * how a typed figure gets overwritten by whichever control the user did not look at.
+   */
+  protected readonly valueLabel = computed(() =>
+    this.status() === 'won' ? COPY.lead.wonAmount : COPY.lead.fields.value,
+  );
+  protected readonly valueHelp = computed(() =>
+    this.status() === 'won' ? COPY.lead.wonAmountHint : null,
+  );
+
+  /** The value as the read grid shows it: currency, or a word saying it is not filled in. */
+  protected readonly valueRead = computed(() => {
+    const raw = this.value().trim();
+    if (!raw.length) return COPY.lead.factsEmpty;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? formatValue(parsed) : raw;
+  });
 
   /** Same one-at-a-time act as `toggleWhy`, kept on its own signal — see `fieldHelpOpen`. */
   protected toggleFieldHelp(field: LeadFieldKey): void {
@@ -404,8 +445,9 @@ export class LeadSheet {
     void this.router.navigate(['/']);
   }
 
-  protected setStatus(value: string): void {
-    this.status.set(value as LeadStatus);
+  /** The stage strip's stop. Typed, unlike the select's string, so no cast is needed. */
+  protected pickStage(stage: LeadStatus): void {
+    this.status.set(stage);
   }
 
   protected setSource(value: string): void {

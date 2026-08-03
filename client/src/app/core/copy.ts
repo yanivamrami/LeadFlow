@@ -469,6 +469,15 @@ export const COPY = {
       optional: 'לא חובה',
     },
 
+    /**
+     * The read grid. Below 900px the identity fields are shown as facts until asked for,
+     * so they need a heading, a way in, and a word for "nothing here yet" — a bare dash
+     * reads as a glyph to a screen reader and as a mistake to everyone else.
+     */
+    factsTitle: 'הפרטים',
+    factsEdit: 'ערוך פרטים',
+    factsEmpty: 'לא מולא',
+
     /** The per-field help toggle. Same words as the checklist's, because it is the same act. */
     fieldHelpShow: 'למה זה חשוב?',
     fieldHelpHide: 'סגור',

@@ -996,7 +996,21 @@ head-on rather than as a side effect.</p>
 </table>
 
 <div class="q">
-  <h2 style="margin:0">Recommendation</h2>
+  <h2 style="margin:0">Decided, and built</h2>
+  <p class="cap"><b>B on the desktop, A on the phone</b> — the recommendation below, as chosen.
+  At ≥900px an edit sheet is the two-bill dialog, bounded at <code>min(1000px, 100vw − 64px)</code>
+  by <code>min(760px, 100vh − 64px)</code> so it stays a sheet posted on the wall rather than a
+  filled window. A create sheet keeps the narrow 560px column, because it has no checklist, log
+  or history to put in a second one. Below 900px both modes read in A's order, and create opens
+  with the details already expanded.</p>
+  <p class="cap">C did not ship as a layout, but its compressions did: the one-line checklist row,
+  one group-level <code>למה שואלים?</code> in place of five, the six-stop stage strip, and the
+  sheet's first use of <code>--lf-day</code>. L2 and L10 are fixed. Rendering the built stylesheet
+  also turned up a pre-existing overflow this review had missed — the app has no
+  <code>border-box</code> reset, so every <code>inline-size: 100%</code> control was running
+  28px wider than the form it sits in.</p>
+
+  <h2 style="margin:26px 0 0">Recommendation</h2>
   <p class="cap"><b>A for the phone, B for desktop — they compose.</b> A's read-grid-then-work order
   and B's two-column desktop are not competing theses; A decides the vertical order and B decides
   what happens to it when the viewport gets an extra axis. C's compressions (the 66px checklist
