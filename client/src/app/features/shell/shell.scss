@@ -22,15 +22,19 @@
 }
 .skip:focus { inset-block-start: var(--lf-space-2); }
 
-/* ---------- masthead ---------- */
+/* ---------- masthead ----------
+   Paper, same ground as the body. When the header and the page share a colour the
+   separation has to come from somewhere else, so the 4px section rule does it — which
+   is what that rule is for in this system. */
 .mast {
   display: flex;
   align-items: center;
   gap: var(--lf-space-3);
   min-block-size: 60px;
   padding-inline: var(--lf-space-4);
-  background: var(--lf-ink);
-  color: var(--lf-on-ink);
+  background: var(--lf-ground);
+  color: var(--lf-ink);
+  border-block-end: var(--lf-rule-w) solid var(--lf-ink);
 }
 
 .mast__brand {
@@ -70,7 +74,8 @@
   cursor: pointer;
 }
 .mast__help svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
-.mast__help:hover { color: var(--lf-day); }
+/* yellow was the hover on an ink ground; on paper it is invisible, so red carries it */
+.mast__help:hover { color: var(--lf-red-text); }
 
 .mast__bell {
   position: relative;
@@ -83,6 +88,7 @@
   cursor: pointer;
 }
 .mast__bell svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
+.mast__bell:hover { color: var(--lf-red-text); }
 
 .mast__badge {
   position: absolute;
@@ -201,20 +207,27 @@
     align-items: center;
     gap: 9px;
     padding-inline: var(--lf-space-4);
-    border-block-end: 5px solid transparent;
-    color: color-mix(in srgb, var(--lf-on-ink) 72%, transparent);
+    /* sits on the masthead's own 4px rule, so the active marker overlaps it */
+    margin-block-end: calc(var(--lf-rule-w) * -1);
+    border-block-end: var(--lf-rule-w) solid transparent;
+    color: var(--lf-muted);
     text-decoration: none;
   }
   .mast__nav svg { inline-size: 19px; block-size: 19px; stroke-width: 2.4; }
+  .mast__nav a:hover { color: var(--lf-ink); }
+  /* The active marker was yellow, which reads at about 1.2:1 on paper — effectively
+     invisible. On this ground the ink rule is what marks position, and it doubles the
+     section rule underneath it so the tab looks seated on the edge. */
   .mast__nav a.on {
-    color: var(--lf-on-ink);
-    border-block-end-color: var(--lf-day);
+    color: var(--lf-ink);
+    border-block-end-color: var(--lf-ink);
     font-weight: 500;
   }
   .soon__n {
     font-size: 12px;
     padding: 3px 6px;
-    background: color-mix(in srgb, var(--lf-on-ink) 16%, transparent);
+    background: var(--lf-tan);
+    color: var(--lf-ink);
   }
 
   .mast__cta {
