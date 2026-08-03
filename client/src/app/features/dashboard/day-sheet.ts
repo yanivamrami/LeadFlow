@@ -34,6 +34,8 @@ export class DaySheet {
   protected readonly expanded = this.store.sheetExpanded;
   protected readonly cleared = this.store.clearedToday;
   protected readonly explainerDismissed = this.store.explainerDismissed;
+  protected readonly loading = this.store.loading;
+  protected readonly loaded = this.store.loaded;
 
   protected act(item: OpenItem): void {
     this.store.logActivity(item.lead.id, this.actionLabel[item.reason]);

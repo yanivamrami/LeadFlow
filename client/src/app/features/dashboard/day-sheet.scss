@@ -227,6 +227,13 @@
   to { opacity: 1; transform: none; }
 }
 
+/* skeleton: the yellow field is already there, only the ink is missing */
+.sk-name { block-size: 26px; inline-size: 52%; }
+.sk-value { block-size: 24px; inline-size: 96px; margin-inline-start: auto; }
+.sk-why { block-size: 14px; inline-size: 68%; margin-block-start: 8px; }
+.sk-btn { block-size: var(--lf-touch); inline-size: 104px; }
+.sk-btn--ghost { inline-size: 76px; }
+
 /* desktop: the sheet stands as a column, so it never scrolls away */
 @media (min-width: 900px) {
   .sheet {

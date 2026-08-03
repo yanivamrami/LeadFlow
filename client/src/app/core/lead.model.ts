@@ -74,6 +74,14 @@ export const OPEN_ITEMS_CAP = 3;
 
 export type Attention = 'now' | 'drift' | 'none';
 
+/**
+ * Register sort. `urgency` is the default because it is the only one that answers
+ * "what should I do next" — the others answer questions the user asks deliberately.
+ */
+export type SortKey = 'urgency' | 'value' | 'quiet' | 'created';
+
+export const SORT_KEYS: readonly SortKey[] = ['urgency', 'value', 'quiet', 'created'];
+
 /** Why a lead is on the day sheet. Drives the sheet's one-line reason. */
 export type OpenReason = 'reminder_due' | 'proposal_silent' | 'unqualified' | 'drifting';
 

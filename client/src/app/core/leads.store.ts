@@ -11,6 +11,7 @@ import {
   OpenItem,
   OpenReason,
   STAGE_ORDER,
+  SortKey,
 } from './lead.model';
 import { NotifyService } from './notify.service';
 import { AppError, SupabaseService, costsData, isAppError } from './supabase.service';
@@ -66,9 +67,11 @@ export class LeadsStore {
   private readonly _now = signal(new Date());
   private readonly _loading = signal(false);
   private readonly _loaded = signal(false);
+  private readonly _loadFailed = signal(false);
   private readonly _tenantId = signal<string | null>(null);
 
   readonly search = signal('');
+  readonly sort = signal<SortKey>('urgency');
   readonly statusFilter = signal<LeadStatus | 'all'>('all');
   readonly view = signal<DashboardView>('list');
   readonly sheetExpanded = signal(false);
@@ -80,6 +83,11 @@ export class LeadsStore {
   readonly now = this._now.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly loaded = this._loaded.asReadonly();
+  /**
+   * A read that failed is not an empty pipeline. Without this the register renders
+   * "you have no leads yet" over a network error — a lie about the user's own data.
+   */
+  readonly loadFailed = this._loadFailed.asReadonly();
   readonly tenantId = this._tenantId.asReadonly();
 
   readonly total = computed(() => this._leads().length);
@@ -124,8 +132,8 @@ export class LeadsStore {
   readonly visibleLeads = computed(() => {
     const term = this.search().trim().toLowerCase();
     const status = this.statusFilter();
+    const key = this.sort();
     const now = this._now();
-    const rank: Record<Attention, number> = { now: 0, drift: 1, none: 2 };
 
     return this._leads()
       .filter((lead) => status === 'all' || lead.status === status)
@@ -135,12 +143,31 @@ export class LeadsStore {
           .filter((v): v is string => !!v)
           .some((v) => v.toLowerCase().includes(term));
       })
-      .sort((a, b) => {
+      .sort((a, b) => this.compare(a, b, key, now));
+  });
+
+  /**
+   * Every sort puts the answer at the top: the most urgent, the biggest, the quietest,
+   * the newest. None of them ever sorts ascending — nobody opens a pipeline to find the
+   * lead they care about least.
+   */
+  private compare(a: Lead, b: Lead, key: SortKey, now: Date): number {
+    switch (key) {
+      case 'value':
+        return b.estimatedValue - a.estimatedValue;
+      case 'quiet':
+        return this.ageInDays(b, now) - this.ageInDays(a, now);
+      case 'created':
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      case 'urgency':
+      default: {
+        const rank: Record<Attention, number> = { now: 0, drift: 1, none: 2 };
         const byAttention = rank[this.attentionOf(a, now)] - rank[this.attentionOf(b, now)];
         if (byAttention !== 0) return byAttention;
         return this.ageInDays(b, now) - this.ageInDays(a, now);
-      });
-  });
+      }
+    }
+  }
 
   readonly isFiltered = computed(
     () => this.statusFilter() !== 'all' || this.search().trim().length > 0,
@@ -162,6 +189,7 @@ export class LeadsStore {
   async load(): Promise<void> {
     if (this._loading()) return;
     this._loading.set(true);
+    this._loadFailed.set(false);
     this._now.set(new Date());
 
     try {
@@ -179,6 +207,7 @@ export class LeadsStore {
       this._leads.set((rows ?? []).map((row) => this.toLead(row)));
       this._loaded.set(true);
     } catch (error) {
+      this._loadFailed.set(true);
       this.report(error, false);
     } finally {
       this._loading.set(false);
@@ -281,6 +310,10 @@ export class LeadsStore {
 
   setStatusFilter(status: LeadStatus | 'all'): void {
     this.statusFilter.set(status);
+  }
+
+  setSort(key: SortKey): void {
+    this.sort.set(key);
   }
 
   setView(view: DashboardView): void {

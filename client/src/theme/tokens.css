@@ -203,6 +203,22 @@ body::before {
   min-inline-size: var(--lf-touch);
 }
 
+/* Skeleton — opaque bars that breathe, never a shimmer sweep. The paper is already
+   there; only the ink has not arrived. */
+.lf-sk {
+  display: block;
+  background: var(--lf-skeleton);
+  animation: lf-sk-breathe 1.2s ease-in-out infinite alternate;
+}
+/* on the day sheet the ground is yellow, so the bar is ink at low alpha */
+.lf-sk--on-day {
+  background: color-mix(in srgb, var(--lf-on-day) 14%, transparent);
+}
+@keyframes lf-sk-breathe {
+  from { opacity: 1; }
+  to { opacity: 0.45; }
+}
+
 /* screen-reader only */
 .lf-sr {
   position: absolute;
@@ -231,5 +247,13 @@ body::before {
   *::after {
     animation-duration: 80ms !important;
     transition-duration: 80ms !important;
+  }
+
+  /* The rule above is written for one-shot entrances. Any *looping* animation caught
+     by it becomes a ~12Hz strobe — the opposite of what reduced motion asks for, and a
+     photosensitivity hazard. Looping animations must be stopped outright, not sped up. */
+  .lf-sk {
+    animation: none !important;
+    opacity: 0.7;
   }
 }

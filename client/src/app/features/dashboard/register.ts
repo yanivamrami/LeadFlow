@@ -1,7 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
-import { COPY, SOURCE_LABEL, STATUS_LABEL, formatValue, formatWhen } from '../../core/copy';
-import { Lead, LeadStatus } from '../../core/lead.model';
+import {
+  COPY,
+  SORT_LABEL,
+  SOURCE_LABEL,
+  STATUS_LABEL,
+  formatValue,
+  formatWhen,
+} from '../../core/copy';
+import { Lead, LeadStatus, SORT_KEYS, SortKey } from '../../core/lead.model';
 import { LeadsStore } from '../../core/leads.store';
 import { LeadMenu } from '../../shared/lead-menu';
 import { StageTag } from '../../shared/stage-tag';
@@ -23,11 +30,22 @@ export class Register {
 
   protected readonly copy = COPY;
   protected readonly sourceLabel = SOURCE_LABEL;
+  protected readonly sortLabel = SORT_LABEL;
+  protected readonly sortKeys = SORT_KEYS;
   protected readonly formatValue = formatValue;
 
   protected readonly leads = this.store.visibleLeads;
   protected readonly total = this.store.total;
   protected readonly isFiltered = this.store.isFiltered;
+  protected readonly loading = this.store.loading;
+  protected readonly loaded = this.store.loaded;
+  protected readonly sort = this.store.sort;
+  /** Placeholder rows while the first read is in flight. */
+  protected readonly skeletonRows = [0, 1, 2, 3, 4, 5];
+
+  protected setSort(value: string): void {
+    this.store.setSort(value as SortKey);
+  }
 
   protected attention(lead: Lead): 'now' | 'drift' | 'none' {
     return this.store.attentionOf(lead);

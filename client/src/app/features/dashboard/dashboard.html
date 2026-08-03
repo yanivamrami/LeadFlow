@@ -1,3 +1,15 @@
+@if (loadFailed()) {
+  <!-- One failure message, not two. A failed read is not an empty pipeline, so neither
+       the sheet nor the register may render their empty states over it. -->
+  <div class="failed" role="alert">
+    <div class="failed__mark" aria-hidden="true"><i></i><i></i><i></i></div>
+    <p class="failed__title">{{ copy.register.loadFailedTitle }}</p>
+    <p class="failed__body">{{ copy.register.loadFailedBody }}</p>
+    <button type="button" class="failed__act" (click)="retry()" [disabled]="loading()">
+      {{ loading() ? copy.register.loading : copy.register.retry }}
+    </button>
+  </div>
+} @else {
 <div class="dash">
   <div class="dash__sheet">
     <lf-day-sheet />
@@ -75,5 +87,6 @@
     }
   </div>
 </div>
+}
 
 <p class="lf-sr" role="status" aria-live="polite">{{ announcement() }}</p>

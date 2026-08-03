@@ -5,6 +5,21 @@
     <span class="sheet__count lf-num">{{ allItems().length }}</span>
   </header>
 
+  @if (loading() && !loaded()) {
+    @for (row of [0, 1]; track row) {
+      <div class="item" aria-hidden="true">
+        <div class="item__l1">
+          <span class="lf-sk lf-sk--on-day sk-name"></span>
+          <span class="lf-sk lf-sk--on-day sk-value"></span>
+        </div>
+        <span class="lf-sk lf-sk--on-day sk-why"></span>
+        <div class="item__actions">
+          <span class="lf-sk lf-sk--on-day sk-btn"></span>
+          <span class="lf-sk lf-sk--on-day sk-btn sk-btn--ghost"></span>
+        </div>
+      </div>
+    }
+  } @else {
   @for (item of items(); track item.lead.id) {
     <article class="item">
       <div class="item__l1">
@@ -36,6 +51,7 @@
       <p class="empty__title">{{ copy.sheet.emptyTitle }}</p>
       <p class="empty__body">{{ copy.sheet.emptyBody }}</p>
     </div>
+  }
   }
 
   @if (hasHidden()) {

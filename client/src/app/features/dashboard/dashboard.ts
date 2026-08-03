@@ -49,6 +49,11 @@ export class Dashboard {
 
   protected readonly loading = this.store.loading;
   protected readonly loaded = this.store.loaded;
+  protected readonly loadFailed = this.store.loadFailed;
+
+  protected retry(): void {
+    void this.store.load();
+  }
 
   constructor() {
     void this.store.load();

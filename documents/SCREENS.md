@@ -31,8 +31,9 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 | 2.4 | ~~**Dashboard — search & stage filters**~~ | ~~Search across name, company, phone, email; stage chip strip with counts.~~ |
 | 2.5 | ~~**Dashboard — empty & no-results states**~~ | ~~Dashed container, geometric mark, one action. Separate copy for "no leads yet" vs "nothing matched".~~ |
 | 2.6 | ~~**Dashboard — checklist nudge**~~ | ~~Pasted advisory after a stage move with open questions. Always carries `לא עכשיו`.~~ |
-| 2.7 | **Dashboard — loading skeleton** | Opaque `--lf-skeleton` bars, no shimmer. Needs a real async source to be worth building. |
-| 2.8 | **Dashboard — sort control** | The "מיון: לפי דחיפות" label is currently static text, not a control. |
+| 2.7 | ~~**Dashboard — loading skeleton**~~ | ~~Opaque `--lf-skeleton` bars that breathe, never a shimmer sweep. Day sheet and register both. Shows only on the first read, not after a write.~~ |
+| 2.8 | ~~**Dashboard — sort control**~~ | ~~Four sorts — דחיפות (default), שווי, מי שקט מזמן, תאריך הוספה. Native select: on a phone the OS picker beats a custom menu and is accessible for free.~~ |
+| 2.9 | ~~**Dashboard — load failure**~~ | ~~A failed read used to render "you have no leads yet". Now its own state, with a retry, replacing both regions so there is one message rather than two.~~ |
 
 ## 3. Lead capture & administration (PRD pillars 2 & 3)
 
@@ -67,7 +68,7 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 
 | # | Screen | Notes |
 |---|---|---|
-| 6.1 | **Sign in** | Email/password at launch; OAuth toggleable later without code changes. |
+| 6.1 | ~~**Sign in**~~ | ~~Email/password. Built out of necessity: every lead policy is `to authenticated`, so without it the dashboard reads an empty pipeline. Minimal — not the finished auth surface.~~ |
 | 6.2 | **Sign up** | Trigger creates the personal tenant plus the demo lead. |
 | 6.3 | **Password reset — request** | |
 | 6.4 | **Password reset — set new** | Deep-linked from the email. |
@@ -98,8 +99,11 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 
 | State | Screens |
 |-------|---------|
-| Built | 12 |
-| Remaining in scope (§1–§7) | 26 |
+| Built | 16 |
+| Remaining in scope (§1–§7) | 23 |
 | Deferred (§8) | 4 |
+
+Sign-in (6.1) is built because RLS made it a prerequisite, not because auth was scheduled.
+Lead detail (3.2) has a confirmed brief and is parked.
 
 **Nearest useful next screen: 3.2 lead detail** — every row, card and day-sheet item already points at it, and today they point at nothing.

@@ -2,7 +2,20 @@
   <header class="reg__hd">
     <h2 class="reg__title" id="reg-title">{{ copy.register.title }}</h2>
     <span class="reg__count lf-num">{{ leads().length }}</span>
-    <span class="reg__sort">{{ copy.register.sort }}</span>
+
+    <label class="sort">
+      <span class="sort__label">{{ copy.register.sort }}</span>
+      <span class="lf-sr">{{ copy.register.sortAria }}</span>
+      <select
+        class="sort__select"
+        [value]="sort()"
+        (change)="setSort($any($event.target).value)"
+      >
+        @for (key of sortKeys; track key) {
+          <option [value]="key">{{ sortLabel[key] }}</option>
+        }
+      </select>
+    </label>
   </header>
 
   <div class="reg__cols" aria-hidden="true">
@@ -15,6 +28,20 @@
     <span></span>
   </div>
 
+  @if (loading() && !loaded()) {
+    <p class="lf-sr" role="status" aria-live="polite">{{ copy.register.loading }}</p>
+    @for (row of skeletonRows; track row) {
+      <div class="row row--sk" aria-hidden="true">
+        <span class="row__flag"></span>
+        <div class="row__id">
+          <span class="lf-sk sk-name"></span>
+          <span class="lf-sk sk-meta"></span>
+        </div>
+        <span class="lf-sk sk-value"></span>
+        <span class="lf-sk sk-stage"></span>
+      </div>
+    }
+  } @else {
   @for (lead of leads(); track lead.id) {
     <article class="row" [class]="'row--' + attention(lead)" [class.row--demo]="lead.isDemo">
       <span class="row__flag" aria-hidden="true"></span>
@@ -84,7 +111,9 @@
     </div>
   }
 
-  @if (leads().length) {
+  }
+
+  @if (leads().length && !loading()) {
     <p class="reg__foot">
       {{ copy.register.showing(leads().length, total()) }} · {{ copy.register.end }}
     </p>

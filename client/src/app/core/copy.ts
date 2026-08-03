@@ -5,7 +5,7 @@
  * No emoji, no sales jargon.
  */
 
-import { LeadSource, LeadStatus, OpenReason, ChecklistItem } from './lead.model';
+import { LeadSource, LeadStatus, OpenReason, ChecklistItem, SortKey } from './lead.model';
 
 export const APP_NAME = 'LeadFlow';
 export const APP_SUB = 'Manager';
@@ -68,6 +68,18 @@ export const OPEN_ACTION: Record<OpenReason, string> = {
   drifting: 'חייג',
 };
 
+/**
+ * Sort options, phrased as the question the user is actually asking rather than as a
+ * column name. "מי שקט מזמן" beats "לפי מגע אחרון": it says which end of the list you
+ * get, so nobody has to guess the direction.
+ */
+export const SORT_LABEL: Record<SortKey, string> = {
+  urgency: 'לפי דחיפות',
+  value: 'לפי שווי',
+  quiet: 'מי שקט מזמן',
+  created: 'לפי תאריך הוספה',
+};
+
 export const CHECKLIST_QUESTION: Record<ChecklistItem, string> = {
   interest: 'הם הגיבו והראו עניין אמיתי?',
   need: 'הם באמת צריכים את מה שאתם מציעים?',
@@ -107,7 +119,12 @@ export const COPY = {
   register: {
     title: 'כל הלידים',
     all: 'הכול',
-    sort: 'מיון: לפי דחיפות',
+    sort: 'מיון',
+    sortAria: 'מיון הלידים',
+    loadFailedTitle: 'לא הצלחנו לטעון את הלידים',
+    loadFailedBody: 'שום דבר לא נמחק — רק הטעינה נכשלה. נסו שוב.',
+    retry: 'נסה שוב',
+    loading: 'טוען לידים…',
     view: 'תצוגה',
     viewList: 'רשימה',
     viewBoard: 'לוח',

@@ -23,10 +23,52 @@
   color: var(--lf-muted);
 }
 
-.reg__sort {
+/* Sort. A native select on purpose: on a phone the OS picker beats any custom menu,
+   and it is keyboard- and screen-reader-correct for free. The design system's own
+   Operate rule puts native expectations above expression — the closed state carries
+   the world, and the open list is the platform's job. */
+.sort {
   margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--lf-space-2);
+  min-inline-size: 0;
+}
+
+.sort__label {
   font-size: 13px;
   color: var(--lf-muted);
+  white-space: nowrap;
+}
+
+.sort__select {
+  min-block-size: 36px;
+  max-inline-size: 168px;
+  padding-inline: var(--lf-space-2);
+  border: 2px solid var(--lf-ink);
+  border-radius: 0;
+  background: var(--lf-ground);
+  color: var(--lf-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.sort__select:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
+
+/* skeleton row: the paper and its rules are real, only the ink is missing */
+.row--sk {
+  pointer-events: none;
+}
+.sk-name { block-size: 20px; inline-size: 62%; }
+.sk-meta { block-size: 12px; inline-size: 42%; margin-block-start: 8px; }
+.sk-value { grid-area: value; block-size: 20px; inline-size: 78px; justify-self: end; }
+.sk-stage { grid-area: stage; block-size: 20px; inline-size: 92px; justify-self: end; }
+
+/* the label is redundant on a phone — the select's own value reads "לפי דחיפות" */
+@media (max-width: 560px) {
+  .sort__label { display: none; }
+  .sort__select { max-inline-size: 132px; }
 }
 
 /* column headings exist only where there are columns */
@@ -228,6 +270,8 @@ lf-lead-menu { grid-area: menu; justify-self: end; }
   .row__id,
   .row__value,
   .row__stage,
+  .sk-value,
+  .sk-stage,
   lf-lead-menu {
     grid-area: auto;
     justify-self: stretch;
