@@ -1,7 +1,7 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { openReasonFor } from './attention';
+import { ageInDays, openReasonFor } from './attention';
 import { COPY, daysBetween, formatDue } from './copy';
 import {
   Activity,
@@ -377,8 +377,14 @@ export class LeadsStore {
 
   /* ---------- derivation ---------- */
 
+  /**
+   * Both of these now delegate to `core/guidance.ts`. The rules moved out of this store
+   * unchanged, because the lead sheet needs the same answer and `openReason` was private —
+   * so the screen where a beginner asks "what now?" could not reach what the day sheet was
+   * already computing. One rule, one place, two screens.
+   */
   ageInDays(lead: Lead, now = this._now()): number {
-    return daysBetween(lead.lastTouchAt ?? lead.createdAt, now);
+    return ageInDays(lead, now);
   }
 
   attentionOf(lead: Lead, now = this._now()): Attention {
@@ -394,6 +400,7 @@ export class LeadsStore {
   private openReason(lead: Lead, now: Date) {
     return openReasonFor(lead, now, this.stages.firstOpen()?.id ?? null);
   }
+
 
   openChecklistCount(lead: Lead): number {
     return CHECKLIST_ITEMS.length - lead.checklistAnswered;

@@ -15,6 +15,7 @@ import { map } from 'rxjs';
 import { LucideColumns3, LucideList, LucideSearch } from '@lucide/angular';
 
 import { COPY } from '../../core/copy';
+import { GuidanceService } from '../../core/guidance.service';
 import { LEAD_SOURCES, LeadSource } from '../../core/lead.model';
 import { LeadsStore } from '../../core/leads.store';
 import { StagesStore } from '../../core/stages.store';
@@ -44,6 +45,7 @@ const BOARD_MIN_WIDTH = 768;
 export class Dashboard {
   private readonly store = inject(LeadsStore);
   private readonly stagesStore = inject(StagesStore);
+  protected readonly guidance = inject(GuidanceService);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly copy = COPY;
@@ -53,6 +55,21 @@ export class Dashboard {
   protected readonly counts = this.store.countByStage;
   protected readonly total = this.store.total;
   protected readonly stageFilter = this.store.stageFilter;
+
+  /**
+   * The filtered stage's meaning, or null while everything is showing. Narrowed here rather
+   * than indexed in the template: `stageFilter` carries `'all'`, which is not a stage and has
+   * no meaning to state.
+   *
+   * The text comes off the stage row now instead of a copy map, so a user-created stage shows
+   * whatever the user wrote — and one they never described falls back to null, which renders
+   * nothing rather than a generic line about a stage only they understand.
+   */
+  protected readonly filteredStageMeaning = computed(() => {
+    const id = this.stageFilter();
+    if (id === 'all') return null;
+    return this.stagesStore.byId(id)?.meaning ?? null;
+  });
   protected readonly search = this.store.search;
   protected readonly announcement = this.store.announcement;
 

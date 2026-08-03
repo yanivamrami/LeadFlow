@@ -6,6 +6,15 @@
         <span class="col__count lf-num">{{ column.leads.length }}</span>
       </header>
 
+      <!-- What the stage IS, never what to do about it: a column of "what to do next" beside
+           every other column would read as several simultaneous nudges.
+           Read off the stage row rather than a copy map, so a stage the user created shows
+           their own words — and a stage they never described shows nothing at all, which is
+           honest where a generic line would not be. -->
+      @if (guidance.verbose() && column.stage.meaning) {
+        <p class="col__meaning">{{ column.stage.meaning }}</p>
+      }
+
       <div
         class="col__drop"
         cdkDropList

@@ -1,8 +1,13 @@
 import { daysBetween } from './copy';
 import { Lead, OpenReason } from './lead.model';
 
-/** Days since the lead was last touched, or since it was created if it never has been. */
-function ageInDays(lead: Lead, now: Date): number {
+/**
+ * Days since the lead was last touched, or since it was created if it never has been.
+ *
+ * Exported because `guidance.ts` and `LeadsStore` both need it and two copies of "how old is
+ * this" is how two screens end up disagreeing about the same lead by a day.
+ */
+export function ageInDays(lead: Lead, now: Date): number {
   return daysBetween(lead.lastTouchAt ?? lead.createdAt, now);
 }
 

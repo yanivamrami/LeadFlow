@@ -80,6 +80,13 @@
       }
     </div>
 
+    <!-- The board's column meanings only exist at ≥768px. The filter strip exists at every
+         width, and filtering to a stage is the same question asked a different way — so this
+         is where a phone gets the answer to "what is כשיר". -->
+    @if (guidance.verbose() && filteredStageMeaning(); as meaning) {
+      <p class="stage-meaning">{{ meaning }}</p>
+    }
+
     @if (view() === 'board') {
       <lf-board />
     } @else {

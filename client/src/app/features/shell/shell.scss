@@ -6,7 +6,8 @@
   position: relative;
   z-index: 1;
   min-block-size: 100vh;
-  padding-block-end: 118px; /* clears the fixed band + tabs */
+  padding-block-end: 118px;
+  /* clears the fixed band + tabs */
 }
 
 .skip {
@@ -20,7 +21,10 @@
   font-weight: 500;
   text-decoration: none;
 }
-.skip:focus { inset-block-start: var(--lf-space-2); }
+
+.skip:focus {
+  inset-block-start: var(--lf-space-2);
+}
 
 /* ---------- masthead ----------
    Paper, same ground as the body. When the header and the page share a colour the
@@ -39,13 +43,17 @@
 
 .mast__brand {
   margin: 0;
-  margin-inline-end: auto;
+  // margin-inline-end: auto;
   direction: ltr;
   font-weight: 600;
   font-size: 26px;
   line-height: 1;
   letter-spacing: -0.01em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
+
 .mast__brand i {
   font-style: normal;
   font-family: var(--lf-font-num);
@@ -73,9 +81,17 @@
   color: inherit;
   cursor: pointer;
 }
-.mast__help svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
+
+.mast__help svg {
+  inline-size: 21px;
+  block-size: 21px;
+  stroke-width: 2.4;
+}
+
 /* yellow was the hover on an ink ground; on paper it is invisible, so red carries it */
-.mast__help:hover { color: var(--lf-red-text); }
+.mast__help:hover {
+  color: var(--lf-red-text);
+}
 
 .mast__bell {
   position: relative;
@@ -87,8 +103,16 @@
   color: inherit;
   cursor: pointer;
 }
-.mast__bell svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
-.mast__bell:hover { color: var(--lf-red-text); }
+
+.mast__bell svg {
+  inline-size: 21px;
+  block-size: 21px;
+  stroke-width: 2.4;
+}
+
+.mast__bell:hover {
+  color: var(--lf-red-text);
+}
 
 .mast__badge {
   position: absolute;
@@ -120,6 +144,7 @@
   text-decoration: none;
   outline-offset: 3px;
 }
+
 /* the mark is 34px because the masthead is tight; the hit area is not */
 .mast__me::after {
   content: '';
@@ -143,10 +168,25 @@
   font: inherit;
   cursor: pointer;
 }
-.mast__signout svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
-.mast__signout:hover:not(:disabled) { color: var(--lf-red-text); }
-.mast__signout:disabled { opacity: 0.55; cursor: not-allowed; }
-.mast__signout-label { display: none; }
+
+.mast__signout svg {
+  inline-size: 21px;
+  block-size: 21px;
+  stroke-width: 2.4;
+}
+
+.mast__signout:hover:not(:disabled) {
+  color: var(--lf-red-text);
+}
+
+.mast__signout:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mast__signout-label {
+  display: none;
+}
 
 /* ---------- mobile action band + tabs ---------- */
 .band {
@@ -170,7 +210,12 @@
   text-decoration: none;
   cursor: pointer;
 }
-.band svg { inline-size: 22px; block-size: 22px; stroke-width: 2.6; }
+
+.band svg {
+  inline-size: 22px;
+  block-size: 22px;
+  stroke-width: 2.6;
+}
 
 .tabs {
   position: fixed;
@@ -181,6 +226,7 @@
   grid-template-columns: repeat(4, 1fr);
   background: var(--lf-ink);
 }
+
 .tabs a,
 .tabs .soon {
   display: grid;
@@ -193,7 +239,13 @@
   font-size: 11px;
   text-decoration: none;
 }
-.tabs svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
+
+.tabs svg {
+  inline-size: 21px;
+  block-size: 21px;
+  stroke-width: 2.4;
+}
+
 .tabs a.on {
   color: var(--lf-on-ink);
   border-block-start-color: var(--lf-day);
@@ -201,23 +253,33 @@
 }
 
 /* not built yet — said plainly rather than linked to nothing */
-.soon { cursor: default; opacity: 0.55; }
+.soon {
+  cursor: default;
+  opacity: 0.55;
+}
 
 /* ---------- desktop ---------- */
 @media (min-width: 900px) {
-  :host { padding-block-end: 0; }
+  :host {
+    padding-block-end: 0;
+  }
 
   .mast {
     min-block-size: 76px;
     gap: var(--lf-space-6);
     padding-inline: var(--lf-space-8);
   }
-  .mast__brand { font-size: 34px; margin-inline-end: 0; }
+
+  .mast__brand {
+    font-size: 34px;
+    margin-inline-end: 0;
+  }
 
   .mast__nav {
     display: flex;
     align-self: stretch;
   }
+
   .mast__nav a,
   .mast__nav .soon {
     display: flex;
@@ -230,8 +292,17 @@
     color: var(--lf-muted);
     text-decoration: none;
   }
-  .mast__nav svg { inline-size: 19px; block-size: 19px; stroke-width: 2.4; }
-  .mast__nav a:hover { color: var(--lf-ink); }
+
+  .mast__nav svg {
+    inline-size: 19px;
+    block-size: 19px;
+    stroke-width: 2.4;
+  }
+
+  .mast__nav a:hover {
+    color: var(--lf-ink);
+  }
+
   /* The active marker was yellow, which reads at about 1.2:1 on paper — effectively
      invisible. On this ground the ink rule is what marks position, and it doubles the
      section rule underneath it so the tab looks seated on the edge. */
@@ -240,6 +311,7 @@
     border-block-end-color: var(--lf-ink);
     font-weight: 500;
   }
+
   .soon__n {
     font-size: 12px;
     padding: 3px 6px;
@@ -263,10 +335,22 @@
     text-decoration: none;
     cursor: pointer;
   }
-  .mast__cta svg { inline-size: 19px; block-size: 19px; stroke-width: 2.6; }
-  .mast__cta:hover { background: color-mix(in srgb, var(--lf-red) 82%, var(--lf-ink)); }
 
-  .mast__me { inline-size: 40px; block-size: 40px; font-size: 15px; }
+  .mast__cta svg {
+    inline-size: 19px;
+    block-size: 19px;
+    stroke-width: 2.6;
+  }
+
+  .mast__cta:hover {
+    background: color-mix(in srgb, var(--lf-red) 82%, var(--lf-ink));
+  }
+
+  .mast__me {
+    inline-size: 40px;
+    block-size: 40px;
+    font-size: 15px;
+  }
 
   .mast__signout {
     display: flex;
@@ -274,7 +358,13 @@
     gap: 8px;
     padding-inline: var(--lf-space-2);
   }
-  .mast__signout svg { inline-size: 19px; block-size: 19px; stroke-width: 2.4; }
+
+  .mast__signout svg {
+    inline-size: 19px;
+    block-size: 19px;
+    stroke-width: 2.4;
+  }
+
   .mast__signout-label {
     display: inline;
     font-size: 15px;
@@ -282,5 +372,7 @@
   }
 
   .band,
-  .tabs { display: none; }
+  .tabs {
+    display: none;
+  }
 }

@@ -38,6 +38,15 @@
   background: var(--lf-ground);
 }
 
+/* The drag grip. Pointer-only convenience for moving the dialog off whatever it is
+   covering, so it exists only where a dialog can be moved usefully: under 900px the
+   sheet is a full-width drawer pinned to the bottom edge and there is nowhere to move
+   it to. Hidden rather than disabled, because a visible control that refuses to work
+   is worse than no control. */
+.hd__grip {
+  display: none;
+}
+
 .hd__name {
   flex: 1 1 auto;
   min-inline-size: 0;
@@ -73,6 +82,29 @@
   overflow-y: auto;
   padding: 0 var(--lf-space-4) var(--lf-space-6);
   -webkit-overflow-scrolling: touch;
+}
+
+/* What to do with this lead. Ink label, prose beside it — the same annotation register the
+   field help uses, so it reads as advice rather than as a warning. An urgent one earns the
+   day's yellow field behind it, never red: red is commit, and nothing here is a failure. */
+.next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lf-space-2) var(--lf-space-3);
+  margin: var(--lf-space-4) 0 0;
+  padding: var(--lf-space-3);
+  border-block-start: 2px solid var(--lf-ink);
+  border-block-end: 2px solid var(--lf-ink);
+}
+.next--urgent { background: var(--lf-day); color: var(--lf-fixed-ink); }
+.next__l { flex: 0 0 auto; color: var(--lf-muted); }
+.next--urgent .next__l { color: var(--lf-fixed-ink); }
+.next__t {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  font-size: 15px;
+  line-height: 1.45;
 }
 
 .sub {
@@ -474,24 +506,65 @@
 /* ---------- desktop: a centred dialog rather than a drawer ---------- */
 @media (min-width: 900px) {
   .sheet {
-    /* Logical insets, not physical. `left: 50%` with a positive X translate lands
-       off-centre under RTL — this is the pattern already verified centred on
-       lf-alert-dialog. */
-    inset-block: 50% auto;
-    inset-inline: 50% auto;
-    translate: 50% -50%;
+    /* Centred with auto margins, deliberately NOT with a translate.
+       `inset-inline: 50%` + `translate: 50%` is the usual trick, but `sheet-rise`
+       animates the `translate` property — so for the whole 220ms the keyframe owned
+       `translate` and the centring offset simply did not exist. Under RTL that left the
+       box hanging off mid-screen to the left, snapping to centre the instant the
+       animation ended. Auto margins cannot be clobbered by a keyframe, so the sheet is
+       centred on its first painted frame and stays there. It also leaves `translate`
+       free for the animation and `transform` free for CDK's drag.
+
+       The block axis is anchored rather than centred, and that is also deliberate:
+       vertical centring makes the box's position a function of its own height, so every
+       height change moves the dialog. In edit mode the sheet mounts before the lead
+       arrives, so hydrating the fields and rendering the timeline re-centred it a beat
+       after opening — and the same shift fired on every later disclosure (a field-help
+       line, the won/lost block, expanding the timeline). A fixed block-start makes
+       growth extend downward only. 6vh pairs with the 88vh cap to read as centred at
+       the heights this sheet actually reaches. */
+    inset-block: 6vh auto;
+    inset-inline: 0;
+    margin-inline: auto;
     inline-size: min(560px, calc(100vw - 48px));
-    max-block-size: min(88vh, 900px);
+    max-block-size: 88vh;
     border: 3px solid var(--lf-ink);
   }
   .hd,
   .ft { padding-inline: var(--lf-space-6); }
   .body { padding-inline: var(--lf-space-6); }
 
-  @keyframes sheet-rise {
-    from { opacity: 0; scale: 0.98; }
-    to { opacity: 1; scale: 1; }
+  .hd__grip {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    /* The grip is the whole hit area; the icon inside stays small. */
+    min-inline-size: var(--lf-touch);
+    min-block-size: var(--lf-touch);
+    margin-inline-start: calc(var(--lf-space-3) * -1);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: var(--lf-muted);
+    cursor: grab;
   }
+  .hd__grip:hover { color: var(--lf-ink); }
+  .hd__grip:active { cursor: grabbing; }
+  .hd__grip svg {
+    inline-size: 20px;
+    block-size: 20px;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    fill: none;
+  }
+
+  /* While dragging, drop the open animation so the two transforms cannot fight, and
+     make it unambiguous that the sheet is being carried rather than settling. */
+  .sheet.cdk-drag-dragging {
+    animation: none;
+    cursor: grabbing;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -111,6 +111,27 @@
         </button>
       }
     </div>
+
+    <p class="seg__l">{{ copy.profile.guidanceLabel }}</p>
+    <div class="seg" role="group" [attr.aria-label]="copy.profile.guidanceLabel">
+      <button
+        type="button"
+        [class.on]="guidance.verbose()"
+        [attr.aria-pressed]="guidance.verbose()"
+        (click)="guidance.set('full')"
+      >
+        {{ copy.profile.guidanceFull }}
+      </button>
+      <button
+        type="button"
+        [class.on]="!guidance.verbose()"
+        [attr.aria-pressed]="!guidance.verbose()"
+        (click)="guidance.set('quiet')"
+      >
+        {{ copy.profile.guidanceQuiet }}
+      </button>
+    </div>
+    <p class="seg__n">{{ copy.profile.guidanceHelp }}</p>
   </section>
 
   <section class="sec">

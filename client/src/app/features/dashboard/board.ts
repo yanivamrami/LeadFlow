@@ -9,6 +9,7 @@ import {
 } from '@angular/cdk/drag-drop';
 
 import { COPY, formatValue, formatWhen } from '../../core/copy';
+import { GuidanceService } from '../../core/guidance.service';
 import { CHECKLIST_ITEMS, Lead, Stage } from '../../core/lead.model';
 import { LeadsStore } from '../../core/leads.store';
 import { LeadMenu } from '../../shared/lead-menu';
@@ -28,6 +29,7 @@ import { LeadMenu } from '../../shared/lead-menu';
 })
 export class Board {
   private readonly store = inject(LeadsStore);
+  protected readonly guidance = inject(GuidanceService);
   private readonly router = inject(Router);
 
   protected readonly copy = COPY;

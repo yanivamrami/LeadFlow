@@ -132,11 +132,9 @@ Use a throwaway lead.
 many activities go with it**. Cancel is always available. Confirm deletes and returns to the
 board.
 
-### S12 — ~~Field tooltips (expected to FAIL)~~ — now built, see S21
-Look for a per-field explanation on the lead form.
-
-**Expected today:** labels and one help line only. The PRD's per-field tooltips are not built.
-Record what you wish each field explained — that copy is the deliverable for G-23.
+### S12 — ~~Field tooltips (expected to FAIL)~~
+**Superseded — the per-field help is built.** Run **S21** for the field help and **S23** for the
+stage teaching instead. Kept only so the numbering does not shift under a half-finished run.
 
 ### S13 — Deep link to a lead that does not exist
 Visit `/lead/00000000-0000-0000-0000-000000000000`.
@@ -684,4 +682,46 @@ this to be missing.
 **Expected:** it persists, with its own confirmation. Only the tenant owner may change it; a
 non-owner sees a readable Hebrew refusal, not a Postgres error.
 
+### S23 — The app answers "when do I move this to כשיר?" without a human
+The acceptance test for the whole guidance layer: this is the question the app could not
+answer on 2026-08-03, when it had to be asked of a person instead.
+1. Open a lead sitting in `יצרנו קשר`.
+2. Read the screen. Do not ask anyone.
 
+**Expected:** under the stage dropdown, two lines — what the current stage *means*, and what
+to do next. Change the dropdown to `כשיר` **without saving**: both lines update to describe
+`כשיר`. Above the fields, a next-step line states the one thing to do with this lead.
+
+**The bar:** you can answer the question from the screen alone. If you still cannot, that is
+the finding — record exactly what was missing, because the copy is the deliverable here.
+
+### S24 — The next-step line tells the truth about urgency
+1. A lead untouched longer than its stage allows (7 days in `יצרנו קשר`, 3 in `נשלחה הצעה`).
+2. A lead touched today.
+3. A lead marked `נסגר בהצלחה`.
+
+**Expected:** (1) the urgent reason on the day's yellow field, carrying a verb —
+`הרבה זמן בלי מגע · חייג`. (2) the calm stage advice on plain paper, no yellow. (3) **no
+next-step line at all** — a closed lead is owed nothing, and inventing advice for it would be
+noise. Never red in any of the three: red is commit, and none of these is a failure.
+
+### S25 — The guidance setting
+1. `/profile` → **הסברים**. On a browser that has never set it, it starts on **מלא**.
+2. Open a lead: every field help line is already open, and **no `למה זה חשוב?` buttons appear**.
+3. Switch to **מצומצם**. Reopen the lead.
+4. Reload the page.
+5. Clear `localStorage` (devtools → Application) and reload.
+
+**Expected:** (2) lines visible, no toggles — a button reading "close" that cannot close is
+worse than no button. (3) toggles return, lines collapse, one opens at a time, **and both the
+next-step line and the stage next-step line stay** — those are actionable, not educational.
+(4) still מצומצם. (5) back to מלא, because a teaching feature must fail towards teaching.
+
+### S26 — Stage meanings on the board and on a phone
+1. Desktop ≥768px, board view, guidance on מלא: each of the six columns carries a caption.
+2. Switch to מצומצם: the captions go.
+3. At 390px, tap the `כשיר` chip in the filter strip.
+
+**Expected:** (1) each caption says what the stage *is* and must **not** say what to do — six
+simultaneous instructions is a nag wall. (3) the meaning appears under the strip, which is how
+a phone gets the teaching the board gives a desktop. Tap `הכול` and the line disappears.

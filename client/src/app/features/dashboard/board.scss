@@ -26,6 +26,17 @@
   color: var(--lf-on-ink);
 }
 
+/* Sits on the column body, not on the ink header — the header is already dense and the
+   meaning is a caption for the column rather than part of its title. */
+.col__meaning {
+  margin: 0;
+  padding: 8px var(--lf-space-3);
+  border-block-end: 1px solid var(--lf-rule-soft);
+  color: var(--lf-muted);
+  font-size: var(--lf-size-small);
+  line-height: 1.4;
+}
+
 .col__name {
   margin: 0;
   font-weight: 600;

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   computed,
   effect,
@@ -13,8 +14,9 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { A11yModule } from '@angular/cdk/a11y';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
-import { LucideX } from '@lucide/angular';
+import { LucideGripVertical, LucideX } from '@lucide/angular';
 
 import {
   ACTIVITY_LABEL,
@@ -30,6 +32,8 @@ import {
   formatValue,
   formatDue,
 } from '../../core/copy';
+import { GuidanceService } from '../../core/guidance.service';
+import { nextStepOf } from '../../core/guidance';
 import {
   Activity,
   CHECKLIST_ITEMS,
@@ -73,7 +77,17 @@ type FooterMode = 'default' | 'dirty' | 'delete';
 @Component({
   selector: 'lf-lead-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, A11yModule, LucideX, TextField, FormError, StageTag, DuePicker],
+  imports: [
+    FormsModule,
+    A11yModule,
+    DragDropModule,
+    LucideX,
+    LucideGripVertical,
+    TextField,
+    FormError,
+    StageTag,
+    DuePicker,
+  ],
   templateUrl: './lead-sheet.html',
   styleUrl: './lead-sheet.scss',
 })
@@ -81,6 +95,8 @@ export class LeadSheet {
   private readonly store = inject(LeadsStore);
   private readonly stagesStore = inject(StagesStore);
   private readonly router = inject(Router);
+  /** Read by the template: how much of the teaching layer is expanded by default. */
+  protected readonly guidance = inject(GuidanceService);
 
   /** Bound from the route: absent on /lead/new, the lead id on /lead/:id. */
   readonly id = input<string | undefined>(undefined);
@@ -99,6 +115,9 @@ export class LeadSheet {
   protected readonly answerLabel = ANSWER_LABEL;
   protected readonly answerAria = ANSWER_ARIA;
   protected readonly fieldHelp = LEAD_FIELD_HELP;
+  // Was STATUS_MEANING / STATUS_GUIDANCE keyed by enum value. Both now live on the stage row,
+  // so the template reads them off `selectedStage()` and a stage nobody described shows
+  // nothing rather than a generic line.
   protected readonly lostReasons = LOST_REASONS;
   /** Live stages, in position order — the "שלב" select reads straight off the pipeline. */
   protected readonly stages = this.stagesStore.active;
@@ -160,6 +179,14 @@ export class LeadSheet {
   protected readonly fieldHelpOpen = signal<LeadFieldKey | null>(null);
   protected readonly timelineExpanded = signal(false);
 
+  /**
+   * Whether the sheet can be dragged. Desktop only: under 900px it is a full-width drawer
+   * on the bottom edge, so there is nowhere to move it to and dragging would only let the
+   * user hide their own form. Tracked live rather than read once, because a window resized
+   * across the breakpoint must not leave a drawer that can be dragged off screen.
+   */
+  protected readonly canDrag = signal(false);
+
   private readonly checklistEl = viewChild<ElementRef<HTMLElement>>('checklist');
   private readonly composerEl = viewChild<ElementRef<HTMLElement>>('composer');
   private readonly noteInputEl = viewChild<ElementRef<HTMLTextAreaElement>>('noteInput');
@@ -177,6 +204,14 @@ export class LeadSheet {
       const first = this.stagesStore.firstOpen();
       if (first) untracked(() => this.stageId.set(first.id));
     });
+
+    if (typeof matchMedia === 'function') {
+      const wide = matchMedia('(min-width: 900px)');
+      this.canDrag.set(wide.matches);
+      const onChange = (event: MediaQueryListEvent) => this.canDrag.set(event.matches);
+      wide.addEventListener('change', onChange);
+      inject(DestroyRef).onDestroy(() => wide.removeEventListener('change', onChange));
+    }
 
     // Fill the form once the lead arrives — on a deep link the store may still be reading.
     effect(() => {
@@ -246,6 +281,34 @@ export class LeadSheet {
    *  rather than carried on the draft, since only `kind` (never the stage's name) decides
    *  the lost-reason requirement and the won-amount block (documents/PLAN-stages.md §1). */
   protected readonly selectedKind = computed(() => this.stagesStore.byId(this.stageId())?.kind);
+
+  /** The meaning and guidance of the selected stage, for the field help below the picker.
+   *  Was `STATUS_MEANING[status]` / `STATUS_GUIDANCE[status]`; both now live on the row, so a
+   *  stage the user invented explains itself in their own words or not at all. */
+  protected readonly selectedStage = computed(() => this.stagesStore.byId(this.stageId()) ?? null);
+
+  /**
+   * The two hand-rolled select blocks ask this instead of comparing signals inline three
+   * times each: the `@if`, the `aria-expanded` and the `aria-describedby` must agree, and
+   * three copies of the same condition is how they stop agreeing.
+   */
+  protected readonly statusHelpOpen = computed(
+    () => this.guidance.verbose() || this.fieldHelpOpen() === 'status',
+  );
+  protected readonly sourceHelpOpen = computed(
+    () => this.guidance.verbose() || this.fieldHelpOpen() === 'source',
+  );
+
+  /**
+   * The one next thing to do with this lead. Derived, never stored: it is a function of the
+   * stage, the follow-up and how long the lead has been silent, all of which the store
+   * already knows. Absent in create mode (no lead yet) and for closed leads (nothing owed).
+   */
+  protected readonly nextStep = computed(() => {
+    const lead = this.lead();
+    if (!lead) return null;
+    return nextStepOf(lead, this.store.now(), this.stagesStore.firstOpen()?.id ?? null);
+  });
 
   /* ---------- answers ---------- */
 
