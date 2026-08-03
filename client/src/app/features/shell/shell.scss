@@ -258,11 +258,18 @@
   opacity: 0.55;
 }
 
+@media (max-width: 900px) {
+  .mast__help {
+    margin-inline-start: auto;
+  }
+}
+
 /* ---------- desktop ---------- */
 @media (min-width: 900px) {
   :host {
     padding-block-end: 0;
   }
+
 
   .mast {
     min-block-size: 76px;
