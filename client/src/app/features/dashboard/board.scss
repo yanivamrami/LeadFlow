@@ -122,6 +122,8 @@
 .card--now {
   background: var(--lf-day);
   color: var(--lf-on-day);
+  /* the ground is fixed yellow, so its border must be fixed ink too */
+  border-color: var(--lf-fixed-ink);
 }
 .card--now .card__co,
 .card--now .card__when {

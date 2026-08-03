@@ -12,7 +12,7 @@
   min-inline-size: 0;
   background: var(--lf-day);
   color: var(--lf-on-day);
-  border-block-end: var(--lf-rule-w) solid var(--lf-ink);
+  border-block-end: var(--lf-rule-w) solid var(--lf-fixed-ink);
 }
 
 .sheet--empty {
@@ -45,7 +45,7 @@
 }
 
 .item {
-  border-block-start: 2px solid var(--lf-ink);
+  border-block-start: 2px solid var(--lf-fixed-ink);
   padding: var(--lf-space-3) var(--lf-space-4) 14px;
   animation: settle var(--lf-dur-enter) var(--lf-ease) backwards;
 }
@@ -92,7 +92,7 @@
 
 .item__age {
   flex: 0 0 auto;
-  background: var(--lf-ink);
+  background: var(--lf-fixed-ink);
   color: var(--lf-day);
   padding: 4px 8px;
 }
@@ -111,22 +111,22 @@
   gap: var(--lf-space-2);
   min-block-size: var(--lf-touch);
   padding-inline: var(--lf-space-4);
-  border: 2px solid var(--lf-ink);
+  border: 2px solid var(--lf-fixed-ink);
   background: transparent;
-  color: var(--lf-ink);
+  color: var(--lf-fixed-ink);
   font: inherit;
   font-weight: 500;
   cursor: pointer;
   transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
 }
-.b:hover { background: var(--lf-ink); color: var(--lf-day); }
+.b:hover { background: var(--lf-fixed-ink); color: var(--lf-day); }
 .b svg { inline-size: 18px; block-size: 18px; stroke-width: 2.4; }
 
-.b--solid { background: var(--lf-ink); color: var(--lf-day); }
-.b--solid:hover { background: transparent; color: var(--lf-ink); }
+.b--solid { background: var(--lf-fixed-ink); color: var(--lf-day); }
+.b--solid:hover { background: transparent; color: var(--lf-fixed-ink); }
 
 .b--bare { border-color: transparent; font-weight: 400; padding-inline: var(--lf-space-2); }
-.b--bare:hover { background: transparent; color: var(--lf-ink); text-decoration: underline; }
+.b--bare:hover { background: transparent; color: var(--lf-fixed-ink); text-decoration: underline; }
 
 .sheet__more {
   display: flex;
@@ -136,18 +136,18 @@
   inline-size: 100%;
   min-block-size: var(--lf-touch);
   border: 0;
-  border-block-start: 2px solid var(--lf-ink);
+  border-block-start: 2px solid var(--lf-fixed-ink);
   background: transparent;
-  color: var(--lf-ink);
+  color: var(--lf-fixed-ink);
   font: inherit;
   font-weight: 500;
   cursor: pointer;
 }
-.sheet__more:hover { background: var(--lf-ink); color: var(--lf-day); }
+.sheet__more:hover { background: var(--lf-fixed-ink); color: var(--lf-day); }
 
 /* empty — the finish line, stated */
 .empty {
-  border-block-start: 2px solid var(--lf-ink);
+  border-block-start: 2px solid var(--lf-fixed-ink);
   padding: var(--lf-space-4) var(--lf-space-4) var(--lf-space-6);
 }
 .empty__title {
@@ -163,7 +163,7 @@
 
 /* cleared today — struck through in red, kept visible until the day rolls over */
 .done {
-  border-block-start: 2px solid var(--lf-ink);
+  border-block-start: 2px solid var(--lf-fixed-ink);
   padding: var(--lf-space-3) var(--lf-space-4) var(--lf-space-4);
 }
 .done__label {
@@ -180,7 +180,7 @@
   font-weight: 600;
   font-size: 19px;
   text-decoration: line-through;
-  text-decoration-color: var(--lf-red);
+  text-decoration-color: var(--lf-fixed-red);
   text-decoration-thickness: 3px;
 }
 .done__note {
@@ -190,7 +190,7 @@
   margin-inline-start: auto;
   font-size: 15px;
   text-decoration: line-through;
-  text-decoration-color: var(--lf-red);
+  text-decoration-color: var(--lf-fixed-red);
   text-decoration-thickness: 2px;
 }
 
@@ -201,8 +201,8 @@
   gap: var(--lf-space-3);
   margin: 0 var(--lf-space-3) var(--lf-space-4);
   padding: var(--lf-space-3) var(--lf-space-4);
-  background: var(--lf-ink);
-  color: var(--lf-on-ink);
+  background: var(--lf-fixed-ink);
+  color: var(--lf-fixed-paper);
   transform: rotate(var(--lf-paste-tilt));
 }
 .explain p {
@@ -217,7 +217,7 @@
   flex: 0 0 auto;
   background: transparent;
   border: 0;
-  color: var(--lf-on-ink);
+  color: var(--lf-fixed-paper);
   cursor: pointer;
 }
 .explain__x svg { inline-size: 18px; block-size: 18px; stroke-width: 2.4; }
@@ -239,7 +239,7 @@
   .sheet {
     block-size: 100%;
     border-block-end: 0;
-    border-inline-end: var(--lf-rule-w) solid var(--lf-ink);
+    border-inline-end: var(--lf-rule-w) solid var(--lf-fixed-ink);
   }
   .sheet__hd { padding: 20px var(--lf-space-6) 12px; }
   .sheet__title,

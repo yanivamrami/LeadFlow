@@ -90,8 +90,8 @@ import { Toast } from '../core/notify.model';
       align-items: start;
       gap: var(--lf-space-2) var(--lf-space-3);
       padding: 12px var(--lf-space-4);
-      background: var(--lf-ink);
-      color: var(--lf-on-ink);
+      background: var(--lf-fixed-ink);
+      color: var(--lf-fixed-paper);
       border-inline-start: 4px solid var(--lf-day);
       rotate: var(--lf-paste-tilt);
       animation: paste var(--lf-dur-settle) var(--lf-ease) backwards;
@@ -125,10 +125,10 @@ import { Toast } from '../core/notify.model';
       margin: -10px -8px 0 0;
       background: transparent;
       border: 0;
-      color: color-mix(in srgb, var(--lf-on-ink) 70%, transparent);
+      color: color-mix(in srgb, var(--lf-fixed-paper) 70%, transparent);
       cursor: pointer;
     }
-    .toast__x:hover { color: var(--lf-on-ink); }
+    .toast__x:hover { color: var(--lf-fixed-paper); }
     .toast__x svg {
       inline-size: 16px;
       block-size: 16px;
@@ -148,9 +148,9 @@ import { Toast } from '../core/notify.model';
     .tb {
       min-block-size: 38px;
       padding-inline: var(--lf-space-3);
-      border: 2px solid var(--lf-on-ink);
+      border: 2px solid var(--lf-fixed-paper);
       background: transparent;
-      color: var(--lf-on-ink);
+      color: var(--lf-fixed-paper);
       font: inherit;
       font-size: 14px;
       cursor: pointer;

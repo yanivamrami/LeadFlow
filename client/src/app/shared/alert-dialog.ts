@@ -77,7 +77,8 @@ import { NotifyService } from '../core/notify.service';
       position: fixed;
       inset: 0;
       z-index: 90;
-      background: color-mix(in srgb, var(--lf-ink) 82%, transparent);
+      /* fixed: a scrim darkens the wall. Theme-flipped it becomes a light veil. */
+      background: color-mix(in srgb, var(--lf-fixed-ink) 82%, transparent);
       animation: scrim-in var(--lf-dur-overlay) var(--lf-ease) backwards;
     }
 

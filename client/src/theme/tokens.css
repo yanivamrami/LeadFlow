@@ -16,6 +16,16 @@
   /* the two committed colours */
   --lf-day: #ffe000;             /* today. attention. the sheet. 14.5:1 with ink */
   --lf-on-day: #14110f;
+
+  /* Fixed materials — identical in both themes, and never overridden below.
+     Some surfaces in this world do not flip: the day sheet is yellow at midnight,
+     and a pasted ink strip is ink on any ground. Anything drawn ON such a surface
+     must use these, because a theme-flipping token inverts against a fixed ground
+     and produces exactly the illegible pairing the theme was meant to avoid
+     (light-on-yellow buttons, a light "ink" strip). */
+  --lf-fixed-ink: #14110f;
+  --lf-fixed-paper: #f7f1e4;
+  --lf-fixed-red: #cc1b12;
   --lf-red: #cc1b12;             /* commit: primary action, Won, cleared marks. 5.0:1 with paper */
   --lf-on-red: #ffffff;
   /* red reads 3.1:1 on an ink ground — barely legal for a mark and illegal for text.

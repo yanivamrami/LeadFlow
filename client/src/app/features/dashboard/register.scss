@@ -113,7 +113,8 @@ lf-lead-menu { grid-area: menu; justify-self: end; }
 }
 .row--now .row__flag {
   background: var(--lf-flag-now);
-  border-inline-end: 2px solid var(--lf-ink);
+  /* fixed: the flag is yellow in both themes, so its edge is fixed ink */
+  border-inline-end: 2px solid var(--lf-fixed-ink);
 }
 .row--drift .row__flag {
   background: var(--lf-flag-drift);
