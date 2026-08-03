@@ -1,5 +1,6 @@
-/* Insights — Read mode. The register's grammar, summing itself up: ruled bands and
-   labelled bars, never tiles and never a pie. */
+/* Insights — Read mode. Three figures across, the one that matters on the fluorescent
+   field, and the two readings side by side once there is width to compare them.
+   Everything collapses to a single column on a phone. */
 
 :host {
   display: block;
@@ -22,34 +23,113 @@
   color: var(--lf-muted);
 }
 
-/* one figure per band. The meaning is not optional — it is why this pillar exists. */
-.band {
-  padding: var(--lf-space-4);
-  border-block-end: 1px solid var(--lf-rule-soft);
+/* ---------- the figures ---------- */
+
+.figures {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--lf-space-4);
+  padding: var(--lf-space-6) var(--lf-space-4) 0;
 }
-.band__label {
+
+.card {
+  position: relative;
+  border: 3px solid var(--lf-ink);
+  background: var(--lf-surface);
+  /* clears the tab that straddles the top border */
+  padding: var(--lf-space-6) var(--lf-space-4) var(--lf-space-4);
+}
+
+/* the label as a stuck-on tag rather than a caption above the number */
+.card__tab {
+  position: absolute;
+  inset-block-start: -12px;
+  inset-inline-start: var(--lf-space-4);
+  max-inline-size: calc(100% - var(--lf-space-8));
+  padding: 3px 9px;
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card__figure {
   margin: 0;
-  color: var(--lf-muted);
-}
-.band__figure {
-  margin: 6px 0 0;
-  font-size: 44px;
+  font-size: 46px;
   line-height: 1;
 }
-.band__figure--none { color: var(--lf-muted); }
-.band__figure--won { color: var(--lf-red-text); }
-.band__meaning {
-  margin: var(--lf-space-2) 0 0;
-  font-size: 14px;
-  line-height: 1.5;
-  max-inline-size: 62ch;
-}
-.band--quiet { background: var(--lf-surface); }
+.card__figure--none { color: var(--lf-muted); }
 
-/* a titled region */
-.block {
+.card__meaning {
+  margin: var(--lf-space-3) 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--lf-muted);
+}
+
+/* The one figure that answers "am I any good at this?". Yellow is a fixed surface in
+   both themes, so everything drawn on it uses the fixed tokens — a theme-flipping ink
+   here would invert against a ground that does not. */
+.card--hero {
+  background: var(--lf-day);
+  color: var(--lf-on-day);
+  border-color: var(--lf-fixed-ink);
+}
+.card--hero .card__tab {
+  background: var(--lf-fixed-ink);
+  color: var(--lf-day);
+}
+.card--hero .card__figure { font-size: 58px; }
+.card--hero .card__meaning { color: var(--lf-on-day); opacity: 0.8; }
+
+/* closed value: already banked, so it takes the full width rather than breaking the
+   row of three into a row of one */
+.closed {
+  position: relative;
+  margin: var(--lf-space-6) var(--lf-space-4) 0;
+  border: 3px solid var(--lf-red);
+  padding: var(--lf-space-6) var(--lf-space-4) var(--lf-space-4);
+}
+.closed__tab {
+  position: absolute;
+  inset-block-start: -12px;
+  inset-inline-start: var(--lf-space-4);
+  padding: 3px 9px;
+  background: var(--lf-red);
+  color: var(--lf-on-red);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.closed__figure {
+  margin: 0;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--lf-red-text);
+}
+.closed__meaning {
+  margin: var(--lf-space-2) 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--lf-muted);
+}
+
+/* ---------- the two readings ---------- */
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--lf-space-6);
   margin-block-start: var(--lf-space-6);
-  padding: 0 var(--lf-space-4);
+  padding-inline: var(--lf-space-4);
+}
+
+.block {
+  min-inline-size: 0;
 }
 .block__title {
   margin: 0;
@@ -64,11 +144,9 @@
   font-size: 14px;
   line-height: 1.5;
   color: var(--lf-muted);
-  max-inline-size: 62ch;
 }
 
-/* stage reach. Bars carry the same ramp the stage tags do, so a colour means one thing
-   across the whole product. */
+/* stage reach: the pipeline ramp, so a colour means the same here as a tag does */
 .bars {
   margin: 0;
   padding: 0;
@@ -78,8 +156,8 @@
 }
 .bar {
   display: grid;
-  grid-template-columns: 108px minmax(0, 1fr) 48px;
-  gap: var(--lf-space-3);
+  grid-template-columns: 104px minmax(0, 1fr) 44px;
+  gap: var(--lf-space-2);
   align-items: center;
 }
 .bar__label {
@@ -136,7 +214,7 @@
   font-size: 12px;
   color: var(--lf-muted);
 }
-.src .num { text-align: start; inline-size: 68px; }
+.src .num { text-align: start; inline-size: 60px; }
 .src__name { font-weight: 400; }
 .src__name a {
   color: inherit;
@@ -162,10 +240,10 @@
   font-size: 14px;
   line-height: 1.5;
   color: var(--lf-muted);
-  max-inline-size: 62ch;
 }
 
-/* nothing to measure yet, and a failed read — same vocabulary as the register's */
+/* ---------- nothing to measure, and a failed read ---------- */
+
 .none,
 .failed {
   margin: var(--lf-space-6) var(--lf-space-4);
@@ -219,17 +297,35 @@
 
 /* skeleton */
 .sk-label { block-size: 12px; inline-size: 96px; }
-.sk-figure { block-size: 40px; inline-size: 128px; margin-block-start: 8px; }
-.sk-meaning { block-size: 14px; inline-size: 72%; margin-block-start: 10px; }
+.sk-figure { block-size: 40px; inline-size: 128px; margin-block-start: 10px; }
+.sk-meaning { block-size: 14px; inline-size: 72%; margin-block-start: 12px; }
+
+/* ---------- three across, then side by side ---------- */
+
+@media (min-width: 700px) {
+  .figures { grid-template-columns: repeat(3, 1fr); }
+}
 
 @media (min-width: 900px) {
   .ins__hd { padding-inline: var(--lf-space-8); }
-  .band { padding-inline: var(--lf-space-8); }
-  .block { padding-inline: var(--lf-space-8); }
+  .figures,
+  .pair { padding-inline: var(--lf-space-8); }
+  .closed { margin-inline: var(--lf-space-8); }
   .none,
   .failed { margin-inline: var(--lf-space-8); }
 
-  /* the three figures sit side by side once there is room to compare them at a glance */
-  .band__figure { font-size: 52px; }
-  .bar { grid-template-columns: 132px minmax(0, 1fr) 56px; }
+  /* the two readings, equal width — a stage funnel and a source ranking answer
+     different questions, and comparing them is easier than scrolling between them */
+  .pair {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--lf-space-8);
+  }
+
+  .card__figure { font-size: 52px; }
+  .card--hero .card__figure { font-size: 64px; }
+  .closed__figure { font-size: 46px; }
+}
+
+@media (min-width: 1200px) {
+  .bar { grid-template-columns: 120px minmax(0, 1fr) 52px; }
 }

@@ -14,13 +14,15 @@
     </div>
   } @else if (loading() && !stats()) {
     <p class="lf-sr" role="status" aria-live="polite">{{ copy.insights.loading }}</p>
-    @for (band of skeletonBands; track band) {
-      <div class="band" aria-hidden="true">
-        <span class="lf-sk sk-label"></span>
-        <span class="lf-sk sk-figure"></span>
-        <span class="lf-sk sk-meaning"></span>
-      </div>
-    }
+    <div class="figures">
+      @for (band of skeletonBands; track band) {
+        <div class="card" aria-hidden="true">
+          <span class="lf-sk sk-label"></span>
+          <span class="lf-sk sk-figure"></span>
+          <span class="lf-sk sk-meaning"></span>
+        </div>
+      }
+    </div>
   } @else if (stats(); as s) {
     @if (s.total === 0) {
       <div class="none">
@@ -30,106 +32,114 @@
         <a class="act" routerLink="/lead/new">{{ copy.insights.emptyAction }}</a>
       </div>
     } @else {
-      <!-- the figures: ruled bands, never a tile row -->
-      <div class="band">
-        <p class="band__label lf-label">{{ copy.insights.totalLabel }}</p>
-        <p class="band__figure lf-num">{{ s.total }}</p>
-        <p class="band__meaning">{{ copy.insights.totalMeaning(s.open) }}</p>
-      </div>
+      <!-- three across. The label is a tab straddling the top border, the way a price
+           tag is stuck onto a sign; the figure that answers "am I any good at this"
+           takes the fluorescent field, so the eye lands there first. -->
+      <div class="figures">
+        <div class="card">
+          <span class="card__tab">{{ copy.insights.totalLabel }}</span>
+          <p class="card__figure lf-num">{{ s.total }}</p>
+          <p class="card__meaning">{{ copy.insights.totalMeaning(s.open) }}</p>
+        </div>
 
-      <div class="band">
-        <p class="band__label lf-label">{{ copy.insights.conversionLabel }}</p>
-        @if (conversion() !== null) {
-          <p class="band__figure lf-num">{{ conversion() }}%</p>
-          <p class="band__meaning">{{ copy.insights.conversionMeaning(s.won, s.decided) }}</p>
-        } @else {
-          <p class="band__figure band__figure--none lf-num">—</p>
-          <p class="band__meaning">{{ copy.insights.conversionNone }}</p>
-        }
-      </div>
-
-      <div class="band">
-        <p class="band__label lf-label">{{ copy.insights.openValueLabel }}</p>
-        <p class="band__figure lf-num">{{ formatValue(s.open_value) }}</p>
-        <p class="band__meaning">{{ copy.insights.openValueMeaning }}</p>
-      </div>
-
-      <div class="band band--quiet">
-        <p class="band__label lf-label">{{ copy.insights.wonValueLabel }}</p>
-        <p class="band__figure band__figure--won lf-num">{{ formatValue(s.won_value) }}</p>
-        <p class="band__meaning">{{ copy.insights.wonValueMeaning }}</p>
-      </div>
-
-      <!-- how far leads get: a list of labelled bars, not a canvas -->
-      <section class="block" aria-labelledby="flow-title">
-        <h2 class="block__title" id="flow-title">{{ copy.insights.flowTitle }}</h2>
-        <p class="block__lead">{{ copy.insights.flowLead }}</p>
-
-        <ul class="bars">
-          @for (row of flow(); track row.status) {
-            <li class="bar">
-              <span class="bar__label">{{ statusLabel[row.status] }}</span>
-              <span class="bar__track">
-                <span
-                  [class]="barClass(row.status)"
-                  [style.inline-size.%]="row.share"
-                  aria-hidden="true"
-                ></span>
-              </span>
-              <span class="bar__value lf-num">{{ row.leads }}</span>
-            </li>
+        <div class="card card--hero">
+          <span class="card__tab">{{ copy.insights.conversionLabel }}</span>
+          @if (conversion() !== null) {
+            <p class="card__figure lf-num">{{ conversion() }}%</p>
+            <p class="card__meaning">{{ copy.insights.conversionMeaning(s.won, s.decided) }}</p>
+          } @else {
+            <p class="card__figure card__figure--none lf-num">—</p>
+            <p class="card__meaning">{{ copy.insights.conversionNone }}</p>
           }
-        </ul>
-      </section>
+        </div>
 
-      <!-- sources, ranked by what actually closed -->
-      <section class="block" aria-labelledby="src-title">
-        <h2 class="block__title" id="src-title">{{ copy.insights.sourcesTitle }}</h2>
-        <p class="block__lead">{{ copy.insights.sourcesLead }}</p>
+        <div class="card">
+          <span class="card__tab">{{ copy.insights.openValueLabel }}</span>
+          <p class="card__figure lf-num">{{ formatValue(s.open_value) }}</p>
+          <p class="card__meaning">{{ copy.insights.openValueMeaning }}</p>
+        </div>
+      </div>
 
-        <table class="src">
-          <thead>
-            <tr>
-              <th scope="col">{{ copy.insights.sourcesCol.source }}</th>
-              <th scope="col" class="num">{{ copy.insights.sourcesCol.total }}</th>
-              <th scope="col" class="num">{{ copy.insights.sourcesCol.won }}</th>
-              <th scope="col" class="num">{{ copy.insights.sourcesCol.rate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of sources(); track row.source) {
-              <tr>
-                <th scope="row" class="src__name">
-                  <a
-                    [routerLink]="['/']"
-                    [queryParams]="{ source: row.source }"
-                    [attr.title]="copy.insights.sourcesOpen"
-                  >
-                    {{ sourceLabel[row.source] }}
-                  </a>
-                </th>
-                <td class="num lf-num">{{ row.total }}</td>
-                <td class="num lf-num">{{ row.won }}</td>
-                <td class="num lf-num">
-                  <!-- withheld, not caveated: a rate from three outcomes is noise -->
-                  @if (canCompare() && row.rate !== null) {
-                    {{ row.rate }}%
-                  } @else {
-                    <span class="src__hold">—</span>
-                  }
-                </td>
-              </tr>
+      <!-- closed value is a fourth figure, and a fourth card would leave the row of
+           three broken. It gets the full width instead, which suits it: it is the only
+           figure here that is already banked. -->
+      <div class="closed">
+        <span class="closed__tab">{{ copy.insights.wonValueLabel }}</span>
+        <p class="closed__figure lf-num">{{ formatValue(s.won_value) }}</p>
+        <p class="closed__meaning">{{ copy.insights.wonValueMeaning }}</p>
+      </div>
+
+      <!-- the two readings sit side by side on a wide screen, stacked on a phone -->
+      <div class="pair">
+        <section class="block" aria-labelledby="flow-title">
+          <h2 class="block__title" id="flow-title">{{ copy.insights.flowTitle }}</h2>
+          <p class="block__lead">{{ copy.insights.flowLead }}</p>
+
+          <ul class="bars">
+            @for (row of flow(); track row.status) {
+              <li class="bar">
+                <span class="bar__label">{{ statusLabel[row.status] }}</span>
+                <span class="bar__track">
+                  <span
+                    [class]="barClass(row.status)"
+                    [style.inline-size.%]="row.share"
+                    aria-hidden="true"
+                  ></span>
+                </span>
+                <span class="bar__value lf-num">{{ row.leads }}</span>
+              </li>
             }
-          </tbody>
-        </table>
+          </ul>
+        </section>
 
-        @if (!canCompare()) {
-          <aside class="thin">
-            <p class="thin__title">{{ copy.insights.thinTitle }}</p>
-            <p class="thin__body">{{ copy.insights.thinBody(shortBy()) }}</p>
-          </aside>
-        }
-      </section>
+        <section class="block" aria-labelledby="src-title">
+          <h2 class="block__title" id="src-title">{{ copy.insights.sourcesTitle }}</h2>
+          <p class="block__lead">{{ copy.insights.sourcesLead }}</p>
+
+          <table class="src">
+            <thead>
+              <tr>
+                <th scope="col">{{ copy.insights.sourcesCol.source }}</th>
+                <th scope="col" class="num">{{ copy.insights.sourcesCol.total }}</th>
+                <th scope="col" class="num">{{ copy.insights.sourcesCol.won }}</th>
+                <th scope="col" class="num">{{ copy.insights.sourcesCol.rate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of sources(); track row.source) {
+                <tr>
+                  <th scope="row" class="src__name">
+                    <a
+                      [routerLink]="['/']"
+                      [queryParams]="{ source: row.source }"
+                      [attr.title]="copy.insights.sourcesOpen"
+                    >
+                      {{ sourceLabel[row.source] }}
+                    </a>
+                  </th>
+                  <td class="num lf-num">{{ row.total }}</td>
+                  <td class="num lf-num">{{ row.won }}</td>
+                  <td class="num lf-num">
+                    <!-- withheld, not caveated: a rate from three outcomes is noise -->
+                    @if (canCompare() && row.rate !== null) {
+                      {{ row.rate }}%
+                    } @else {
+                      <span class="src__hold">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          @if (!canCompare()) {
+            <aside class="thin">
+              <p class="thin__title">{{ copy.insights.thinTitle }}</p>
+              <p class="thin__body">{{ copy.insights.thinBody(shortBy()) }}</p>
+            </aside>
+          }
+        </section>
+      </div>
     }
   }
 </section>

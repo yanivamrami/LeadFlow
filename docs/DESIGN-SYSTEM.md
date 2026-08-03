@@ -250,9 +250,20 @@ Read mode, so comprehension outranks density. **No figure appears without a line
 what it means**; the PRD's fourth pillar exists to teach, and a number a beginner cannot
 interpret fails here even when the arithmetic is right.
 
-**Ruled bands, not tiles.** One figure per band — label, figure at 44–52px in the numeral
-face, meaning in muted body beneath. The hero-metric tile row is refused here for the same
-reason the dashboard refuses it.
+**Three cards across, and deliberately unequal.** Each figure is a card whose label is an
+**ink tab straddling the top border** — a price tag stuck onto a sign, not a caption above
+a number. The figure that answers *am I any good at this?* (conversion) takes the
+fluorescent field at a larger size while the others stay quiet paper, so colour carries the
+hierarchy rather than every card claiming equal importance. Closed value takes the full
+width beneath rather than breaking a row of three into a row of one.
+
+Cards are on the craft floor's refuse-list as a page scaffold. They are earned here by an
+explicit brief — and the thing that list is really warning about is *undifferentiated*
+cards, which is what the yellow anchor fixes.
+
+**The two readings sit side by side** at ≥900px, equal width: a stage funnel and a source
+ranking answer different questions, and comparing them beats scrolling between them.
+Everything collapses to one column below 700px.
 
 **Charts are semantic HTML.** Stage reach is a list of labelled bars using the pipeline
 ramp, so a colour means the same thing on this screen as a stage tag does everywhere else.
