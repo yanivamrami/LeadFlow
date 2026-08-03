@@ -40,6 +40,12 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'insights',
+        pathMatch: 'full',
+        title: 'תובנות · LeadFlow Manager',
+        loadComponent: () => import('./features/insights/insights').then((m) => m.Insights),
+      },
+      {
         path: 'profile',
         pathMatch: 'full',
         title: 'פרופיל · LeadFlow Manager',

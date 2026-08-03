@@ -1,0 +1,235 @@
+/* Insights — Read mode. The register's grammar, summing itself up: ruled bands and
+   labelled bars, never tiles and never a pie. */
+
+:host {
+  display: block;
+  padding-block-end: var(--lf-space-12);
+}
+
+.ins__hd {
+  padding: var(--lf-space-6) var(--lf-space-4) var(--lf-space-4);
+  border-block-end: var(--lf-rule-w) solid var(--lf-ink);
+}
+.ins__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 1;
+}
+.ins__sub {
+  margin: var(--lf-space-2) 0 0;
+  font-size: 14px;
+  color: var(--lf-muted);
+}
+
+/* one figure per band. The meaning is not optional — it is why this pillar exists. */
+.band {
+  padding: var(--lf-space-4);
+  border-block-end: 1px solid var(--lf-rule-soft);
+}
+.band__label {
+  margin: 0;
+  color: var(--lf-muted);
+}
+.band__figure {
+  margin: 6px 0 0;
+  font-size: 44px;
+  line-height: 1;
+}
+.band__figure--none { color: var(--lf-muted); }
+.band__figure--won { color: var(--lf-red-text); }
+.band__meaning {
+  margin: var(--lf-space-2) 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  max-inline-size: 62ch;
+}
+.band--quiet { background: var(--lf-surface); }
+
+/* a titled region */
+.block {
+  margin-block-start: var(--lf-space-6);
+  padding: 0 var(--lf-space-4);
+}
+.block__title {
+  margin: 0;
+  padding-block: var(--lf-space-3);
+  border-block-start: var(--lf-rule-w) solid var(--lf-ink);
+  font-weight: 600;
+  font-size: var(--lf-size-h2);
+  line-height: 1.1;
+}
+.block__lead {
+  margin: 0 0 var(--lf-space-4);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--lf-muted);
+  max-inline-size: 62ch;
+}
+
+/* stage reach. Bars carry the same ramp the stage tags do, so a colour means one thing
+   across the whole product. */
+.bars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--lf-space-3);
+}
+.bar {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr) 48px;
+  gap: var(--lf-space-3);
+  align-items: center;
+}
+.bar__label {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bar__track {
+  display: block;
+  block-size: 28px;
+  border: 2px solid var(--lf-ink);
+  background: var(--lf-ground);
+}
+.bar__fill {
+  display: block;
+  block-size: 100%;
+  min-inline-size: 2px;
+  transition: inline-size var(--lf-dur-settle) var(--lf-ease);
+}
+.bar__fill--new { background: var(--lf-ground); box-shadow: inset 0 0 0 2px var(--lf-ink); }
+.bar__fill--contacted { background: var(--lf-tan); }
+.bar__fill--qualified { background: var(--lf-tan-deep); }
+.bar__fill--proposal_sent { background: var(--lf-ink); }
+.bar__fill--won { background: var(--lf-red); }
+.bar__fill--lost {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 5px,
+    color-mix(in srgb, var(--lf-muted) 45%, transparent) 5px 7px
+  );
+}
+.bar__value {
+  font-size: 17px;
+  text-align: start;
+}
+
+/* sources: a real table, because it is tabular data */
+.src {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.src th,
+.src td {
+  padding: 10px var(--lf-space-2);
+  text-align: start;
+  border-block-end: 1px solid var(--lf-rule-soft);
+}
+.src thead th {
+  border-block-end: 3px solid var(--lf-ink);
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--lf-muted);
+}
+.src .num { text-align: start; inline-size: 68px; }
+.src__name { font-weight: 400; }
+.src__name a {
+  color: inherit;
+  text-decoration: none;
+}
+.src__name a:hover { color: var(--lf-red-text); }
+.src__name a:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
+.src__hold { color: var(--lf-muted); }
+
+/* the withholding notice: marked as guidance, because that is what it is */
+.thin {
+  margin-block-start: var(--lf-space-4);
+  padding-inline-start: var(--lf-space-3);
+  border-inline-start: 2px solid var(--lf-red);
+}
+.thin__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--lf-size-body);
+}
+.thin__body {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--lf-muted);
+  max-inline-size: 62ch;
+}
+
+/* nothing to measure yet, and a failed read — same vocabulary as the register's */
+.none,
+.failed {
+  margin: var(--lf-space-6) var(--lf-space-4);
+  border: 2px dashed var(--lf-rule-soft);
+  padding: var(--lf-space-8) var(--lf-space-4);
+  text-align: center;
+}
+.none__mark {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-inline-size: 180px;
+  margin: 0 auto var(--lf-space-4);
+}
+.none__mark i {
+  display: block;
+  block-size: 10px;
+  border: 1px solid var(--lf-muted);
+}
+.none__mark i:last-child { inline-size: 55%; margin-inline: auto; }
+.none__title,
+.failed__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--lf-size-h2);
+}
+.none__body,
+.failed__body {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--lf-muted);
+}
+
+.act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--lf-touch);
+  margin-block-start: var(--lf-space-4);
+  padding-inline: var(--lf-space-6);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+.act:hover:not(:disabled) { background: var(--lf-ink); color: var(--lf-on-ink); }
+.act:disabled { opacity: 0.6; cursor: default; }
+
+/* skeleton */
+.sk-label { block-size: 12px; inline-size: 96px; }
+.sk-figure { block-size: 40px; inline-size: 128px; margin-block-start: 8px; }
+.sk-meaning { block-size: 14px; inline-size: 72%; margin-block-start: 10px; }
+
+@media (min-width: 900px) {
+  .ins__hd { padding-inline: var(--lf-space-8); }
+  .band { padding-inline: var(--lf-space-8); }
+  .block { padding-inline: var(--lf-space-8); }
+  .none,
+  .failed { margin-inline: var(--lf-space-8); }
+
+  /* the three figures sit side by side once there is room to compare them at a glance */
+  .band__figure { font-size: 52px; }
+  .bar { grid-template-columns: 132px minmax(0, 1fr) 56px; }
+}

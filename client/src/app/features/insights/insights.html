@@ -1,0 +1,135 @@
+<section class="ins" aria-labelledby="ins-title">
+  <header class="ins__hd">
+    <h1 class="ins__title" id="ins-title">{{ copy.insights.title }}</h1>
+    <p class="ins__sub">{{ copy.insights.subtitle }}</p>
+  </header>
+
+  @if (failed()) {
+    <div class="failed" role="alert">
+      <p class="failed__title">{{ copy.insights.failedTitle }}</p>
+      <p class="failed__body">{{ copy.insights.failedBody }}</p>
+      <button type="button" class="act" [disabled]="loading()" (click)="retry()">
+        {{ loading() ? copy.insights.loading : copy.insights.retry }}
+      </button>
+    </div>
+  } @else if (loading() && !stats()) {
+    <p class="lf-sr" role="status" aria-live="polite">{{ copy.insights.loading }}</p>
+    @for (band of skeletonBands; track band) {
+      <div class="band" aria-hidden="true">
+        <span class="lf-sk sk-label"></span>
+        <span class="lf-sk sk-figure"></span>
+        <span class="lf-sk sk-meaning"></span>
+      </div>
+    }
+  } @else if (stats(); as s) {
+    @if (s.total === 0) {
+      <div class="none">
+        <div class="none__mark" aria-hidden="true"><i></i><i></i><i></i></div>
+        <p class="none__title">{{ copy.insights.emptyTitle }}</p>
+        <p class="none__body">{{ copy.insights.emptyBody }}</p>
+        <a class="act" routerLink="/lead/new">{{ copy.insights.emptyAction }}</a>
+      </div>
+    } @else {
+      <!-- the figures: ruled bands, never a tile row -->
+      <div class="band">
+        <p class="band__label lf-label">{{ copy.insights.totalLabel }}</p>
+        <p class="band__figure lf-num">{{ s.total }}</p>
+        <p class="band__meaning">{{ copy.insights.totalMeaning(s.open) }}</p>
+      </div>
+
+      <div class="band">
+        <p class="band__label lf-label">{{ copy.insights.conversionLabel }}</p>
+        @if (conversion() !== null) {
+          <p class="band__figure lf-num">{{ conversion() }}%</p>
+          <p class="band__meaning">{{ copy.insights.conversionMeaning(s.won, s.decided) }}</p>
+        } @else {
+          <p class="band__figure band__figure--none lf-num">—</p>
+          <p class="band__meaning">{{ copy.insights.conversionNone }}</p>
+        }
+      </div>
+
+      <div class="band">
+        <p class="band__label lf-label">{{ copy.insights.openValueLabel }}</p>
+        <p class="band__figure lf-num">{{ formatValue(s.open_value) }}</p>
+        <p class="band__meaning">{{ copy.insights.openValueMeaning }}</p>
+      </div>
+
+      <div class="band band--quiet">
+        <p class="band__label lf-label">{{ copy.insights.wonValueLabel }}</p>
+        <p class="band__figure band__figure--won lf-num">{{ formatValue(s.won_value) }}</p>
+        <p class="band__meaning">{{ copy.insights.wonValueMeaning }}</p>
+      </div>
+
+      <!-- how far leads get: a list of labelled bars, not a canvas -->
+      <section class="block" aria-labelledby="flow-title">
+        <h2 class="block__title" id="flow-title">{{ copy.insights.flowTitle }}</h2>
+        <p class="block__lead">{{ copy.insights.flowLead }}</p>
+
+        <ul class="bars">
+          @for (row of flow(); track row.status) {
+            <li class="bar">
+              <span class="bar__label">{{ statusLabel[row.status] }}</span>
+              <span class="bar__track">
+                <span
+                  [class]="barClass(row.status)"
+                  [style.inline-size.%]="row.share"
+                  aria-hidden="true"
+                ></span>
+              </span>
+              <span class="bar__value lf-num">{{ row.leads }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <!-- sources, ranked by what actually closed -->
+      <section class="block" aria-labelledby="src-title">
+        <h2 class="block__title" id="src-title">{{ copy.insights.sourcesTitle }}</h2>
+        <p class="block__lead">{{ copy.insights.sourcesLead }}</p>
+
+        <table class="src">
+          <thead>
+            <tr>
+              <th scope="col">{{ copy.insights.sourcesCol.source }}</th>
+              <th scope="col" class="num">{{ copy.insights.sourcesCol.total }}</th>
+              <th scope="col" class="num">{{ copy.insights.sourcesCol.won }}</th>
+              <th scope="col" class="num">{{ copy.insights.sourcesCol.rate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of sources(); track row.source) {
+              <tr>
+                <th scope="row" class="src__name">
+                  <a
+                    [routerLink]="['/']"
+                    [queryParams]="{ source: row.source }"
+                    [attr.title]="copy.insights.sourcesOpen"
+                  >
+                    {{ sourceLabel[row.source] }}
+                  </a>
+                </th>
+                <td class="num lf-num">{{ row.total }}</td>
+                <td class="num lf-num">{{ row.won }}</td>
+                <td class="num lf-num">
+                  <!-- withheld, not caveated: a rate from three outcomes is noise -->
+                  @if (canCompare() && row.rate !== null) {
+                    {{ row.rate }}%
+                  } @else {
+                    <span class="src__hold">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        @if (!canCompare()) {
+          <aside class="thin">
+            <p class="thin__title">{{ copy.insights.thinTitle }}</p>
+            <p class="thin__body">{{ copy.insights.thinBody(shortBy()) }}</p>
+          </aside>
+        }
+      </section>
+    }
+  }
+</section>

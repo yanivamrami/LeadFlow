@@ -303,6 +303,53 @@ export const COPY = {
     qualifyNote:
       'אף שאלה לא חוסמת אתכם. אתם יכולים להזיז ליד לכל שלב בכל רגע — השאלות רק עוזרות לדעת איפה אתם עומדים.',
   },
+  /**
+   * Insights — §5. The PRD's fourth pillar exists to *educate*, so no figure appears
+   * without a line saying what it means. A number a beginner cannot interpret is a
+   * failure here even when the arithmetic is right.
+   */
+  insights: {
+    title: 'תובנות',
+    subtitle: 'מה קורה בפועל בצינור שלכם.',
+
+    totalLabel: 'לידים בסך הכול',
+    totalMeaning: (open: number) => `${open} מהם עוד פתוחים ומחכים לכם.`,
+
+    conversionLabel: 'אחוז סגירה',
+    /** Names its own denominator on its face — the number is meaningless without it. */
+    conversionMeaning: (won: number, decided: number) =>
+      `מתוך ${decided} לידים שהגיעו להחלטה, ${won} נסגרו בהצלחה. לידים שעוד פתוחים לא נספרים כאן.`,
+    conversionNone: 'עוד לא הגעתם להחלטה על אף ליד, אז אין מה לחשב.',
+
+    openValueLabel: 'שווי שעוד בתהליך',
+    openValueMeaning: 'סכום כל הלידים שעדיין לא נסגרו. זו לא הכנסה — זו הזדמנות.',
+    wonValueLabel: 'נסגר בהצלחה',
+    wonValueMeaning: 'הסכומים שרשמתם על לידים שנסגרו.',
+
+    flowTitle: 'עד לאן הלידים מגיעים',
+    flowLead:
+      'כמה לידים הגיעו בכלל לכל שלב. השורות מתקצרות משלב לשלב — זה נורמלי, וזה מראה לכם איפה אתם מאבדים אותם.',
+    flowUnit: 'לידים',
+
+    sourcesTitle: 'מאיפה הלידים מגיעים',
+    sourcesLead: 'מסודר לפי מה שבאמת נסגר, לא לפי מה שהביא הכי הרבה.',
+    sourcesCol: { source: 'מקור', total: 'הגיעו', won: 'נסגרו', rate: 'אחוז' },
+    sourcesOpen: 'הצג במסך הלידים',
+
+    /** Below the threshold no ratio between groups is shown at all. */
+    thinTitle: 'עוד אין מספיק נתונים',
+    thinBody: (needed: number) =>
+      `כדי להשוות בין מקורות בצורה אמינה צריך עוד ${needed} לידים שהגיעו להחלטה. עד אז המספרים למעלה נכונים, אבל השוואה ביניהם עוד לא תהיה אמיתית.`,
+
+    emptyTitle: 'עוד אין מה למדוד',
+    emptyBody: 'הוסיפו כמה לידים, ותוך שבועיים־שלושה יהיה כאן מה לראות.',
+    emptyAction: 'ליד חדש',
+
+    loading: 'טוען תובנות…',
+    failedTitle: 'לא הצלחנו לטעון את התובנות',
+    failedBody: 'שום דבר לא נמחק — רק החישוב נכשל. נסו שוב.',
+    retry: 'נסה שוב',
+  },
   /** The lead sheet — §3. One surface in two modes, so one copy block. */
   lead: {
     createTitle: 'ליד חדש',

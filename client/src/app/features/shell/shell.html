@@ -13,10 +13,10 @@
       {{ copy.nav.reminders }}
       <span class="soon__n lf-num">{{ reminderCount }}</span>
     </span>
-    <span class="soon" aria-disabled="true">
+    <a routerLink="/insights" routerLinkActive="on" ariaCurrentWhenActive="page">
       <svg lucideChartNoAxesColumn aria-hidden="true"></svg>
       {{ copy.nav.insights }}
-    </span>
+    </a>
   </nav>
 
   <a class="mast__cta" routerLink="/lead/new">
@@ -72,10 +72,10 @@
     <svg lucideClipboardList aria-hidden="true"></svg>
     {{ copy.nav.reminders }}
   </span>
-  <span class="soon" aria-disabled="true">
+  <a routerLink="/insights" routerLinkActive="on" ariaCurrentWhenActive="page">
     <svg lucideChartNoAxesColumn aria-hidden="true"></svg>
     {{ copy.nav.insights }}
-  </span>
+  </a>
   <a routerLink="/profile" routerLinkActive="on" ariaCurrentWhenActive="page">
     <svg lucideUser aria-hidden="true"></svg>
     {{ copy.nav.profile }}

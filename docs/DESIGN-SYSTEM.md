@@ -244,6 +244,32 @@ sit on paper; trigger-written `status_changed` entries take a small ink chip, so
 is distinguishable from the person by treatment rather than hue. Notes are **append-only** —
 no edit, no delete, because a rewritable log is not a log.
 
+## 8d. Insights — figures, bars and withholding
+
+Read mode, so comprehension outranks density. **No figure appears without a line saying
+what it means**; the PRD's fourth pillar exists to teach, and a number a beginner cannot
+interpret fails here even when the arithmetic is right.
+
+**Ruled bands, not tiles.** One figure per band — label, figure at 44–52px in the numeral
+face, meaning in muted body beneath. The hero-metric tile row is refused here for the same
+reason the dashboard refuses it.
+
+**Charts are semantic HTML.** Stage reach is a list of labelled bars using the pipeline
+ramp, so a colour means the same thing on this screen as a stage tag does everywhere else.
+No canvas, no pie: a pie shows volume and hides the only thing that matters. This departs
+from `docs/ARCHITECTURE.md`'s `p-chart` mapping deliberately — six labelled bars are
+screen-readable, selectable and printable, and Chart.js earns its place at the first real
+time-series.
+
+**Withholding is a design element.** Below 10 decided leads no ratio between groups is
+displayed at all — the cell shows `—` and a guidance note says what is still needed. Not
+a caveated number: people remember the figure and forget the disclaimer. The rule lives in
+`MIN_DECIDED_FOR_COMPARISON`.
+
+**A denominator that names itself.** Conversion is `won ÷ decided`, and the meaning line
+says so, because the same percentage computed two ways is two different claims about
+someone's work.
+
 ## 9. Empty states
 
 Dashed 2px container, a geometric mark of empty rectangles hinting at the missing rows, one sentence of guidance, and at most one action. No illustration, no photography, no mascot. The day sheet's empty state is a statement of completion, not an absence — it never collapses to nothing.

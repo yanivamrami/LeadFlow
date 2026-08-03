@@ -67,10 +67,17 @@ One save commits fields, note and checklist answers together through the `save_l
 
 | # | Screen | Notes | TODO |
 |---|---|---|---|
-| 5.1 | **Insights overview** | Total leads, conversion rate, pipeline value. Each metric ships with a plain-language explanation — the PRD's "educational insights". | Whole screen. |
-| 5.2 | **Pipeline progression** | Leads through stages over time. RTL time axis. | Whole screen. Needs stage-change history, which nothing records today — an activity row is written per move, so the history is recoverable but not modelled. |
-| 5.3 | **Source breakdown** | Which sources actually convert. | Whole screen. Source is on the lead but has no entry surface until 3.1. |
-| 5.4 | **Analytics empty state** | A new user has no data; this must teach rather than show zeros. | Whole screen. |
+**Two deliberate deviations, both reasoned:** conversion is `won ÷ decided`, not the PRD's
+literal "Won vs. Total" — counting still-open leads as failures shows a beginner a punishing
+number with no explanation, and the figure names its own denominator on screen. And the charts
+are semantic HTML, not `p-chart` as `docs/ARCHITECTURE.md` maps: six labelled bars are a list,
+so they are screen-readable, selectable and printable. Chart.js earns its place at the first
+real time-series.
+
+| 5.1 | ~~**Insights overview**~~ | ~~Three ruled bands — total, conversion, value in play — plus closed value. Never a KPI tile row. Every figure carries a plain-language line saying what it means, which is the pillar's whole purpose.~~ | Not visually verified. The aggregate's arithmetic is unverified against real rows: no DB password this session, so `lead_stats` has been validated by Postgres at creation but never executed. |
+| 5.2 | ~~**Pipeline progression**~~ | ~~Stage reach as labelled bars in the pipeline ramp: how many leads ever got to each stage, so "where do I lose them" reads instantly. Stage history is now modelled — `from_status`/`to_status` columns, trigger updated, existing rows backfilled by parsing the old display text once.~~ | Not a time-series. A trend chart needs months of history and a reader who parses one; revisit when there is history worth plotting, with the axis running right-to-left. |
+| 5.3 | ~~**Source breakdown**~~ | ~~Two columns per source — how many came in, how many closed — sorted by close rate, so the answer is the first row. Never a pie: a pie shows volume and hides the only thing that matters. Each row links into the register filtered by that source.~~ | The register does not yet read a `source` query param, so the link lands unfiltered. |
+| 5.4 | ~~**Analytics empty & thin states**~~ | ~~Two states. No leads: dashed container, one action. **Not enough leads: figures show, comparisons withhold** — below 10 decided leads no ratio between sources appears at all, not even caveated, because people remember the number and forget the disclaimer.~~ | The 10-decided threshold is a judgement call, not a derived constant. Revisit against real usage. |
 
 ## 6. Auth & account
 
@@ -115,13 +122,13 @@ eagerly and refuses to construct unconfigured.
 
 | State | Screens |
 |-------|---------|
-| Built | 28 |
-| Built, with something still open | 26 of the 28 — 1.5 and 3.3 are closed |
-| Unbuilt, in scope (§1–§7) | 11 |
+| Built | 32 |
+| Built, with something still open | 30 of the 32 — 1.5 and 3.3 are closed |
+| Unbuilt, in scope (§1–§7) | 7 |
 | Dropped (6.7) | 1 |
 | Deferred (§8) | 4 |
 
-§1–§7 holds 40 screens: 28 built + 11 unbuilt + 1 dropped. (2.9 was found while building
+§1–§7 holds 40 screens: 32 built + 7 unbuilt + 1 dropped. (2.9 was found while building
 2.7 and added to the list rather than fixed silently.)
 
 **No visual round has been run on §3.** It renders behind `authGuard` and this session has
