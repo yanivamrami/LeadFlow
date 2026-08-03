@@ -27,7 +27,11 @@
   cursor: pointer;
   transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
 }
-.opt:hover:not(:disabled) { background: var(--lf-day); color: var(--lf-ink); }
+/* --lf-on-day, not --lf-ink: yellow is fixed in both themes, so a theme-following ink turns
+   near-white here and the hovered chip goes blank in dark mode. Same defect as the withheld
+   conversion figure on /insights. The sibling `.template:hover` in add-stage.scss already
+   does it this way. */
+.opt:hover:not(:disabled) { background: var(--lf-day); color: var(--lf-on-day); }
 .opt.on { background: var(--lf-ink); color: var(--lf-on-ink); }
 .opt:disabled { opacity: 0.6; cursor: default; }
 

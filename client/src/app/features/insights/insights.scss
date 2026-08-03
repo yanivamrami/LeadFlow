@@ -86,6 +86,22 @@
 .card--hero .card__figure { font-size: 58px; }
 .card--hero .card__meaning { color: var(--lf-on-day); opacity: 0.8; }
 
+/* The withheld-figure dash, on yellow.
+ *
+ * `.card__figure--none` above paints it with --lf-muted, which is right on the paper cards
+ * and wrong here: in dark mode that token is rgba(247,241,228,0.66) — near-white — and over
+ * #ffe000 it lands at roughly 1.1:1. Invisible, in the one state a fresh account is always
+ * in, since the figure is withheld until 10 leads have been decided.
+ *
+ * Not faded at all, deliberately: the em-dash already says "no number yet", so dimming it
+ * adds nothing and every opacity step costs contrast on a ground this bright. Full fixed
+ * ink is 14.5:1 here.
+ */
+.card--hero .card__figure--none {
+  color: var(--lf-on-day);
+  opacity: 1;
+}
+
 /* closed value: already banked, so it takes the full width rather than breaking the
    row of three into a row of one */
 .closed {
