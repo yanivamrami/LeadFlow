@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 import { LucideLogOut } from '@lucide/angular';
 
@@ -33,12 +33,15 @@ import { matchError, nameError, passwordError } from '../auth/validate';
 export class Profile {
   private readonly supabase = inject(SupabaseService);
   private readonly notify = inject(NotifyService);
-  private readonly router = inject(Router);
 
   protected readonly theme = inject(ThemeService);
   protected readonly copy = COPY;
 
   protected readonly email = this.supabase.email;
+
+  constructor() {
+    void this.loadBusinessName();
+  }
 
   /* ---------- name ---------- */
 
@@ -53,6 +56,22 @@ export class Profile {
   );
   /** Save stays inert until there is a change to save — a no-op write is not a feature. */
   protected readonly nameChanged = computed(() => this.name().trim() !== this.savedName().trim());
+
+  /* ---------- business name (tenant) ---------- */
+
+  private readonly tenantId = signal<string | null>(null);
+  private readonly savedBusiness = signal('');
+  protected readonly business = signal('');
+  protected readonly savingBusiness = signal(false);
+  protected readonly businessServerProblem = signal<string | null>(null);
+  private readonly businessTried = signal(false);
+
+  protected readonly businessProblem = computed(() =>
+    this.businessTried() && !this.business().trim() ? COPY.profile.businessRequired : null,
+  );
+  protected readonly businessChanged = computed(
+    () => this.business().trim() !== this.savedBusiness().trim(),
+  );
 
   /* ---------- password ---------- */
 
@@ -75,7 +94,8 @@ export class Profile {
 
   /* ---------- the rest ---------- */
 
-  protected readonly signingOut = signal(false);
+  /** One flow, in SupabaseService, shared with the masthead's own sign-out control. */
+  protected readonly signingOut = this.supabase.signingOut;
 
   protected readonly themeOptions: readonly { value: ThemeChoice; label: string }[] = [
     { value: 'light', label: COPY.profile.themeLight },
@@ -100,6 +120,44 @@ export class Profile {
       this.nameServerProblem.set(isAppError(error) ? error.message : COPY.errors.generic);
     } finally {
       this.savingName.set(false);
+    }
+  }
+
+  /** Loads the tenant's current name once, so the field opens with what is really saved. */
+  private async loadBusinessName(): Promise<void> {
+    try {
+      const tenantId = await this.supabase.resolveTenantId();
+      if (!tenantId) return;
+      this.tenantId.set(tenantId);
+
+      const name = await this.supabase.getTenantName(tenantId);
+      this.savedBusiness.set(name);
+      this.business.set(name);
+    } catch (error) {
+      this.businessServerProblem.set(isAppError(error) ? error.message : COPY.errors.generic);
+    }
+  }
+
+  protected async saveBusiness(): Promise<void> {
+    this.businessTried.set(true);
+    this.businessServerProblem.set(null);
+    const tenantId = this.tenantId();
+    if (this.businessProblem() || this.savingBusiness() || !this.businessChanged() || !tenantId) {
+      return;
+    }
+
+    const next = this.business().trim();
+    this.savingBusiness.set(true);
+    try {
+      await this.supabase.updateTenantName(tenantId, next);
+      this.savedBusiness.set(next);
+      this.business.set(next);
+      this.businessTried.set(false);
+      this.notify.succeeded(COPY.profile.businessSaved);
+    } catch (error) {
+      this.businessServerProblem.set(isAppError(error) ? error.message : COPY.errors.generic);
+    } finally {
+      this.savingBusiness.set(false);
     }
   }
 
@@ -134,17 +192,7 @@ export class Profile {
     }
   }
 
-  protected async signOut(): Promise<void> {
-    if (this.signingOut()) return;
-    this.signingOut.set(true);
-    try {
-      await this.supabase.signOut();
-      await this.router.navigateByUrl('/auth/sign-in');
-      this.notify.succeeded(COPY.profile.signedOut);
-    } catch (error) {
-      this.notify.failed(isAppError(error) ? error.message : COPY.errors.generic);
-    } finally {
-      this.signingOut.set(false);
-    }
+  protected signOut(): Promise<void> {
+    return this.supabase.signOutAndLeave();
   }
 }

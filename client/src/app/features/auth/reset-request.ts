@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { COPY } from '../../core/copy';
-import { isAppError, SupabaseService } from '../../core/supabase.service';
+import { NotifyService } from '../../core/notify.service';
+import { SupabaseService } from '../../core/supabase.service';
 import { TextField } from '../../shared/text-field';
 import { AuthPage } from './auth-page';
 import { CommitBand } from './commit-band';
 import { FormError } from '../../shared/form-error';
 import { PasteStrip, StripRow } from './paste-strip';
-import { emailError } from './validate';
+import { emailError, submitError } from './validate';
 
 /**
  * 6.3 — ask for a reset link.
@@ -72,6 +73,7 @@ import { emailError } from './validate';
 })
 export class ResetRequest {
   private readonly supabase = inject(SupabaseService);
+  private readonly notify = inject(NotifyService);
 
   protected readonly copy = COPY;
 
@@ -111,7 +113,7 @@ export class ResetRequest {
       await this.supabase.requestPasswordReset(this.email().trim());
       this.sent.set(true);
     } catch (error) {
-      this.serverProblem.set(isAppError(error) ? error.message : COPY.errors.generic);
+      this.serverProblem.set(submitError(error, this.notify.online()));
     } finally {
       this.busy.set(false);
     }

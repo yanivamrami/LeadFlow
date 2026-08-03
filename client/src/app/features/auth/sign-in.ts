@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { COPY } from '../../core/copy';
-import { isAppError, SupabaseService } from '../../core/supabase.service';
+import { NotifyService } from '../../core/notify.service';
+import { SupabaseService } from '../../core/supabase.service';
 import { TextField } from '../../shared/text-field';
 import { AuthPage } from './auth-page';
 import { CommitBand } from './commit-band';
 import { FormError } from '../../shared/form-error';
 import { PasteStrip, StripRow } from './paste-strip';
-import { emailError, passwordError, safeReturnUrl } from './validate';
+import { emailError, passwordError, safeReturnUrl, submitError } from './validate';
 
 /**
  * 6.1 — sign in. The overwhelmingly common arrival: someone who already has an account,
@@ -57,6 +58,7 @@ import { emailError, passwordError, safeReturnUrl } from './validate';
 })
 export class SignIn {
   private readonly supabase = inject(SupabaseService);
+  private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -102,7 +104,7 @@ export class SignIn {
       const target = safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
       await this.router.navigateByUrl(target);
     } catch (error) {
-      this.serverProblem.set(isAppError(error) ? error.message : COPY.errors.generic);
+      this.serverProblem.set(submitError(error, this.notify.online()));
     } finally {
       this.busy.set(false);
     }

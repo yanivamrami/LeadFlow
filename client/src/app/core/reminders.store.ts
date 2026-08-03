@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 
 import { COPY, OPEN_REASON, daysBetween } from './copy';
 import { Lead, LeadStatus, OpenItem, OpenReason } from './lead.model';
@@ -90,6 +90,23 @@ export class RemindersStore {
   private readonly _loaded = signal(false);
   private readonly _failed = signal(false);
   private readonly _busyId = signal<string | null>(null);
+
+  constructor() {
+    // Sign-out empties this store for the same reason it empties the pipeline: a root
+    // singleton would otherwise hand the next user the previous one's follow-ups, and the
+    // masthead badge would count them. Epoch 0 is the initial value, not a sign-out.
+    effect(() => {
+      if (this.supabase.sessionEpoch() > 0) untracked(() => this.reset());
+    });
+  }
+
+  reset(): void {
+    this._rows.set([]);
+    this._loaded.set(false);
+    this._failed.set(false);
+    this._loading.set(false);
+    this._busyId.set(null);
+  }
 
   readonly rows = this._rows.asReadonly();
   readonly now = this._now.asReadonly();

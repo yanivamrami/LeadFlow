@@ -15,6 +15,7 @@ import { LucideEllipsisVertical } from '@lucide/angular';
 
 import { COPY, STATUS_LABEL } from '../core/copy';
 import { Lead, LeadStatus, STAGE_ORDER } from '../core/lead.model';
+import { DuePicker } from './due-picker';
 
 /**
  * The per-row actions menu. This is the full non-drag path to a stage change
@@ -29,7 +30,7 @@ import { Lead, LeadStatus, STAGE_ORDER } from '../core/lead.model';
 @Component({
   selector: 'lf-lead-menu',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideEllipsisVertical, CdkOverlayOrigin, CdkConnectedOverlay],
+  imports: [LucideEllipsisVertical, CdkOverlayOrigin, CdkConnectedOverlay, DuePicker],
   template: `
     <button
       #trigger
@@ -55,38 +56,55 @@ import { Lead, LeadStatus, STAGE_ORDER } from '../core/lead.model';
       (overlayOutsideClick)="close()"
       (detach)="close()"
     >
-      <div class="menu" role="menu" [attr.aria-label]="triggerLabel()" (keydown.escape)="closeAndFocus()">
-        <p class="menu__head lf-label">{{ copy.menu.moveTo }}</p>
-        @for (status of stages; track status) {
-          <button
-            type="button"
-            role="menuitem"
-            class="menu__item"
-            [disabled]="status === lead().status"
-            (click)="pick(status)"
-          >
-            {{ statusLabel[status] }}
-            @if (status === lead().status) {
-              <span class="menu__now">נוכחי</span>
+      <div
+        class="menu"
+        [class.menu--snooze]="page() === 'snooze'"
+        [attr.role]="page() === 'menu' ? 'menu' : null"
+        [attr.aria-label]="triggerLabel()"
+        (keydown.escape)="onEscape()"
+      >
+        @switch (page()) {
+          @case ('menu') {
+            <p class="menu__head lf-label">{{ copy.menu.moveTo }}</p>
+            @for (status of stages; track status) {
+              <button
+                type="button"
+                role="menuitem"
+                class="menu__item"
+                [disabled]="status === lead().status"
+                (click)="pick(status)"
+              >
+                {{ statusLabel[status] }}
+                @if (status === lead().status) {
+                  <span class="menu__now">נוכחי</span>
+                }
+              </button>
             }
-          </button>
-        }
-        <div class="menu__rule"></div>
-        <button type="button" role="menuitem" class="menu__item" (click)="emitLog()">
-          {{ copy.menu.logActivity }}
-        </button>
-        <button type="button" role="menuitem" class="menu__item" (click)="emitSnooze()">
-          {{ copy.menu.snooze }}
-        </button>
-        @if (lead().isDemo) {
-          <button
-            type="button"
-            role="menuitem"
-            class="menu__item menu__item--danger"
-            (click)="emitDelete()"
-          >
-            {{ copy.menu.delete }}
-          </button>
+            <div class="menu__rule"></div>
+            <button type="button" role="menuitem" class="menu__item" (click)="emitLog()">
+              {{ copy.menu.logActivity }}
+            </button>
+            <button type="button" role="menuitem" class="menu__item" (click)="openSnooze()">
+              {{ copy.menu.snooze }}
+            </button>
+            @if (lead().isDemo) {
+              <button
+                type="button"
+                role="menuitem"
+                class="menu__item menu__item--danger"
+                (click)="emitDelete()"
+              >
+                {{ copy.menu.delete }}
+              </button>
+            }
+          }
+          @case ('snooze') {
+            <!-- the same panel changing job, not a second overlay stacked on the first -->
+            <div class="menu__snooze">
+              <p class="menu__head lf-label">{{ copy.menu.snooze }}</p>
+              <lf-due-picker (picked)="pickSnooze($event)" (cancel)="backToMenu()" />
+            </div>
+          }
         }
       </div>
     </ng-template>
@@ -115,6 +133,10 @@ import { Lead, LeadStatus, STAGE_ORDER } from '../core/lead.model';
       border: 3px solid var(--lf-ink);
       padding-block: 6px;
     }
+    /* the date field and its three chips need more room than a stage list does */
+    .menu--snooze { inline-size: 288px; max-inline-size: calc(100vw - 24px); }
+
+    .menu__snooze { padding: 4px 14px 12px; }
 
     .menu__head {
       margin: 0;
@@ -153,12 +175,15 @@ export class LeadMenu {
 
   readonly moveTo = output<LeadStatus>();
   readonly logActivity = output<void>();
-  readonly snooze = output<void>();
+  /** Emits the day the user picked — the store, not this menu, decides what "today" means. */
+  readonly snooze = output<Date>();
   readonly deleteLead = output<void>();
 
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
 
   protected readonly open = signal(false);
+  /** The overlay's second "page": the stage list, or the day picker in its place. */
+  protected readonly page = signal<'menu' | 'snooze'>('menu');
   protected readonly copy = COPY;
   protected readonly statusLabel = STATUS_LABEL;
   protected readonly stages = STAGE_ORDER;
@@ -177,16 +202,31 @@ export class LeadMenu {
   ];
 
   protected toggle(): void {
-    this.open.update((v) => !v);
+    const next = !this.open();
+    this.open.set(next);
+    if (next) this.page.set('menu');
   }
 
   protected close(): void {
     this.open.set(false);
+    this.page.set('menu');
   }
 
   protected closeAndFocus(): void {
-    this.open.set(false);
+    this.close();
     this.trigger().nativeElement.focus();
+  }
+
+  /**
+   * Escape steps back one page at a time: out of the picker into the menu it replaced,
+   * then out of the menu entirely — never both in one keystroke.
+   */
+  protected onEscape(): void {
+    if (this.page() === 'snooze') {
+      this.backToMenu();
+    } else {
+      this.closeAndFocus();
+    }
   }
 
   protected pick(status: LeadStatus): void {
@@ -199,8 +239,16 @@ export class LeadMenu {
     this.closeAndFocus();
   }
 
-  protected emitSnooze(): void {
-    this.snooze.emit();
+  protected openSnooze(): void {
+    this.page.set('snooze');
+  }
+
+  protected backToMenu(): void {
+    this.page.set('menu');
+  }
+
+  protected pickSnooze(due: Date): void {
+    this.snooze.emit(due);
     this.closeAndFocus();
   }
 

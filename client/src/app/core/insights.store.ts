@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 
 import { COPY } from './copy';
 import { LeadSource, LeadStatus } from './lead.model';
@@ -38,6 +38,20 @@ export class InsightsStore {
   private readonly _stats = signal<LeadStats | null>(null);
   private readonly _loading = signal(false);
   private readonly _failed = signal(false);
+
+  constructor() {
+    // Sign-out empties this store too: aggregates are the most misleading thing to leave
+    // on screen, because a stale figure looks exactly like a fresh one.
+    effect(() => {
+      if (this.supabase.sessionEpoch() > 0) untracked(() => this.reset());
+    });
+  }
+
+  reset(): void {
+    this._stats.set(null);
+    this._loading.set(false);
+    this._failed.set(false);
+  }
 
   readonly stats = this._stats.asReadonly();
   readonly loading = this._loading.asReadonly();

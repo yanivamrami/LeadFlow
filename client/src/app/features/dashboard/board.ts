@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   CdkDrag,
   CdkDragDrop,
@@ -28,6 +28,7 @@ import { LeadMenu } from '../../shared/lead-menu';
 })
 export class Board {
   private readonly store = inject(LeadsStore);
+  private readonly router = inject(Router);
 
   protected readonly copy = COPY;
   protected readonly statusLabel = STATUS_LABEL;
@@ -54,12 +55,13 @@ export class Board {
     this.store.moveToStage(lead.id, status, STATUS_LABEL[status]);
   }
 
+  /** Opens the composer rather than writing — see Register.log for why. */
   protected log(lead: Lead): void {
-    this.store.logActivity(lead.id, COPY.menu.logActivity);
+    void this.router.navigate(['/lead', lead.id], { queryParams: { at: 'note' } });
   }
 
-  protected snooze(lead: Lead): void {
-    this.store.snooze(lead.id);
+  protected snooze(lead: Lead, due: Date): void {
+    void this.store.snooze(lead.id, due);
   }
 
   protected remove(lead: Lead): void {

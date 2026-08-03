@@ -131,6 +131,23 @@
   block-size: var(--lf-touch);
 }
 
+/* the way out — outermost, inline-end of the monogram. Icon-only under 900px, where
+   a fifth text label has nowhere to go; the string still carries as the accessible name. */
+.mast__signout {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.mast__signout svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
+.mast__signout:hover:not(:disabled) { color: var(--lf-red-text); }
+.mast__signout:disabled { opacity: 0.55; cursor: not-allowed; }
+.mast__signout-label { display: none; }
+
 /* ---------- mobile action band + tabs ---------- */
 .band {
   position: fixed;
@@ -250,6 +267,19 @@
   .mast__cta:hover { background: color-mix(in srgb, var(--lf-red) 82%, var(--lf-ink)); }
 
   .mast__me { inline-size: 40px; block-size: 40px; font-size: 15px; }
+
+  .mast__signout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-inline: var(--lf-space-2);
+  }
+  .mast__signout svg { inline-size: 19px; block-size: 19px; stroke-width: 2.4; }
+  .mast__signout-label {
+    display: inline;
+    font-size: 15px;
+    font-weight: 500;
+  }
 
   .band,
   .tabs { display: none; }

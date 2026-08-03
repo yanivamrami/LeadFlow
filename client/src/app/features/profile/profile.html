@@ -23,6 +23,25 @@
       </button>
     </form>
 
+    <form novalidate (ngSubmit)="saveBusiness()">
+      <lf-text-field
+        name="businessName"
+        autocomplete="organization"
+        enterkeyhint="done"
+        [label]="copy.profile.businessLabel"
+        [help]="copy.profile.businessHelp"
+        [error]="businessProblem()"
+        [disabled]="savingBusiness()"
+        [(value)]="business"
+      />
+
+      <lf-form-error [message]="businessServerProblem()" />
+
+      <button type="submit" class="b" [disabled]="savingBusiness() || !businessChanged()">
+        {{ savingBusiness() ? copy.auth.working : copy.profile.save }}
+      </button>
+    </form>
+
     <div class="ro">
       <p class="ro__l lf-label">{{ copy.profile.emailLabel }}</p>
       <p class="ro__v">{{ email() }}</p>

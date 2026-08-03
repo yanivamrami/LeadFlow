@@ -123,6 +123,27 @@ export const CHECKLIST_WHY: Record<ChecklistItem, string> = {
   timeline: '"מתישהו" זה בדרך כלל לא. שווה לברר מתי.',
 };
 
+/**
+ * What each field on the lead form is *for*. The PRD asks for tooltips; the primary device
+ * has no hover, so this is the same tap-to-reveal line the checklist's "why ask?" uses —
+ * one open at a time, annotation rather than interruption.
+ *
+ * Every line says why the field earns its keep, not what to type in it. A label already
+ * says "טלפון"; a beginner does not know that leaving it empty is allowed, or that `מקור`
+ * is the field the insights screen reads back to them weeks later.
+ */
+export type LeadFieldKey = 'name' | 'company' | 'phone' | 'email' | 'source' | 'value' | 'status';
+
+export const LEAD_FIELD_HELP: Record<LeadFieldKey, string> = {
+  name: 'הדבר היחיד שחייב להיות. גם "הבחור מחנות הברזל" עובד — תתקנו כשתדעו.',
+  company: 'עוזר להבדיל בין שני אנשים עם אותו שם, ומזכיר לכם עם מי דיברתם.',
+  phone: 'לא חובה. אם יש רק טלפון או רק אימייל — זה מספיק כדי להתחיל.',
+  email: 'לא חובה. שימושי כשצריך לשלוח הצעה או סיכום שיחה.',
+  source: 'מאיפה הליד הגיע. זה השדה שמסך התובנות קורא אחר כך, כדי להראות לכם מאיפה באים הלקוחות שנסגרים.',
+  value: 'הערכה גסה מספיקה. משמש כדי לראות כמה כסף פתוח על השולחן — לא הבטחה.',
+  status: 'איפה הליד עומד עכשיו. אתם מזיזים אותו כשמשהו קורה, ולכל שלב יש הצעה מה לעשות אחריו.',
+};
+
 /** Tri-state answers. The label carries the meaning — colour never does it alone. */
 export const ANSWER_LABEL: Record<QualificationAnswer, string> = {
   yes: 'כן',
@@ -168,6 +189,13 @@ export const COPY = {
     remindersBadge: (n: number) =>
       n === 0 ? 'תזכורות' : n === 1 ? 'תזכורת אחת מחכה' : `${n} תזכורות מחכות`,
     skipToContent: 'דלג לתוכן',
+    /**
+     * Leaving is a masthead control, not something buried two screens deep: a user who
+     * cannot find the way out does not trust the way in. The label shows from 900px; below
+     * that the icon carries it and this string is the accessible name.
+     */
+    signOut: 'יציאה',
+    account: 'החשבון שלי',
   },
   sheet: {
     title: 'היום',
@@ -182,7 +210,11 @@ export const COPY = {
     explainer:
       'הדף הצהוב הוא היום שלך. כל מה שסגרתם נמחק בקו אדום, והדף מתקצר. דף ריק — סיימתם.',
     dismiss: 'הבנתי',
-    snooze: 'דחה ליום',
+    /**
+     * Was `דחה ליום` while the only reachable date was tomorrow. It now opens a chooser,
+     * so the label stops promising a specific amount of time.
+     */
+    snooze: 'דחה',
   },
   register: {
     title: 'כל הלידים',
@@ -206,6 +238,13 @@ export const COPY = {
     clearFilters: 'נקה סינון',
     demoFlag: 'לדוגמה',
     demoNote: 'נוצר אוטומטית כדי שיהיה במה להתנסות · אפשר למחוק',
+    /**
+     * A filter arriving from the insights screen. It names itself on the register, because
+     * a filter the user cannot see is one they will not think to remove — and then the
+     * board looks broken.
+     */
+    sourceFilter: (label: string) => `מקור: ${label}`,
+    clearSourceFilter: 'הצג את כל המקורות',
     noContact: 'ללא מגע',
     columns: {
       lead: 'ליד',
@@ -224,9 +263,11 @@ export const COPY = {
   },
   menu: {
     open: 'פתח ליד',
+    /** Opens the composer on the lead. It no longer writes anything by itself. */
     logActivity: 'רשום פעילות',
     moveTo: 'העבר לשלב',
-    snooze: 'דחה ליום',
+    /** Opens the day chooser in this same panel — see `sheet.snooze`. */
+    snooze: 'דחה',
     delete: 'מחק ליד',
   },
   nudge: {
@@ -428,6 +469,11 @@ export const COPY = {
       optional: 'לא חובה',
     },
 
+    /** The per-field help toggle. Same words as the checklist's, because it is the same act. */
+    fieldHelpShow: 'למה זה חשוב?',
+    fieldHelpHide: 'סגור',
+    fieldHelpAria: (field: string) => `למה ${field} חשוב?`,
+
     /** Name is the only requirement. An error names the fix, never just the rule. */
     nameRequired: 'צריך שם — בלעדיו אין איך לזהות את הליד.',
     emailInvalid: 'האימייל לא נראה תקין. בדקו את הכתובת.',
@@ -549,7 +595,15 @@ export const COPY = {
     title: 'פרופיל',
     identity: 'הפרטים שלכם',
     nameLabel: 'שם',
-    nameHelp: 'מופיע במסך העליון ומשמש כשם העסק.',
+    nameHelp: 'מופיע במסך העליון.',
+    /**
+     * The business name is the tenant's, not the user's. It was set once at signup and had
+     * no way back — a typo lived forever, and a renamed business had nowhere to say so.
+     */
+    businessLabel: 'שם העסק',
+    businessHelp: 'איך העסק נקרא. משמש כשיצטרפו אליכם אנשים נוספים.',
+    businessSaved: 'שם העסק עודכן',
+    businessRequired: 'צריך שם לעסק.',
     emailLabel: 'אימייל',
     emailNote: 'החלפת אימייל דורשת אישור בדואר, ואין עדיין שליחת מיילים. בקרוב.',
     save: 'שמירה',

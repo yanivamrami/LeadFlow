@@ -23,6 +23,8 @@ function stubSupabase() {
     displayName: signal(''),
     email: signal(''),
     signOut: () => Promise.resolve(),
+    signingOut: signal(false),
+    signOutAndLeave: () => Promise.resolve(),
   };
 }
 

@@ -3,13 +3,13 @@ import { Router } from '@angular/router';
 
 import { COPY } from '../../core/copy';
 import { NotifyService } from '../../core/notify.service';
-import { isAppError, SupabaseService } from '../../core/supabase.service';
+import { SupabaseService } from '../../core/supabase.service';
 import { TextField } from '../../shared/text-field';
 import { AuthPage } from './auth-page';
 import { CommitBand } from './commit-band';
 import { FormError } from '../../shared/form-error';
 import { PasteStrip, StripRow } from './paste-strip';
-import { matchError, passwordError } from './validate';
+import { matchError, passwordError, submitError } from './validate';
 
 type Phase = 'checking' | 'ready' | 'expired';
 
@@ -152,7 +152,7 @@ export class ResetNew {
       this.notify.succeeded(COPY.auth.newPassword.changed);
       await this.router.navigateByUrl('/');
     } catch (error) {
-      this.serverProblem.set(isAppError(error) ? error.message : COPY.errors.generic);
+      this.serverProblem.set(submitError(error, this.notify.online()));
     } finally {
       this.busy.set(false);
     }

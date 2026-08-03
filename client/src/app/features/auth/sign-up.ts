@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 
 import { COPY } from '../../core/copy';
-import { isAppError, SupabaseService } from '../../core/supabase.service';
+import { NotifyService } from '../../core/notify.service';
+import { SupabaseService } from '../../core/supabase.service';
 import { TextField } from '../../shared/text-field';
 import { AuthPage } from './auth-page';
 import { CommitBand } from './commit-band';
 import { FormError } from '../../shared/form-error';
 import { PasteStrip, StripRow } from './paste-strip';
-import { emailError, nameError, passwordError } from './validate';
+import { emailError, nameError, passwordError, submitError } from './validate';
 
 /**
  * 6.2 — sign up. Three fields, and one yellow field that says what pressing the button
@@ -102,6 +103,7 @@ import { emailError, nameError, passwordError } from './validate';
 })
 export class SignUp {
   private readonly supabase = inject(SupabaseService);
+  private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
 
   protected readonly copy = COPY;
@@ -148,7 +150,7 @@ export class SignUp {
         this.serverProblem.set(COPY.errors.emailNotConfirmed);
       }
     } catch (error) {
-      this.serverProblem.set(isAppError(error) ? error.message : COPY.errors.generic);
+      this.serverProblem.set(submitError(error, this.notify.online()));
     } finally {
       this.busy.set(false);
     }

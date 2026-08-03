@@ -1,6 +1,7 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Router } from '@angular/router';
 
-import { COPY, STATUS_GUIDANCE, STATUS_LABEL, daysBetween } from './copy';
+import { COPY, STATUS_GUIDANCE, STATUS_LABEL, daysBetween, formatDue } from './copy';
 import {
   Activity,
   ActivityType,
@@ -12,6 +13,7 @@ import {
   Lead,
   LeadDraft,
   LeadSaveExtras,
+  LeadSource,
   LeadStatus,
   OPEN_ITEMS_CAP,
   OpenItem,
@@ -24,6 +26,15 @@ import { NotifyService } from './notify.service';
 import { AppError, SupabaseService, costsData, isAppError } from './supabase.service';
 
 export type DashboardView = 'list' | 'board';
+
+/**
+ * Activity types that count as having actually reached the person, and therefore close an
+ * open follow-up. `note` is deliberately absent: "he asked me to call back next week" is a
+ * record of intent, not of contact. Mirrors the gate inside the `save_lead` RPC — if one
+ * side changes, the other must too, or the same act clears the reminder from one screen
+ * and leaves it open from another.
+ */
+const CONTACT_TYPES: readonly ActivityType[] = ['call', 'email', 'meeting'];
 
 /**
  * The row shape PostgREST returns for the dashboard query. The `leads` table carries
@@ -69,6 +80,8 @@ const SELECT = `
 export class LeadsStore {
   private readonly supabase = inject(SupabaseService);
   private readonly notify = inject(NotifyService);
+  /** Only for the checklist nudge's action, which is a navigation and nothing else. */
+  private readonly router = inject(Router);
 
   private readonly _leads = signal<Lead[]>([]);
   private readonly _now = signal(new Date());
@@ -80,6 +93,8 @@ export class LeadsStore {
   readonly search = signal('');
   readonly sort = signal<SortKey>('urgency');
   readonly statusFilter = signal<LeadStatus | 'all'>('all');
+  /** Arrives from an insights row (`?source=`); validated by the caller before it lands here. */
+  readonly sourceFilter = signal<LeadSource | 'all'>('all');
   readonly view = signal<DashboardView>('list');
   readonly sheetExpanded = signal(false);
   readonly explainerDismissed = signal(false);
@@ -97,14 +112,24 @@ export class LeadsStore {
   readonly loadFailed = this._loadFailed.asReadonly();
   readonly tenantId = this._tenantId.asReadonly();
 
-  readonly total = computed(() => this._leads().length);
+  /**
+   * Leads narrowed by source alone — the shared base for `total`, `countByStatus` and
+   * `visibleLeads`, so a source filter arriving from insights stays consistent across
+   * every figure the filter row shows, not just the list underneath it.
+   */
+  private readonly sourceScopedLeads = computed(() => {
+    const source = this.sourceFilter();
+    return source === 'all' ? this._leads() : this._leads().filter((l) => l.source === source);
+  });
+
+  readonly total = computed(() => this.sourceScopedLeads().length);
 
   readonly countByStatus = computed(() => {
     const counts = Object.fromEntries(STAGE_ORDER.map((s) => [s, 0])) as Record<
       LeadStatus,
       number
     >;
-    for (const lead of this._leads()) counts[lead.status]++;
+    for (const lead of this.sourceScopedLeads()) counts[lead.status]++;
     return counts;
   });
 
@@ -142,7 +167,7 @@ export class LeadsStore {
     const key = this.sort();
     const now = this._now();
 
-    return this._leads()
+    return this.sourceScopedLeads()
       .filter((lead) => status === 'all' || lead.status === status)
       .filter((lead) => {
         if (!term) return true;
@@ -177,7 +202,10 @@ export class LeadsStore {
   }
 
   readonly isFiltered = computed(
-    () => this.statusFilter() !== 'all' || this.search().trim().length > 0,
+    () =>
+      this.statusFilter() !== 'all' ||
+      this.sourceFilter() !== 'all' ||
+      this.search().trim().length > 0,
   );
 
   readonly columns = computed(() =>
@@ -186,6 +214,31 @@ export class LeadsStore {
       leads: this.visibleLeads().filter((lead) => lead.status === status),
     })),
   );
+
+  constructor() {
+    // Sign-out must empty this store. It is a root singleton, so otherwise the next user
+    // to sign in on this browser inherits the previous one's pipeline on screen, and the
+    // cached tenant id sends their first query to the wrong tenant. Skips epoch 0, which
+    // is the initial value and not a sign-out.
+    effect(() => {
+      if (this.supabase.sessionEpoch() > 0) untracked(() => this.reset());
+    });
+  }
+
+  /** Back to the state a fresh load starts from. Filters and view preferences go too. */
+  reset(): void {
+    this._leads.set([]);
+    this._tenantId.set(null);
+    this._loaded.set(false);
+    this._loadFailed.set(false);
+    this._loading.set(false);
+    this.search.set('');
+    this.statusFilter.set('all');
+    this.sourceFilter.set('all');
+    this.sort.set('urgency');
+    this.sheetExpanded.set(false);
+    this.announcement.set('');
+  }
 
   /* ---------- loading ---------- */
 
@@ -331,6 +384,11 @@ export class LeadsStore {
     this.statusFilter.set(status);
   }
 
+  /** Invalid or absent values are the caller's job to catch; `'all'` is always safe here. */
+  setSourceFilter(source: LeadSource | 'all'): void {
+    this.sourceFilter.set(source);
+  }
+
   setSort(key: SortKey): void {
     this.sort.set(key);
   }
@@ -342,6 +400,7 @@ export class LeadsStore {
   clearFilters(): void {
     this.search.set('');
     this.statusFilter.set('all');
+    this.sourceFilter.set('all');
   }
 
   toggleSheet(): void {
@@ -372,7 +431,16 @@ export class LeadsStore {
         this.announcement.set(COPY.a11y.stageChanged(lead.name, statusLabel));
         const open = this.openChecklistCount(lead);
         if (open > 0 && status !== 'won' && status !== 'lost') {
-          this.notify.nudge(COPY.nudge.checklist(open), COPY.nudge.later);
+          // The action opens the lead at its checklist. It never answers anything — that is
+          // why it waited for the checklist to have a screen rather than shipping as a
+          // one-tap "mark done", which would have been a lie about the user's own data.
+          this.notify.nudge(COPY.nudge.checklist(open), COPY.nudge.later, {
+            label: COPY.nudge.fillNow,
+            run: () =>
+              void this.router.navigate(['/lead', leadId], {
+                queryParams: { at: 'checklist' },
+              }),
+          });
         } else {
           this.notify.info(STATUS_GUIDANCE[status]);
         }
@@ -380,9 +448,13 @@ export class LeadsStore {
     );
   }
 
-  /** Logging contact writes an activity; last-contact is derived from it on reload. */
-  /** Returns whether it landed, so a caller can show a busy state and wait for it. */
-  logActivity(leadId: string, note: string): Promise<boolean> {
+  /**
+   * Logs contact. `type` is the truthful record; `body` is optional so a caller can log
+   * that something concrete happened (a call) without inventing a sentence to justify
+   * it — the timestamp and the type carry the fact. Last-contact is derived from this
+   * on reload. Returns whether it landed, so a caller can show a busy state and wait.
+   */
+  logActivity(leadId: string, type: ActivityType, body: string | null = null): Promise<boolean> {
     const lead = this.byId(leadId);
     if (!lead) return Promise.resolve(false);
 
@@ -394,21 +466,32 @@ export class LeadsStore {
           this.supabase.client.from('activities').insert({
             lead_id: leadId,
             tenant_id: tenantId,
-            type: 'note',
-            body: note,
+            type,
+            body,
           }) as never,
         );
-        await this.closeOpenReminders(leadId);
+        // Only real contact clears a follow-up. `save_lead` applies the same three types
+        // to the note it writes, so the two entry points cannot disagree about what
+        // "I dealt with this" means — writing an internal note is not dealing with it.
+        if (CONTACT_TYPES.includes(type)) await this.closeOpenReminders(leadId);
       },
       () => this.notify.succeeded(COPY.notify.activityLogged),
     );
   }
 
-  /** Pushes the follow-up to tomorrow. Creates one if the lead has none open. */
-  snooze(leadId: string): Promise<boolean> {
+  /**
+   * Moves the follow-up to the chosen day. Creates one if the lead has none open.
+   * `due`'s `min` on the picker's input is only a hint, so a past day is refused here
+   * too — the same rule RemindersStore.reschedule already enforces for its own picker.
+   */
+  snooze(leadId: string, due: Date): Promise<boolean> {
     const lead = this.byId(leadId);
     if (!lead) return Promise.resolve(false);
-    const tomorrow = new Date(this._now().getTime() + 86_400_000).toISOString();
+    if (daysBetween(due, this._now()) > 0) {
+      this.notify.failed(COPY.reminders.pastDate);
+      return Promise.resolve(false);
+    }
+    const dueIso = due.toISOString();
 
     return this.commit(
       lead.name,
@@ -427,25 +510,31 @@ export class LeadsStore {
           await this.supabase.run(
             this.supabase.client
               .from('reminders')
-              .update({ due_at: tomorrow })
+              .update({ due_at: dueIso })
               .eq('id', open[0].id) as never,
           );
         } else {
-          await this.supabase.run(
-            this.supabase.client.from('reminders').insert({
-              lead_id: leadId,
-              tenant_id: tenantId,
-              title: COPY.notify.snoozed,
-              due_at: tomorrow,
-              // Every reminder records who scheduled it, on all three write paths — this
-              // one, RemindersStore.create, and save_lead's auth.uid(). It cannot be
-              // backfilled later without inventing history.
-              assigned_to: this.supabase.user()?.id ?? null,
-            }) as never,
-          );
+          // The generated types have `title` as non-nullable on insert, though the column
+          // allows null — same widening RemindersStore.create uses, for the same reason.
+          // No title invents no reason: the day picker lands on any date the user chose,
+          // not always tomorrow, so a fixed "נדחה למחר" would misstate every other day.
+          // The reminders list falls back to its own generic label (RemindersStore.titleFor)
+          // when title is null.
+          const payload = {
+            lead_id: leadId,
+            tenant_id: tenantId,
+            title: null,
+            due_at: dueIso,
+            // Every reminder records who scheduled it, on all three write paths — this
+            // one, RemindersStore.create, and save_lead's auth.uid(). It cannot be
+            // backfilled later without inventing history.
+            assigned_to: this.supabase.user()?.id ?? null,
+          } as never;
+
+          await this.supabase.run(this.supabase.client.from('reminders').insert(payload) as never);
         }
       },
-      () => this.notify.succeeded(COPY.notify.snoozed),
+      () => this.notify.succeeded(COPY.notify.reminderMoved(formatDue(due, this._now()))),
     );
   }
 

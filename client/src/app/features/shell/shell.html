@@ -60,6 +60,18 @@
   >
     <span aria-hidden="true">{{ monogram() }}</span>
   </a>
+
+  <button
+    type="button"
+    class="mast__signout lf-hit"
+    [disabled]="signingOut()"
+    [attr.aria-label]="copy.shell.signOut"
+    [attr.title]="copy.shell.signOut"
+    (click)="signOut()"
+  >
+    <svg lucideLogOut aria-hidden="true"></svg>
+    <span class="mast__signout-label" aria-hidden="true">{{ copy.shell.signOut }}</span>
+  </button>
 </header>
 
 <lf-offline-banner />

@@ -142,6 +142,24 @@
 .b--bare { border-color: transparent; font-weight: 400; padding-inline: var(--lf-space-2); }
 .b--bare:hover { background: transparent; color: var(--lf-fixed-red); }
 
+/* the row grows to hold its own picker; nothing here may cover the sheet. lf-due-picker
+   is themed for a paper ground, so the flipping tokens it reads (--lf-ink and friends)
+   are remapped here to the sheet's own fixed ink in both themes — the same reasoning
+   behind every other rule in this file, applied through the custom properties the
+   picker already consumes rather than by touching its component. */
+.item__picker {
+  display: block;
+  margin-block-start: var(--lf-space-2);
+  --lf-ink: var(--lf-fixed-ink);
+  --lf-on-ink: var(--lf-day);
+  --lf-surface: var(--lf-day);
+  --lf-ground: var(--lf-day);
+  --lf-muted: color-mix(in srgb, var(--lf-fixed-ink) 65%, transparent);
+  --lf-red: var(--lf-fixed-red);
+  --lf-on-red: var(--lf-day);
+  --lf-red-text: var(--lf-fixed-red);
+}
+
 .sheet__more {
   display: flex;
   align-items: center;

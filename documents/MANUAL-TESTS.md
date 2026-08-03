@@ -96,8 +96,10 @@ Tap the per-question "why ask?" on question 1, then on question 3.
 second "add note" button. The note appears in the timeline with its type. No edit and no delete
 on notes: they are append-only by design.
 
-**Known gap (G-26):** an open reminder on this lead is **not** cleared by saving a note here,
-even though the day sheet's action does clear it. Expected-to-be-wrong; confirm and move on.
+**Follow-up behaviour (G-26, applied).** Saving a note typed `שיחה` / `אימייל` / `פגישה` clears
+the lead's open follow-up; a plain `הערה` deliberately does not, because recording an intention
+is not the same as having reached someone. Both entry points agree — the day sheet's one-tap
+action uses the same three types.
 
 ### S8 — Close a lead as won
 1. Open a lead, change status to `נסגר בהצלחה`.
@@ -130,7 +132,7 @@ Use a throwaway lead.
 many activities go with it**. Cancel is always available. Confirm deletes and returns to the
 board.
 
-### S12 — Field tooltips (expected to FAIL — G-23)
+### S12 — ~~Field tooltips (expected to FAIL)~~ — now built, see S21
 Look for a per-field explanation on the lead form.
 
 **Expected today:** labels and one help line only. The PRD's per-field tooltips are not built.
@@ -160,6 +162,26 @@ that lead's timeline (written by a database trigger, not the form). If the lead 
 checklist questions, a dismissible nudge appears counting them, always with `לא עכשיו`; it
 informs only — it does not offer to mark them answered. If the checklist is complete, you get the
 stage's guidance line instead. **The move is never blocked.**
+
+### S16 — Checklist nudge takes you to the questions
+1. Pick a lead with unanswered checklist questions. Move it a stage (drag, or the card/row menu).
+2. The nudge appears in the toast stack, counting the open questions. It has **two** buttons.
+3. Tap `מלא עכשיו`.
+
+**Expected:** you land on that lead, **scrolled to the checklist**, with the questions on screen —
+not at the top of the sheet. **Nothing is answered and nothing is pre-selected.** The nudge is
+gone. Tapping `לא עכשיו` instead just dismisses it and the stage move stands either way.
+
+**Also check:**
+- Keyboard: Tab to `מלא עכשיו`, press Enter. Same landing, and focus is **on the checklist
+  section** — the next Tab reaches the first answer segment, so no keystroke can answer a question
+  by accident.
+- OS reduce-motion on: the jump is instant rather than a smooth scroll.
+- The address bar reads `/lead/<id>?at=checklist`. Reloading that URL lands the same way.
+- Move a lead whose checklist is **complete**: you get the stage's guidance line instead, with no
+  nudge at all.
+- Move a lead to `נסגר בהצלחה` / `לא יצא לפועל` with questions open: no nudge — closing is not the
+  moment to qualify.
 
 ---
 
@@ -472,3 +494,57 @@ One line each, in a list you hand back:
 
 Include: scenario id, what you expected, what happened, viewport, and anything in the console.
 Do not fix anything mid-run — a half-fixed app makes the remaining scenarios untrustworthy.
+### S17 — Logging contact from the menus no longer writes junk
+1. Open a lead's row menu (list view) → `רשום פעילות`.
+2. Then a board card menu → same item.
+3. Then, on the yellow day sheet, an item whose action reads `חייג`.
+4. Then a day-sheet item whose action reads `רשום פעילות`.
+
+**Expected:** 1, 2 and 4 open the lead with the **composer focused** — you type what happened,
+then save. Nothing is written by the tap itself. 3 writes immediately and the timeline shows a
+**call with no body text**: the type and the timestamp are the record. **No timeline entry
+should ever read `רשום פעילות` or `חייג`** — that was the defect.
+
+### S18 — `דחה` opens a day chooser everywhere
+1. Day sheet → `דחה` on an item.
+2. Register row menu → `דחה`. Then a board card menu → `דחה`.
+
+**Expected:** on the day sheet the chooser appears **inline in the row**, pushing the rest of the
+sheet down — it must never cover the yellow field. In the kebab, the **same panel** becomes the
+chooser; no second panel stacks on top. `מחר` · `בעוד 3 ימים` · `בעוד שבוע` · `תאריך` · `ביטול`.
+The success toast **names the date it landed on**, not "tomorrow". Picking a past date via the
+date input is refused. `Escape` in the kebab goes chooser → menu → closed, one step at a time,
+and focus returns to the kebab button. Only one row's chooser is open at a time.
+
+### S19 — Source filter from insights
+1. `/insights` → click a source name in the first column of the source table.
+
+**Expected:** the board shows **only** that source. A removable chip names the filter, the stage
+chip counts and the total reflect it, and clearing the chip also drops `?source=` from the URL so
+a refresh does not resurrect it. Try `/?source=nonsense` → everything shows, never an empty
+board. Switch to board view while filtered: **there is no chip there** — known gap G-40.
+
+### S20 — Logout, and what it leaves behind
+1. Find `יציאה` in the masthead (label at desktop width, icon-only on a phone). Sign out.
+2. Sign back in as **a different account** if you have one, or the same one.
+
+**Expected:** you land on sign-in with a confirmation toast. Pressing Back must not show a board
+with data. After signing in, the board must show **only the new session's leads** — no flash of
+the previous account's pipeline, and the reminders badge must not carry the old count. The
+profile screen's `יציאה` must behave identically; both call one implementation.
+
+### S21 — Per-field help on the lead form
+1. `/lead/new` → tap `למה זה חשוב?` beside `שם`, then beside `מקור`.
+
+**Expected:** one line appears beneath the field; opening the second closes the first. Nothing is
+expanded on arrival. With a screen reader, focusing the input **announces the help line** (not
+only pressing the toggle). Every toggle is a ≥44×44 target. This replaces S12, which expected
+this to be missing.
+
+### S22 — Business name
+`/profile` → change the business name, save, reload.
+
+**Expected:** it persists, with its own confirmation. Only the tenant owner may change it; a
+non-owner sees a readable Hebrew refusal, not a Postgres error.
+
+

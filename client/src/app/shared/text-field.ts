@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  model,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { LucideEye, LucideEyeOff } from '@lucide/angular';
@@ -22,7 +30,21 @@ let seq = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, LucideEye, LucideEyeOff],
   template: `
-    <label class="lf-label" [attr.for]="id">{{ label() }}</label>
+    <div class="lf-row">
+      <label class="lf-label" [attr.for]="id">{{ label() }}</label>
+      @if (fieldHelp(); as text) {
+        <button
+          type="button"
+          class="why"
+          [attr.aria-expanded]="fieldHelpOpen()"
+          [attr.aria-controls]="id + '-why'"
+          [attr.aria-label]="fieldHelpAria()"
+          (click)="fieldHelpToggled.emit()"
+        >
+          {{ fieldHelpOpen() ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
+        </button>
+      }
+    </div>
 
     <div class="box" [class.box--bad]="!!error()">
       <input
@@ -59,6 +81,11 @@ let seq = 0;
       }
     </div>
 
+    @if (fieldHelp(); as text) {
+      @if (fieldHelpOpen()) {
+        <p class="why-text" [id]="id + '-why'">{{ text }}</p>
+      }
+    }
     @if (help(); as text) {
       <p class="help" [id]="id + '-help'">{{ text }}</p>
     }
@@ -75,9 +102,40 @@ let seq = 0;
     /* borders collapse between neighbours — one ruled block, not stacked boxes */
     :host(:not(:first-of-type)) { margin-block-start: -2px; }
 
+    .lf-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--lf-space-2);
+      margin-block-end: 6px;
+    }
+
     label {
       display: block;
-      margin-block-end: 6px;
+      color: var(--lf-muted);
+    }
+
+    /* the per-field "why?" toggle — same act as the checklist's, so the same look.
+       Padded to a full touch target even though the visible text is small. */
+    .why {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      min-block-size: var(--lf-touch);
+      padding-inline: 4px;
+      border: 0;
+      background: transparent;
+      color: var(--lf-red-text, var(--lf-red));
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .why-text {
+      margin: 8px 0 0;
+      padding-inline-start: var(--lf-space-3);
+      border-inline-start: 2px solid var(--lf-red);
+      font-size: var(--lf-size-small);
+      line-height: 1.45;
       color: var(--lf-muted);
     }
 
@@ -151,6 +209,16 @@ export class TextField {
   readonly error = input<string | null>(null);
   readonly disabled = input(false);
 
+  /**
+   * The per-field "why is this here?" line — the checklist's "why ask?" mechanic, reused
+   * for form fields. Absent `fieldHelp`, no trigger renders at all. Open state and its
+   * toggle live with the caller (one-at-a-time across the whole form), not in this field.
+   */
+  readonly fieldHelp = input<string | null>(null);
+  readonly fieldHelpOpen = input(false);
+  readonly fieldHelpAria = input<string | null>(null);
+  readonly fieldHelpToggled = output<void>();
+
   readonly value = model<string>('');
 
   /** Set on first blur, so validation never scolds someone mid-typing. */
@@ -169,6 +237,9 @@ export class TextField {
 
   protected readonly describedBy = computed(() => {
     const parts: string[] = [];
+    // Tied to the input from the moment it opens, not only when the toggle is pressed —
+    // so a screen reader announces it the instant the field takes focus.
+    if (this.fieldHelp() && this.fieldHelpOpen()) parts.push(`${this.id}-why`);
     if (this.help()) parts.push(`${this.id}-help`);
     if (this.error()) parts.push(`${this.id}-bad`);
     return parts.length ? parts.join(' ') : null;

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { APP_NAME, APP_SUB } from '../../core/copy';
+import { OfflineBanner } from '../../shared/offline-banner';
 
 /**
  * The signed-out screen: one bill, posted.
@@ -18,11 +19,14 @@ import { APP_NAME, APP_SUB } from '../../core/copy';
 @Component({
   selector: 'lf-auth-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [OfflineBanner],
   template: `
     <div class="bill">
       <header class="head">
         <p class="brand">{{ appName }}<i>{{ appSub }}</i></p>
       </header>
+
+      <lf-offline-banner />
 
       <div class="body">
         <h1 class="title">{{ title() }}</h1>

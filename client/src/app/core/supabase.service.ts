@@ -1,4 +1,5 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   AuthError,
   PostgrestError,
@@ -10,6 +11,7 @@ import {
 import { environment } from '../../environments/environment';
 import { COPY } from './copy';
 import { Database } from './database.types';
+import { NotifyService } from './notify.service';
 
 /**
  * The only error shape the rest of the app ever sees. Raw PostgREST and GoTrue
@@ -106,9 +108,15 @@ export function costsData(error: AppError, wasWrite: boolean): boolean {
 export class SupabaseService {
   readonly client: SupabaseClient<Database>;
 
+  private readonly router = inject(Router);
+  private readonly notify = inject(NotifyService);
+
   private readonly _session = signal<Session | null>(null);
   private readonly _ready = signal(false);
   private readonly _recovery = signal(false);
+  private readonly _tenantId = signal<string | null>(null);
+  private readonly _signingOut = signal(false);
+  private readonly _sessionEpoch = signal(0);
 
   readonly session = this._session.asReadonly();
   /** False until the stored session has been restored — route guards must wait on it. */
@@ -133,6 +141,22 @@ export class SupabaseService {
   });
 
   readonly email = computed(() => this.user()?.email ?? '');
+
+  /** True while a sign-out is in flight, from either door — the masthead or the profile. */
+  readonly signingOut = this._signingOut.asReadonly();
+
+  /**
+   * Increments on every sign-out. The stores are root singletons, so without this they
+   * keep the previous user's leads, reminders and stats in memory after the session ends —
+   * and the cached `tenantId` means the next sign-in scopes its first query to the
+   * *previous* tenant. RLS returns no rows rather than another tenant's data, so this is
+   * not a leak, but the board would show a stale or wrongly-empty pipeline.
+   *
+   * Exposed as a counter the stores watch, rather than this service calling into them:
+   * the stores depend on this service, so the reverse dependency would be a cycle. Each
+   * store owns its own reset and only the ones that were actually constructed react.
+   */
+  readonly sessionEpoch = this._sessionEpoch.asReadonly();
 
   /**
    * Resolves once the stored session has been restored. Route guards await this instead
@@ -168,7 +192,10 @@ export class SupabaseService {
       this.markReady();
 
       if (event === 'PASSWORD_RECOVERY') this._recovery.set(true);
-      if (event === 'SIGNED_OUT') this._recovery.set(false);
+      if (event === 'SIGNED_OUT') {
+        this._recovery.set(false);
+        this._sessionEpoch.update((n) => n + 1);
+      }
     });
   }
 
@@ -224,6 +251,27 @@ export class SupabaseService {
     if (error) throw this.fromAuth(error);
   }
 
+  /**
+   * The one sign-out flow — busy state, the call itself, the redirect and the toast —
+   * shared by the masthead's icon-only control and the profile screen's labelled one.
+   * Two entry points, one behaviour, so they cannot drift apart: a failure here is a
+   * recoverable toast, never the critical popup, because nothing the user owns is at
+   * risk when a sign-out fails.
+   */
+  async signOutAndLeave(): Promise<void> {
+    if (this._signingOut()) return;
+    this._signingOut.set(true);
+    try {
+      await this.signOut();
+      await this.router.navigateByUrl('/auth/sign-in');
+      this.notify.succeeded(COPY.profile.signedOut);
+    } catch (error) {
+      this.notify.failed(isAppError(error) ? error.message : COPY.errors.generic);
+    } finally {
+      this._signingOut.set(false);
+    }
+  }
+
   async requestPasswordReset(email: string): Promise<void> {
     const redirectTo =
       typeof window === 'undefined' ? undefined : `${window.location.origin}/auth/reset/new`;
@@ -277,6 +325,44 @@ export class SupabaseService {
 
     await this.run(
       this.client.from('profiles').update({ display_name: displayName }).eq('id', user.id) as never,
+    );
+  }
+
+  /**
+   * The tenant the signed-in member belongs to. `memberships` is the only table that
+   * names it — the same resolution LeadsStore does for the pipeline — read directly
+   * here rather than through that store, which is a different layer and would reach
+   * outside what a profile screen needs.
+   */
+  async resolveTenantId(): Promise<string | null> {
+    const known = this._tenantId();
+    if (known) return known;
+
+    const rows = await this.run<{ tenant_id: string }[]>(
+      this.client.from('memberships').select('tenant_id').limit(1) as never,
+    );
+    const tenantId = rows?.[0]?.tenant_id ?? null;
+    this._tenantId.set(tenantId);
+    return tenantId;
+  }
+
+  /** The business name as it stands today, for the profile screen to show before editing. */
+  async getTenantName(tenantId: string): Promise<string> {
+    const rows = await this.run<{ name: string }[]>(
+      this.client.from('tenants').select('name').eq('id', tenantId).limit(1) as never,
+    );
+    return rows?.[0]?.name ?? '';
+  }
+
+  /**
+   * Renames the tenant — the business name, seeded once by the signup trigger and never
+   * writable anywhere since. `tenants_update` is RLS'd to the owner only
+   * (`private.is_tenant_owner`), so a member who is not the owner gets `42501`, which
+   * `fromPostgrest` already maps to `errors.notAllowed` — no new error mapping needed.
+   */
+  async updateTenantName(tenantId: string, name: string): Promise<void> {
+    await this.run(
+      this.client.from('tenants').update({ name }).eq('id', tenantId) as never,
     );
   }
 

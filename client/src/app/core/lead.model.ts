@@ -10,6 +10,15 @@ export type LeadStatus =
 
 export type LeadSource = 'website' | 'referral' | 'social_media' | 'phone' | 'other';
 
+/** Every value the union permits, for validating untrusted input (e.g. `?source=`). */
+export const LEAD_SOURCES: readonly LeadSource[] = [
+  'website',
+  'referral',
+  'social_media',
+  'phone',
+  'other',
+];
+
 /**
  * Activity kinds. `status_changed` is written only by the DB trigger — the client
  * never sends it, which is what makes the timeline's system entries trustworthy.

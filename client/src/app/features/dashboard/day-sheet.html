@@ -58,12 +58,22 @@
         <button
           type="button"
           class="b b--bare"
+          [attr.aria-expanded]="openPicker() === item.lead.id"
           [disabled]="busy(item.lead)"
-          (click)="snooze(item.lead)"
+          (click)="togglePicker(item.lead.id)"
         >
           {{ copy.sheet.snooze }}
         </button>
       </div>
+
+      @if (openPicker() === item.lead.id) {
+        <lf-due-picker
+          class="item__picker"
+          [busy]="busy(item.lead)"
+          (picked)="pickSnooze(item.lead, $event)"
+          (cancel)="togglePicker(item.lead.id)"
+        />
+      }
     </article>
   }
 

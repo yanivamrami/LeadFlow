@@ -3,16 +3,19 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterOutlet } from '@angular/router';
+import { ActivatedRoute, RouterOutlet } from '@angular/router';
+import { map } from 'rxjs';
 
 import { LucideColumns3, LucideList, LucideSearch } from '@lucide/angular';
 
 import { COPY, STATUS_LABEL, STATUS_SHORT } from '../../core/copy';
-import { LeadStatus, STAGE_ORDER } from '../../core/lead.model';
+import { LEAD_SOURCES, LeadSource, LeadStatus, STAGE_ORDER } from '../../core/lead.model';
 import { LeadsStore } from '../../core/leads.store';
 import { Board } from './board';
 import { DaySheet } from './day-sheet';
@@ -39,6 +42,7 @@ const BOARD_MIN_WIDTH = 768;
 })
 export class Dashboard {
   private readonly store = inject(LeadsStore);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly copy = COPY;
   protected readonly stages = STAGE_ORDER;
@@ -61,6 +65,17 @@ export class Dashboard {
   protected readonly loaded = this.store.loaded;
   protected readonly loadFailed = this.store.loadFailed;
 
+  /**
+   * `?source=` arrives from an insights row, and the router reuses this component
+   * across a query-param-only navigation — so this reads the param as a stream, not a
+   * constructor-time snapshot, or clicking a second source from insights would do
+   * nothing the second time.
+   */
+  private readonly sourceParam = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('source'))),
+    { initialValue: this.route.snapshot.queryParamMap.get('source') },
+  );
+
   protected retry(): void {
     void this.store.load();
   }
@@ -68,12 +83,25 @@ export class Dashboard {
   constructor() {
     void this.store.load();
 
+    effect(() => {
+      this.store.setSourceFilter(this.validateSource(this.sourceParam()));
+    });
+
     if (typeof window !== 'undefined') {
       const query = window.matchMedia(`(min-width: ${BOARD_MIN_WIDTH}px)`);
       const onChange = () => this.wide.set(query.matches);
       query.addEventListener('change', onChange);
       inject(DestroyRef).onDestroy(() => query.removeEventListener('change', onChange));
     }
+  }
+
+  /**
+   * Never an empty board: an unrecognised or absent source falls back to showing
+   * everything, the same precedent `safeReturnUrl` set for untrusted query input.
+   */
+  private validateSource(value: string | null): LeadSource | 'all' {
+    if (!value) return 'all';
+    return (LEAD_SOURCES as readonly string[]).includes(value) ? (value as LeadSource) : 'all';
   }
 
   protected setSearch(term: string): void {

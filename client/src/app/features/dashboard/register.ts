@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import {
   COPY,
@@ -28,6 +28,8 @@ import { StageTag } from '../../shared/stage-tag';
 })
 export class Register {
   private readonly store = inject(LeadsStore);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly copy = COPY;
   protected readonly sourceLabel = SOURCE_LABEL;
@@ -43,6 +45,15 @@ export class Register {
   protected readonly sort = this.store.sort;
   /** Placeholder rows while the first read is in flight. */
   protected readonly skeletonRows = [0, 1, 2, 3, 4, 5];
+
+  /**
+   * A filter the user cannot see is one they will not think to remove — this names it,
+   * so it only renders once the source actually is filtered.
+   */
+  protected readonly sourceFilterLabel = computed(() => {
+    const source = this.store.sourceFilter();
+    return source === 'all' ? null : this.sourceLabel[source];
+  });
 
   protected setSort(value: string): void {
     this.store.setSort(value as SortKey);
@@ -64,12 +75,17 @@ export class Register {
     this.store.moveToStage(lead.id, status, STATUS_LABEL[status]);
   }
 
+  /**
+   * The row's activity is a record, not a label — writing the button's own words as
+   * the body would leave the timeline full of instructions to the user rather than
+   * facts about the lead. So this opens the composer instead of writing anything.
+   */
   protected log(lead: Lead): void {
-    this.store.logActivity(lead.id, COPY.menu.logActivity);
+    void this.router.navigate(['/lead', lead.id], { queryParams: { at: 'note' } });
   }
 
-  protected snooze(lead: Lead): void {
-    this.store.snooze(lead.id);
+  protected snooze(lead: Lead, due: Date): void {
+    void this.store.snooze(lead.id, due);
   }
 
   protected remove(lead: Lead): void {
@@ -78,5 +94,21 @@ export class Register {
 
   protected clearFilters(): void {
     this.store.clearFilters();
+    this.clearSourceParam();
+  }
+
+  /** Clears only the source filter, leaving search and status untouched. */
+  protected clearSource(): void {
+    this.store.setSourceFilter('all');
+    this.clearSourceParam();
+  }
+
+  /** Otherwise a page refresh would re-read the same `?source=` and silently reapply it. */
+  private clearSourceParam(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { source: null },
+      queryParamsHandling: 'merge',
+    });
   }
 }

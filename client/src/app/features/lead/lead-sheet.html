@@ -40,6 +40,10 @@
         [error]="nameError()"
         [disabled]="saving()"
         enterkeyhint="next"
+        [fieldHelp]="fieldHelp.name"
+        [fieldHelpOpen]="fieldHelpOpen() === 'name'"
+        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.name)"
+        (fieldHelpToggled)="toggleFieldHelp('name')"
       />
       <lf-text-field
         [label]="copy.lead.fields.company"
@@ -47,6 +51,10 @@
         [(value)]="company"
         [help]="copy.lead.fields.optional"
         [disabled]="saving()"
+        [fieldHelp]="fieldHelp.company"
+        [fieldHelpOpen]="fieldHelpOpen() === 'company'"
+        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.company)"
+        (fieldHelpToggled)="toggleFieldHelp('company')"
       />
       <lf-text-field
         [label]="copy.lead.fields.phone"
@@ -56,6 +64,10 @@
         inputmode="tel"
         [help]="copy.lead.fields.optional"
         [disabled]="saving()"
+        [fieldHelp]="fieldHelp.phone"
+        [fieldHelpOpen]="fieldHelpOpen() === 'phone'"
+        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.phone)"
+        (fieldHelpToggled)="toggleFieldHelp('phone')"
       />
       <lf-text-field
         [label]="copy.lead.fields.email"
@@ -66,36 +78,74 @@
         [error]="emailError()"
         [help]="copy.lead.fields.optional"
         [disabled]="saving()"
+        [fieldHelp]="fieldHelp.email"
+        [fieldHelpOpen]="fieldHelpOpen() === 'email'"
+        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.email)"
+        (fieldHelpToggled)="toggleFieldHelp('email')"
       />
 
       <div class="pair">
-        <label class="pick">
-          <span class="pick__label lf-label">{{ copy.lead.fields.status }}</span>
+        <div class="pick">
+          <div class="pick__row">
+            <label class="pick__label lf-label" for="status-select">{{ copy.lead.fields.status }}</label>
+            <button
+              type="button"
+              class="why"
+              [attr.aria-expanded]="fieldHelpOpen() === 'status'"
+              aria-controls="status-why"
+              [attr.aria-label]="copy.lead.fieldHelpAria(copy.lead.fields.status)"
+              (click)="toggleFieldHelp('status')"
+            >
+              {{ fieldHelpOpen() === 'status' ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
+            </button>
+          </div>
           <select
+            id="status-select"
             class="pick__select"
             [value]="status()"
             [disabled]="saving()"
+            [attr.aria-describedby]="fieldHelpOpen() === 'status' ? 'status-why' : null"
             (change)="setStatus($any($event.target).value)"
           >
             @for (stage of stages; track stage) {
               <option [value]="stage">{{ statusLabel[stage] }}</option>
             }
           </select>
-        </label>
+          @if (fieldHelpOpen() === 'status') {
+            <p class="why-text" id="status-why">{{ fieldHelp.status }}</p>
+          }
+        </div>
 
-        <label class="pick">
-          <span class="pick__label lf-label">{{ copy.lead.fields.source }}</span>
+        <div class="pick">
+          <div class="pick__row">
+            <label class="pick__label lf-label" for="source-select">{{ copy.lead.fields.source }}</label>
+            <button
+              type="button"
+              class="why"
+              [attr.aria-expanded]="fieldHelpOpen() === 'source'"
+              aria-controls="source-why"
+              [attr.aria-label]="copy.lead.fieldHelpAria(copy.lead.fields.source)"
+              (click)="toggleFieldHelp('source')"
+            >
+              {{ fieldHelpOpen() === 'source' ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
+            </button>
+          </div>
           <select
+            id="source-select"
             class="pick__select"
             [value]="source()"
             [disabled]="saving()"
+            [attr.aria-describedby]="fieldHelpOpen() === 'source' ? 'source-why' : null"
             (change)="setSource($any($event.target).value)"
           >
             @for (option of sources; track option) {
               <option [value]="option">{{ sourceLabel[option] }}</option>
             }
           </select>
-        </label>
+          @if (fieldHelpOpen() === 'source') {
+            <p class="why-text" id="source-why">{{ fieldHelp.source }}</p>
+          }
+        </div>
       </div>
 
       <lf-text-field
@@ -105,6 +155,10 @@
         inputmode="decimal"
         [error]="valueError()"
         [disabled]="saving()"
+        [fieldHelp]="fieldHelp.value"
+        [fieldHelpOpen]="fieldHelpOpen() === 'value'"
+        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.value)"
+        (fieldHelpToggled)="toggleFieldHelp('value')"
       />
 
       <!-- closing: inline, never a second dialog -->
@@ -205,7 +259,9 @@
         </div>
 
         <!-- checklist -->
-        <section class="block" aria-labelledby="cl-title">
+        <!-- tabindex -1 so the nudge's "מלא עכשיו" can land focus on the section itself:
+             the heading and progress are announced, and nothing is pre-selected -->
+        <section #checklist class="block" tabindex="-1" aria-labelledby="cl-title">
           <header class="block__hd">
             <h3 class="block__title" id="cl-title">{{ copy.lead.checklist.title }}</h3>
             <span class="block__count lf-num">
@@ -289,7 +345,7 @@
         </section>
 
         <!-- composer: part of the one save, not a second action -->
-        <section class="block" aria-labelledby="cmp-title">
+        <section #composer class="block" aria-labelledby="cmp-title">
           <header class="block__hd">
             <h3 class="block__title" id="cmp-title">{{ copy.lead.composer.label }}</h3>
           </header>
@@ -312,6 +368,7 @@
           <label class="bare bare--area">
             <span class="lf-sr">{{ copy.lead.composer.label }}</span>
             <textarea
+              #noteInput
               rows="3"
               [placeholder]="copy.lead.composer.placeholder"
               [value]="note()"

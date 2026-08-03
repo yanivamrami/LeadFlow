@@ -18,6 +18,15 @@
     </label>
   </header>
 
+  @if (sourceFilterLabel(); as label) {
+    <div class="reg__source">
+      <span class="reg__source-label">{{ copy.register.sourceFilter(label) }}</span>
+      <button type="button" class="reg__source-clear" (click)="clearSource()">
+        {{ copy.register.clearSourceFilter }}
+      </button>
+    </div>
+  }
+
   <div class="reg__cols" aria-hidden="true">
     <span></span>
     <span class="lf-label">{{ copy.register.columns.lead }}</span>
@@ -90,7 +99,7 @@
         [lead]="lead"
         (moveTo)="move(lead, $event)"
         (logActivity)="log(lead)"
-        (snooze)="snooze(lead)"
+        (snooze)="snooze(lead, $event)"
         (deleteLead)="remove(lead)"
       />
     </article>

@@ -1,12 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   computed,
   effect,
   inject,
   input,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,6 +23,8 @@ import {
   CHECKLIST_QUESTION,
   CHECKLIST_WHY,
   COPY,
+  LEAD_FIELD_HELP,
+  LeadFieldKey,
   LOST_REASONS,
   SOURCE_LABEL,
   STATUS_LABEL,
@@ -82,6 +86,12 @@ export class LeadSheet {
   /** Bound from the route: absent on /lead/new, the lead id on /lead/:id. */
   readonly id = input<string | undefined>(undefined);
 
+  /**
+   * `?at=checklist` — where to land. Set by the stage-move nudge's `מלא עכשיו`, which owes
+   * the user the questions themselves rather than the top of a long sheet.
+   */
+  readonly at = input<string | undefined>(undefined);
+
   protected readonly copy = COPY;
   protected readonly statusLabel = STATUS_LABEL;
   protected readonly sourceLabel = SOURCE_LABEL;
@@ -90,6 +100,7 @@ export class LeadSheet {
   protected readonly why = CHECKLIST_WHY;
   protected readonly answerLabel = ANSWER_LABEL;
   protected readonly answerAria = ANSWER_ARIA;
+  protected readonly fieldHelp = LEAD_FIELD_HELP;
   protected readonly lostReasons = LOST_REASONS;
   protected readonly stages = STAGE_ORDER;
   protected readonly sources = SOURCES;
@@ -139,7 +150,21 @@ export class LeadSheet {
   protected readonly saving = signal(false);
   protected readonly submitted = signal(false);
   protected readonly whyOpen = signal<ChecklistItem | null>(null);
+  /**
+   * One-at-a-time, same as `whyOpen` — but a separate signal, deliberately not shared with
+   * it. A field's help and a checklist question's "why ask?" are different questions; if
+   * they shared one signal, opening one would silently close the other for no reason the
+   * user could see.
+   */
+  protected readonly fieldHelpOpen = signal<LeadFieldKey | null>(null);
   protected readonly timelineExpanded = signal(false);
+
+  private readonly checklistEl = viewChild<ElementRef<HTMLElement>>('checklist');
+  private readonly composerEl = viewChild<ElementRef<HTMLElement>>('composer');
+  private readonly noteInputEl = viewChild<ElementRef<HTMLTextAreaElement>>('noteInput');
+  /** Landing happens once per arrival, never on every later render. */
+  private landed = false;
+  private landedNote = false;
 
   constructor() {
     // Fill the form once the lead arrives — on a deep link the store may still be reading.
@@ -148,6 +173,51 @@ export class LeadSheet {
       if (!lead) return;
       untracked(() => this.hydrate(lead));
     });
+
+    // `?at=checklist` — wait for the lead, because the checklist does not render without it.
+    effect(() => {
+      if (this.at() !== 'checklist' || this.landed || !this.lead()) return;
+      const el = this.checklistEl()?.nativeElement;
+      if (!el) return;
+      this.landed = true;
+      untracked(() => this.landOnChecklist(el));
+    });
+
+    // `?at=note` — land on the activity composer. Unlike the checklist, the user's next
+    // act here is typing, so focus goes straight into the textarea.
+    effect(() => {
+      if (this.at() !== 'note' || this.landedNote || !this.lead()) return;
+      const section = this.composerEl()?.nativeElement;
+      const input = this.noteInputEl()?.nativeElement;
+      if (!section || !input) return;
+      this.landedNote = true;
+      untracked(() => this.landOnComposer(section, input));
+    });
+  }
+
+  /**
+   * Scroll the questions into view and put focus on the section, not on an answer: focusing
+   * a radio would sit on `לא` and one stray keystroke would answer a question nobody asked.
+   * Reduced motion gets an instant jump — the point is arriving, not the travel.
+   */
+  private landOnChecklist(el: HTMLElement): void {
+    const still =
+      typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+    el.focus({ preventScroll: true });
+  }
+
+  /**
+   * Scroll the composer into view and focus the textarea itself, not the section: the next
+   * act here is typing, so there is no wrong keystroke to guard against the way there is on
+   * the checklist's radios. Reduced motion gets an instant jump — the point is arriving, not
+   * the travel.
+   */
+  private landOnComposer(section: HTMLElement, input: HTMLTextAreaElement): void {
+    const still =
+      typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    section.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+    input.focus({ preventScroll: true });
   }
 
   private hydrate(lead: Lead): void {
@@ -181,6 +251,11 @@ export class LeadSheet {
 
   protected toggleWhy(item: ChecklistItem): void {
     this.whyOpen.update((open) => (open === item ? null : item));
+  }
+
+  /** Same one-at-a-time act as `toggleWhy`, kept on its own signal — see `fieldHelpOpen`. */
+  protected toggleFieldHelp(field: LeadFieldKey): void {
+    this.fieldHelpOpen.update((open) => (open === field ? null : field));
   }
 
   /* ---------- timeline ---------- */

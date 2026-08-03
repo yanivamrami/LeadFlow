@@ -105,15 +105,17 @@ export class NotifyService {
   /**
    * The checklist nudge lives in the same pasted stack as toasts — same object, same place.
    *
-   * It carries no "fill them in now" action yet: the checklist lives on the lead-detail
-   * screen, which does not exist. Offering a button that silently marks five questions
-   * answered would be a lie about the user's own data, so the nudge informs and waits.
+   * Its action takes the user *to* the questions; it never answers them. That distinction is
+   * the whole reason the action was withheld until the checklist had a screen of its own:
+   * a button that silently marked five questions answered would be a lie about the user's
+   * own data. Sticky, so it waits rather than expiring — and the dismiss is always there.
    */
-  nudge(message: string, dismissLabel: string): void {
+  nudge(message: string, dismissLabel: string, action?: ToastAction): void {
     this.push({
       id: ++this.seq,
       kind: 'info',
       message,
+      action,
       sticky: true,
       dismissLabel,
       createdAt: Date.now(),

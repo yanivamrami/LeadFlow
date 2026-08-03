@@ -1,4 +1,5 @@
 import { COPY } from '../../core/copy';
+import { isAppError } from '../../core/supabase.service';
 
 /**
  * Client-side validation exists to save a round trip and to say things in Hebrew — it is
@@ -41,4 +42,18 @@ export function matchError(a: string, b: string): string | null {
 export function safeReturnUrl(value: string | null): string {
   if (!value || !value.startsWith('/') || value.startsWith('//')) return '/';
   return value;
+}
+
+/**
+ * A signed-out submit (sign in, sign up, reset) that fails while the browser is offline
+ * throws before the request even leaves — `signInWithPassword` et al. reject with a raw
+ * fetch error rather than the service's normalized `AppError`, so `error.message` here
+ * would otherwise fall back to the generic line and never say what actually happened.
+ * `online` is read first so the offline line always wins, in the same words
+ * `NotifyService.blockedOffline` uses for a blocked write — one phrasing for "nothing
+ * left the browser", not a third one invented for this screen.
+ */
+export function submitError(error: unknown, online: boolean): string {
+  if (!online) return COPY.offline.blocked;
+  return isAppError(error) ? error.message : COPY.errors.generic;
 }

@@ -7,6 +7,7 @@ import {
   LucideCircleQuestionMark,
   LucideClipboardList,
   LucideList,
+  LucideLogOut,
   LucidePlus,
   LucideUser,
 } from '@lucide/angular';
@@ -47,6 +48,7 @@ import { OfflineBanner } from '../../shared/offline-banner';
     LucideUser,
     LucidePlus,
     LucideCircleQuestionMark,
+    LucideLogOut,
     OfflineBanner,
     LegendDialog,
   ],
@@ -104,6 +106,17 @@ export class Shell {
 
   /** First letter of the real name — Hebrew or Latin, whatever they typed at signup. */
   protected readonly monogram = computed(() => this.displayName().trim().charAt(0) || '·');
+
+  /**
+   * The masthead's own way out — outermost, inline-end of the monogram: account, then
+   * leave. Same flow as the profile screen's `יציאה`, from SupabaseService, so the two
+   * doors cannot behave differently.
+   */
+  protected readonly signingOut = this.supabase.signingOut;
+
+  protected signOut(): void {
+    void this.supabase.signOutAndLeave();
+  }
 
   protected openHelp(): void {
     this.help.show();

@@ -71,6 +71,38 @@
   .sort__select { max-inline-size: 132px; }
 }
 
+/* the removable source-filter chip — a filter the user cannot see is one they will
+   not think to remove, so it names itself and offers its own way out */
+.reg__source {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lf-space-2);
+  margin: 0 var(--lf-space-4) var(--lf-space-2);
+  padding: 6px var(--lf-space-3);
+  border: 2px solid var(--lf-ink);
+}
+
+.reg__source-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.reg__source-clear {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--lf-touch);
+  margin-inline-start: auto;
+  padding-inline: var(--lf-space-3);
+  border: 2px solid transparent;
+  background: transparent;
+  color: var(--lf-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.reg__source-clear:hover { border-color: var(--lf-ink); color: var(--lf-red-text); }
+
 /* column headings exist only where there are columns */
 .reg__cols {
   display: none;
