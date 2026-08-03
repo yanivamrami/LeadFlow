@@ -21,6 +21,10 @@
   /* red reads 3.1:1 on an ink ground — barely legal for a mark and illegal for text.
      Anything red sitting ON ink (toast rules and marks) uses this instead: 6.6:1. */
   --lf-red-on-ink: #ff6a4d;
+  /* and red reads only 4.0:1 as text on the poster ground, which fails body copy.
+     Red *words* on paper — field errors, destructive labels — use this: 6.6:1.
+     --lf-red stays a fill colour; these two are the only red text there is. */
+  --lf-red-text: #ae1800;
 
   /* paper ramp — carries pipeline progression, greyscale-legible */
   --lf-tan: #e8dcc0;
@@ -100,6 +104,7 @@
   --lf-on-day: #14110f;
   --lf-red: #ff6a4d;             /* #cc1b12 drops to 3.3:1 on this ground */
   --lf-on-red: #171512;
+  --lf-red-text: #ff8a72;        /* red words on the dark ground */
 
   --lf-tan: #3a342a;
   --lf-tan-deep: #554c39;

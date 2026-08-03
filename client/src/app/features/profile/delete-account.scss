@@ -1,0 +1,193 @@
+/* The end of an account. Stated plainly, on the hatch, with the exit as prominent
+   as the commit — leaving should be possible, not easy to do by accident. */
+
+:host {
+  display: block;
+  padding-block-end: var(--lf-space-12);
+}
+
+.page {
+  max-inline-size: 620px;
+  padding-inline: var(--lf-space-4);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: var(--lf-touch);
+  margin-block-start: var(--lf-space-3);
+  color: var(--lf-muted);
+  font-weight: 500;
+  text-decoration: none;
+}
+.back:hover {
+  color: var(--lf-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.back svg {
+  inline-size: 17px;
+  block-size: 17px;
+  stroke-width: 2.4;
+  /* a directional icon, so it mirrors with the writing direction */
+  scale: -1 1;
+}
+
+.ttl {
+  margin: var(--lf-space-2) 0 0;
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: var(--lf-size-name);
+  line-height: 1.05;
+}
+
+.lead {
+  margin: var(--lf-space-3) 0 0;
+  max-inline-size: 52ch;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* ---------- what goes ---------- */
+
+.what {
+  margin-block-start: var(--lf-space-6);
+  padding: var(--lf-space-4);
+  background: var(--lf-flag-drift);
+  border-block: var(--lf-rule-w) solid var(--lf-ink);
+}
+.what__h {
+  margin: 0 0 var(--lf-space-3);
+  color: var(--lf-muted);
+}
+
+.counting {
+  margin: 0;
+  color: var(--lf-muted);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list li {
+  padding-block: 10px;
+  font-family: var(--lf-font-num);
+  font-weight: 500;
+  font-size: 17px;
+}
+.list li + li {
+  border-block-start: var(--lf-rule-w-3) solid var(--lf-rule-soft);
+}
+
+/* ---------- the acknowledgement ---------- */
+
+.ack {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lf-space-3);
+  margin-block-start: var(--lf-space-6);
+  min-block-size: var(--lf-touch);
+  padding-block: 10px;
+  cursor: pointer;
+}
+
+/* the native control stays, and stays operable — it is only moved out from under the mark */
+.ack input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ack__box {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  inline-size: 26px;
+  block-size: 26px;
+  border: 2px solid var(--lf-ink);
+  background: var(--lf-surface);
+}
+.ack input:checked + .ack__box {
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+}
+.ack input:focus-visible + .ack__box {
+  outline: 3px solid var(--lf-red);
+  outline-offset: 2px;
+}
+.ack__box svg {
+  inline-size: 19px;
+  block-size: 19px;
+  stroke-width: 3;
+}
+
+.ack__t {
+  line-height: 1.4;
+}
+
+/* ---------- commit and exit ---------- */
+
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lf-space-3);
+  margin-block-start: var(--lf-space-6);
+}
+
+.b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 52px;
+  padding-inline: var(--lf-space-6);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--lf-dur-state) linear,
+    color var(--lf-dur-state) linear;
+}
+.b:hover:not(:disabled) {
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+}
+
+/* red because this is a commit, not because it is scary */
+.b--commit {
+  border-color: var(--lf-red);
+  background: var(--lf-red);
+  color: var(--lf-on-red);
+  font-weight: 600;
+}
+.b--commit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lf-red) 82%, var(--lf-ink));
+  border-color: color-mix(in srgb, var(--lf-red) 82%, var(--lf-ink));
+  color: var(--lf-on-red);
+}
+.b--commit:disabled {
+  background: transparent;
+  border-color: var(--lf-muted);
+  color: var(--lf-muted);
+  cursor: not-allowed;
+}
+.b--commit[aria-busy='true'] {
+  cursor: progress;
+}
+
+@media (min-width: 900px) {
+  .page {
+    padding-inline: var(--lf-space-8);
+  }
+  .ttl {
+    font-size: var(--lf-size-display);
+  }
+}

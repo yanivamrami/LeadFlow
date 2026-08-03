@@ -5,52 +5,69 @@ import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { routes } from './app.routes';
 import { SupabaseService } from './core/supabase.service';
+import { THEME_KEY, ThemeService } from './core/theme.service';
 
 /**
  * The real SupabaseService refuses to construct without a configured URL and key, and
  * tests run against environment.ts, which is empty on purpose. Stub the seam rather
  * than pointing the suite at a live project.
  */
-function stubSupabase(authenticated: boolean) {
-  const session = signal(authenticated ? ({ user: { email: 'test@leadflow.dev' } } as never) : null);
+function stubSupabase() {
   return {
-    session,
+    session: signal(null),
     ready: signal(true),
-    user: () => (authenticated ? { email: 'test@leadflow.dev' } : null),
-    isAuthenticated: signal(authenticated),
+    whenReady: Promise.resolve(),
+    user: () => null,
+    isAuthenticated: signal(false),
+    inRecovery: signal(false),
+    displayName: signal(''),
+    email: signal(''),
     signOut: () => Promise.resolve(),
   };
 }
 
 describe('App', () => {
-  async function setup(authenticated: boolean) {
+  async function setup() {
     TestBed.resetTestingModule();
+    localStorage.removeItem(THEME_KEY);
+
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
         provideRouter(routes),
-        { provide: SupabaseService, useValue: stubSupabase(authenticated) },
+        { provide: SupabaseService, useValue: stubSupabase() },
       ],
     }).compileComponents();
+
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
 
   it('should create the app', async () => {
-    const compiled = await setup(true);
-    expect(compiled).toBeTruthy();
+    expect(await setup()).toBeTruthy();
   });
 
-  it('renders the shell for a signed-in session', async () => {
-    const compiled = await setup(true);
-    expect(compiled.querySelector('.mast__brand')?.textContent).toContain('LeadFlow');
-    expect(compiled.querySelector('a.skip')?.getAttribute('href')).toBe('#main');
-  });
+  /**
+   * The shell used to live here behind an `@if (signedIn())`. It is a routed layout now,
+   * which is what makes "signed out means no chrome" structural rather than a condition
+   * someone can forget to write. Asserting the root is bare is asserting exactly that.
+   */
+  it('carries only the outlet and the surfaces that outlive a route', async () => {
+    const compiled = await setup();
 
-  it('hides the shell when signed out, so sign-in renders on its own', async () => {
-    const compiled = await setup(false);
     expect(compiled.querySelector('.mast')).toBeNull();
     expect(compiled.querySelector('.tabs')).toBeNull();
+    expect(compiled.querySelector('.band')).toBeNull();
+    expect(compiled.querySelector('lf-toast-stack')).not.toBeNull();
+    expect(compiled.querySelector('lf-alert-dialog')).not.toBeNull();
+  });
+
+  it('resolves the theme onto the document as it boots', async () => {
+    await setup();
+    const theme = TestBed.inject(ThemeService);
+
+    expect(theme.choice()).toBe('system');
+    expect(document.documentElement.getAttribute('data-theme')).toBe(theme.resolved());
   });
 });
