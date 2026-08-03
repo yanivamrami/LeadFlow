@@ -58,6 +58,20 @@
   display: none;
 }
 
+/* the way to "what does any of this mean?" — present at every size, because the
+   audience is new to lead management and the answer must never be hunted for */
+.mast__help {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.mast__help svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
+.mast__help:hover { color: var(--lf-day); }
+
 .mast__bell {
   position: relative;
   display: grid;
@@ -92,7 +106,7 @@
   block-size: 34px;
   background: var(--lf-day);
   color: var(--lf-on-day);
-  /* a Hebrew monogram — Archivo has no glyph for it */
+  /* a Hebrew monogram — kept on the UI face, where the letterforms are the display voice */
   font-family: var(--lf-font-ui);
   font-weight: 600;
   font-size: 16px;

@@ -24,6 +24,16 @@
     {{ copy.shell.addLead }}
   </a>
 
+  <button
+    type="button"
+    class="mast__help lf-hit"
+    [attr.aria-label]="copy.help.open"
+    [attr.title]="copy.help.open"
+    (click)="openHelp()"
+  >
+    <svg lucideCircleQuestionMark aria-hidden="true"></svg>
+  </button>
+
   <button type="button" class="mast__bell lf-hit" [attr.aria-label]="copy.shell.remindersBadge">
     <svg lucideBell aria-hidden="true"></svg>
     <span class="mast__badge lf-num">{{ reminderCount }}</span>
@@ -42,6 +52,7 @@
 </header>
 
 <lf-offline-banner />
+<lf-legend-dialog />
 
 <main id="main" class="content" tabindex="-1">
   <router-outlet />

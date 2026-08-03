@@ -78,7 +78,12 @@
 
   @if (!explainerDismissed()) {
     <aside class="explain">
-      <p>{{ copy.sheet.explainer }}</p>
+      <p>
+        {{ copy.sheet.explainer }}
+        <button type="button" class="explain__more" (click)="openHelp()">
+          {{ copy.help.open }}
+        </button>
+      </p>
       <button
         type="button"
         class="explain__x lf-hit"

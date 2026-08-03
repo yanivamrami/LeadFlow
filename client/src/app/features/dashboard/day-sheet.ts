@@ -5,6 +5,7 @@ import { LucidePhone, LucideX } from '@lucide/angular';
 
 import { COPY, OPEN_ACTION, OPEN_REASON, formatAge, formatValue } from '../../core/copy';
 import { Lead, OpenItem } from '../../core/lead.model';
+import { HelpService } from '../../core/help.service';
 import { LeadsStore } from '../../core/leads.store';
 
 /**
@@ -22,6 +23,7 @@ import { LeadsStore } from '../../core/leads.store';
 })
 export class DaySheet {
   private readonly store = inject(LeadsStore);
+  private readonly help = inject(HelpService);
 
   protected readonly copy = COPY;
   protected readonly reasonLabel = OPEN_REASON;
@@ -52,6 +54,10 @@ export class DaySheet {
 
   protected dismissExplainer(): void {
     this.store.dismissExplainer();
+  }
+
+  protected openHelp(): void {
+    this.help.show();
   }
 
   protected focusDrifting(): void {

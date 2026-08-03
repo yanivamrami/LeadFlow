@@ -164,7 +164,7 @@ lf-lead-menu { grid-area: menu; justify-self: end; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.row__open:hover { text-decoration: underline; }
+.row__open:hover { color: var(--lf-red-text); }
 .row__open:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
 
 /* the stamp — provenance, rotated off-axis like a rubber stamp */

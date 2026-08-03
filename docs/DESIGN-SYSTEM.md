@@ -57,11 +57,13 @@ Roles, not materials — `--lf-ground` / `--lf-ink` / `--lf-surface` flip with t
 
 ## 2. Typography
 
-**Fredoka carries every Hebrew glyph in the product, at every size.** **Archivo** is figures and Latin only.
+**Fredoka** is the display and body voice. **Rubik** carries figures, labels and Latin.
 
-This is a hard rule, not a preference: **Archivo has no Hebrew coverage**, so any Hebrew string set in it silently falls back to a system face — the text still renders, which is exactly why the bug survives review. If a string can contain Hebrew, it is Fredoka. Use `.lf-label` (Fredoka) for Hebrew labels and `.lf-label-ltr` (Archivo, tracked, uppercase) only for Latin ones such as the brand lockup.
+**Both faces cover Hebrew, and that is a requirement, not a coincidence.** Strings mix: `היום 14:32`, `5 ימים`, `3 מתוך 5` are figures and Hebrew in one run. The previous numeral face was Latin-only, so every one of those silently fell back to a system font mid-sentence — the text still rendered, which is exactly why the bug survived review. **Any face used anywhere in this product must cover Hebrew.** Rubik also ships a real `tnum` feature, so money columns still align.
 
-Fredoka is rounded and warm — a deliberate counterpoint to the hard edges, serving the PRD's "forgiving, beginner-friendly" promise. It carries the display voice at 26–52px, which is what makes this world a sign rather than a table. Figures stay in Archivo 800 with `tabular-nums` so money columns align.
+Fredoka is rounded and warm — a deliberate counterpoint to the hard edges, serving the PRD's "forgiving, beginner-friendly" promise. It carries the display voice at 26–52px, which is what makes this world a sign rather than a table. Figures stay in Rubik 800 with `tabular-nums`.
+
+`.lf-label` (Fredoka) is for Hebrew labels; `.lf-label-ltr` (Rubik, tracked, uppercase) is for Latin ones such as the brand lockup — not because Rubik cannot set Hebrew, but because Hebrew has no uppercase and tracking only pulls its letterforms apart.
 
 Hebrew takes no tracking: it has no uppercase and letterspacing only pulls its letterforms apart. Hebrew labels sit at `0.01em`; the `.12em` register belongs to Latin only.
 
@@ -75,11 +77,11 @@ Hebrew takes no tracking: it has no uppercase and letterspacing only pulls its l
 | Body | Fredoka | 15 / 400 | 1.55 |
 | Small — metadata | Fredoka | 13 / 400 | 1.4 |
 | Label — Hebrew | Fredoka | 12 / 600, `.01em` | 1.35 |
-| Label — Latin only | Archivo | 12 / 800, `.12em`, caps | 1.3 |
-| Figure | Archivo | 800, `tabular-nums`, 17–30 | 1.05 |
+| Label — Latin only | Rubik | 12 / 800, `.12em`, caps | 1.3 |
+| Figure | Rubik | 800, `tabular-nums`, 17–30 | 1.05 |
 | Hebrew monogram (avatar) | Fredoka | 16 / 600 | 1 |
 
-Nothing below 12px anywhere — including labels and stamps, which is why the label size is a token (`--lf-size-label`) rather than a literal. The brand lockup is Latin-only (`LeadFlow` + `MANAGER` in Archivo 800 caps) per `PRODUCT.md`.
+Nothing below 12px anywhere — including labels and stamps, which is why the label size is a token (`--lf-size-label`) rather than a literal. The brand lockup is Latin-only (`LeadFlow` + `MANAGER` in Rubik 800 caps) per `PRODUCT.md`.
 
 ---
 
@@ -161,13 +163,13 @@ Six posted bills, right-to-left, stage 1 at the inline-start edge. Column identi
 
 **Paste strip** (`lf-paste-strip`) — secondary ways out of a screen (create an account, forgot the password), as an ink-filled strip rotated by `--lf-paste-tilt` with yellow links. The rotation collapses under `prefers-reduced-motion`.
 
-**Filter chips** — a scrolling strip under a 3px ink rule. Selected chip is an ink fill. Counts in Archivo 800.
+**Filter chips** — a scrolling strip under a 3px ink rule. Selected chip is an ink fill. Counts in Rubik 800.
 
 **View toggle** — two segments in a 2px ink frame; the selected segment fills `--lf-day`.
 
 **Row menu** (`lf-lead-menu`) — 3px ink border, no shadow, opens on the row's inline-end edge. Carries all six stages plus log-activity, snooze, and delete-for-demo. Closes on outside click and Escape, returning focus to its trigger.
 
-**Stamps** — provenance and guidance marks: 3px border, Archivo 800 at 11px, `.1em` tracking, rotated off-axis. Never a rounded pill, never an emoji.
+**Stamps** — provenance and guidance marks: 3px border, Rubik 800 at 11px, `.1em` tracking, rotated off-axis. Never a rounded pill, never an emoji.
 
 ---
 
@@ -236,7 +238,7 @@ The label — `כן` / `לא` / `?` — carries the answer, so nothing depends o
 answer is not `unknown`: "not asked" and "asked, they don't know" are different signals and
 the storage keeps them apart.
 
-**The timeline reuses the register row.** Date as a margin stamp in Archivo tabular, body
+**The timeline reuses the register row.** Date as a margin stamp in Rubik tabular, body
 beside it, 1 px rules between, newest first, time shown on anything from today. Typed notes
 sit on paper; trigger-written `status_changed` entries take a small ink chip, so the machine
 is distinguishable from the person by treatment rather than hue. Notes are **append-only** —
@@ -270,7 +272,7 @@ Under `prefers-reduced-motion` every duration collapses to 80ms, stagger goes to
 
 - Currency: `₪12,500` via `Intl` `he-IL`, no decimals in lists. Over a million: `₪1.2מ׳`.
 - Dates: relative inside a week (`אתמול`, `לפני יומיים`, `לפני 5 ימים`), absolute after (`2 באוגוסט`). Hebrew dual is handled explicitly — `יומיים`, never `2 ימים`.
-- Phone, email, URL: `dir="ltr"`, aligned to the inline end, set in Archivo.
+- Phone, email, URL: `dir="ltr"`, aligned to the inline end, set in Rubik.
 - **Logical CSS properties only** — `margin-inline-start`, `padding-block`, `border-inline-end`. No `left`/`right`.
 - Charts run their time axis right-to-left.
 

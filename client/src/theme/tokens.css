@@ -68,10 +68,12 @@
   --lf-stage-lost-border: var(--lf-muted);
 
   /* type — Fredoka carries every Hebrew glyph in the product, at every size.
-     Archivo is figures and Latin only: it has no Hebrew coverage, so Hebrew set in it
-     silently falls back to a system face and breaks the voice. */
+     Rubik covers Hebrew too, which is the point: strings mix. "היום 14:32" and "5 ימים"
+     are figures AND Hebrew in one run, and the previous numeral face had no Hebrew at all,
+     so those silently fell back to a system font mid-sentence. Rubik also ships a real
+     `tnum` feature, so money columns still align — the reason a numeral face exists here. */
   --lf-font-ui: 'Fredoka', system-ui, sans-serif;
-  --lf-font-num: 'Archivo', ui-monospace, sans-serif;
+  --lf-font-num: 'Rubik', system-ui, sans-serif;
   --lf-size-day: 40px;           /* the sheet heading */
   --lf-size-display: 30px;       /* lead name, desktop */
   --lf-size-name: 26px;          /* lead name, mobile */
@@ -167,7 +169,8 @@ body::before {
   line-height: 1.05;
 }
 
-/* figures, phone, email, Latin — always Archivo, always tabular */
+/* figures, phone, email, Latin — always Rubik, always tabular. Safe for mixed
+   Hebrew-and-digit strings, which is why it replaced a Latin-only face. */
 .lf-num,
 .lf-ltr {
   font-family: var(--lf-font-num);
@@ -190,8 +193,9 @@ body::before {
   line-height: 1.35;
 }
 
-/* Latin-only labels — the brand lockup and any Latin abbreviation — keep Archivo's
-   tracked, uppercase register. Never put Hebrew in this class. */
+/* Latin-only labels — the brand lockup and any Latin abbreviation — take the tracked,
+   uppercase register. Hebrew has no uppercase and does not take tracking, so it belongs
+   in .lf-label instead; the numeral face would render it, but wrongly. */
 .lf-label-ltr {
   font-family: var(--lf-font-num);
   font-weight: 800;

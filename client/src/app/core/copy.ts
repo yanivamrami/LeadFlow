@@ -37,6 +37,20 @@ export const STATUS_SHORT: Record<LeadStatus, string> = {
   lost: 'לא יצא',
 };
 
+/**
+ * What the stage *is*, in the words someone who has never used a CRM would use.
+ * STATUS_GUIDANCE below says what to do next; this says where you are. A beginner
+ * needs both, and "כשיר" tells them neither on its own.
+ */
+export const STATUS_MEANING: Record<LeadStatus, string> = {
+  new: 'מישהו גילה עניין, ואתם עוד לא דיברתם איתו.',
+  contacted: 'דיברתם איתם לפחות פעם אחת, אבל עוד לא ברור אם יצא מזה משהו.',
+  qualified: 'בדקתם והם באמת מתאימים — שווה להשקיע בהם זמן.',
+  proposal_sent: 'שלחתם מחיר או הצעה, ועכשיו הכתובת אצלם.',
+  won: 'הם אמרו כן. זה לקוח.',
+  lost: 'זה לא קרה. רשמתם למה, וזה מה שיעזור לכם בפעם הבאה.',
+};
+
 /** The teaching layer: what this stage means and what to do next. */
 export const STATUS_GUIDANCE: Record<LeadStatus, string> = {
   new: 'ליד חדש — הזמן להכשיר! צרו קשר וברַרו אם יש כאן עניין אמיתי.',
@@ -246,6 +260,48 @@ export const COPY = {
     leadDeleted: 'הליד נמחק',
     checklistFilled: 'שאלות ההכשרה סומנו',
   },
+  /**
+   * The legend. The PRD's audience has never managed leads before, so the interface
+   * cannot rely on anyone already knowing what a pipeline stage or a "qualified" lead
+   * is. Everything the screen says with colour, texture or a term of art is spelled out
+   * here in plain words, in one place, reachable from every screen.
+   */
+  help: {
+    open: 'מה זה אומר?',
+    title: 'מה זה אומר?',
+    subtitle: 'כל מה שמופיע על המסך, במילים פשוטות.',
+    close: 'סגור',
+
+    sheetTitle: 'הדף הצהוב',
+    sheetBody:
+      'הדף הצהוב למעלה הוא היום שלכם. כל מה שמופיע בו מחכה לכם עכשיו. כשתסיימו משהו הוא יימחק בקו אדום והדף יתקצר — דף ריק אומר שסיימתם להיום.',
+
+    flagsTitle: 'הסימנים בצד של כל שורה',
+    flagNow: 'צריך אתכם היום.',
+    flagDrift: 'לא דיברתם עם הליד הזה כבר הרבה זמן.',
+    flagNone: 'הכול בסדר. אין מה לעשות כרגע.',
+
+    cardsTitle: 'הכרטיסים בלוח',
+    cardNow: 'רקע צהוב — הליד הזה מחכה לכם.',
+    cardDrift: 'רקע מפוספס — שקט כאן יותר מדי זמן.',
+    cardWon: 'מסגרת אדומה — נסגר בהצלחה.',
+    cardLost: 'מסגרת מקווקוות וחיוורת — לא יצא לפועל.',
+
+    stagesTitle: 'ששת השלבים',
+    stagesLead: 'כל ליד נמצא באחד מהשלבים האלה. אתם מזיזים אותו כשמשהו קורה.',
+
+    colorsTitle: 'הצבעים',
+    colorDay: 'צהוב — משהו שמחכה לכם היום.',
+    colorRed: 'אדום — סגירה, או פעולה ראשית כמו שמירה.',
+    colorInk: 'שחור — הודעות של המערכת ודברים שהמערכת רשמה לבד.',
+    colorHatch: 'פספוסים — משהו ששקט או שלא יצא לפועל. לא שגיאה.',
+
+    qualifyTitle: 'מה זה "שאלות הכשרה"?',
+    qualifyBody:
+      '"הכשרה" זה פשוט לבדוק אם שווה להשקיע בליד הזה — לפני שאתם משקיעים בו שעות. חמש שאלות קצרות: יש עניין אמיתי? הם צריכים את מה שאתם מציעים? יש תקציב? אתם מדברים עם מי שמחליט? ומתי זה אמור לקרות?',
+    qualifyNote:
+      'אף שאלה לא חוסמת אתכם. אתם יכולים להזיז ליד לכל שלב בכל רגע — השאלות רק עוזרות לדעת איפה אתם עומדים.',
+  },
   /** The lead sheet — §3. One surface in two modes, so one copy block. */
   lead: {
     createTitle: 'ליד חדש',
@@ -284,6 +340,8 @@ export const COPY = {
 
     checklist: {
       title: 'שאלות הכשרה',
+      /** The term is jargon on first contact, so the section says what it is for. */
+      lead: 'חמש שאלות שעוזרות לדעת אם שווה להשקיע בליד הזה. אף אחת מהן לא חוסמת אתכם.',
       progress: (answered: number, total: number) => `${answered} מתוך ${total}`,
       why: 'למה שואלים?',
       hideWhy: 'הסתר',

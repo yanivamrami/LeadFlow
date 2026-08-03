@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   LucideBell,
   LucideChartNoAxesColumn,
+  LucideCircleQuestionMark,
   LucideClipboardList,
   LucideList,
   LucidePlus,
@@ -11,7 +12,9 @@ import {
 } from '@lucide/angular';
 
 import { APP_NAME, APP_SUB, COPY } from '../../core/copy';
+import { HelpService } from '../../core/help.service';
 import { SupabaseService } from '../../core/supabase.service';
+import { LegendDialog } from '../../shared/legend-dialog';
 import { OfflineBanner } from '../../shared/offline-banner';
 
 /**
@@ -36,13 +39,16 @@ import { OfflineBanner } from '../../shared/offline-banner';
     LucideChartNoAxesColumn,
     LucideUser,
     LucidePlus,
+    LucideCircleQuestionMark,
     OfflineBanner,
+    LegendDialog,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
 export class Shell {
   private readonly supabase = inject(SupabaseService);
+  private readonly help = inject(HelpService);
 
   protected readonly appName = APP_NAME;
   protected readonly appSub = APP_SUB;
@@ -54,4 +60,8 @@ export class Shell {
 
   /** First letter of the real name — Hebrew or Latin, whatever they typed at signup. */
   protected readonly monogram = computed(() => this.displayName().trim().charAt(0) || '·');
+
+  protected openHelp(): void {
+    this.help.show();
+  }
 }
