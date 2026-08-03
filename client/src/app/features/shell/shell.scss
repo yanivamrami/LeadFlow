@@ -28,10 +28,14 @@
    is what that rule is for in this system. */
 .mast {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: var(--lf-space-3);
+  /* Under 900px the row is brand + four 44px hit targets, which is 166px of a 360px
+     screen before the wordmark gets a pixel. The gutter and gaps are tighter here than
+     the desktop rhythm on purpose — the alternative was the page scrolling sideways. */
+  gap: var(--lf-space-2);
   min-block-size: 60px;
-  padding-inline: var(--lf-space-4);
+  padding-inline: var(--lf-space-3);
   background: var(--lf-ground);
   color: var(--lf-ink);
   border-block-end: var(--lf-rule-w) solid var(--lf-ink);
@@ -40,13 +44,26 @@
 .mast__brand {
   margin: 0;
   margin-inline-end: auto;
+  /* A flex item defaults to min-inline-size: auto, so the wordmark refused to give up a
+     pixel and pushed the whole masthead — and with it the document — past the viewport.
+     This is the actual defect; the ellipsis below is the backstop that keeps it fixed
+     for any brand string, font fallback or locale, not just this one. */
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   direction: ltr;
   font-weight: 600;
   font-size: 26px;
-  line-height: 1;
+  /* line-height 1 clips ascenders once overflow is hidden, so the box gets the leading back */
+  line-height: 1.2;
   letter-spacing: -0.01em;
 }
+/* The Latin sub-lockup is a flat 72px whatever the wordmark does — the single most
+   expensive thing in a 360px bar, and the least load-bearing. It keeps its place on the
+   auth screen and on the desktop masthead, where there is room for the full lockup. */
 .mast__brand i {
+  display: none;
   font-style: normal;
   font-family: var(--lf-font-num);
   font-weight: 800;
@@ -55,6 +72,11 @@
   text-transform: uppercase;
   opacity: 0.72;
   margin-inline-start: 8px;
+}
+/* Below 360px — the old 320px handsets — even the bare wordmark is 16px wider than what
+   is left, so it steps down rather than ellipsing into "LeadFlo…". */
+@media (max-width: 359px) {
+  .mast__brand { font-size: 21px; }
 }
 
 .mast__nav,
@@ -252,6 +274,8 @@
     align-items: center;
     gap: 9px;
     margin-inline-start: auto;
+    /* two words on two lines is a squeezed button, not a design — it holds one line */
+    white-space: nowrap;
     min-block-size: var(--lf-touch);
     padding-inline: var(--lf-space-4);
     border: 0;
@@ -283,4 +307,24 @@
 
   .band,
   .tabs { display: none; }
+}
+
+/* ---------- desktop, but not much of it ----------
+   At 900px the full masthead — wordmark, three nav tabs, the red CTA, and four controls —
+   wanted 1029px and ran the whole document sideways. So the band between the nav
+   breakpoint and a real laptop keeps the desktop layout on a tighter rhythm: the gutter
+   and gaps come in, and the Latin sub-lockup stays away as it does on mobile. The
+   wordmark keeps its 34px — it is the one thing here that should not be negotiated. */
+@media (min-width: 900px) and (max-width: 1149px) {
+  .mast {
+    gap: var(--lf-space-3);
+    padding-inline: var(--lf-space-4);
+  }
+  .mast__nav a,
+  .mast__nav .soon { padding-inline: var(--lf-space-2); }
+}
+
+/* room for the full lockup at last */
+@media (min-width: 1150px) {
+  .mast__brand i { display: inline; }
 }
