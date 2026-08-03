@@ -1,0 +1,134 @@
+/* SCREENS 9.2 — automations on a stage. Nested inside `stage-row` (active stages) or the
+   archived list (`stages.html`), so this host carries its own top rule rather than a full
+   border — the parent already frames the stage itself. */
+
+:host {
+  display: block;
+  margin-block-start: var(--lf-space-4);
+  padding-block-start: var(--lf-space-3);
+  border-block-start: 1px solid var(--lf-rule-soft);
+}
+
+.panel__hd {
+  margin-block-end: var(--lf-space-3);
+}
+.panel__title {
+  margin: 0;
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: var(--lf-size-h2);
+}
+.panel__lead {
+  margin: 4px 0 0;
+  font-size: var(--lf-size-small);
+  color: var(--lf-muted);
+  line-height: 1.5;
+}
+
+.failed {
+  padding: var(--lf-space-3) var(--lf-space-4);
+  border: 2px dashed var(--lf-rule-soft);
+  color: var(--lf-red-text);
+}
+.failed__body {
+  margin: 4px 0 var(--lf-space-2);
+  font-size: var(--lf-size-small);
+  color: var(--lf-muted);
+}
+
+.sk-row {
+  display: block;
+  block-size: 64px;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--lf-space-3) 0;
+  color: var(--lf-muted);
+  font-size: 14px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lf-space-3);
+}
+
+.secret {
+  margin-block-start: var(--lf-space-4);
+  padding: var(--lf-space-4);
+  border: 3px solid var(--lf-red);
+}
+.secret__title {
+  margin: 0;
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: 15px;
+}
+.secret__warning {
+  margin: 6px 0 var(--lf-space-3);
+  font-size: var(--lf-size-small);
+  color: var(--lf-red-text);
+  line-height: 1.5;
+}
+.secret__value {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: var(--lf-space-2) var(--lf-space-3);
+  border: 2px solid var(--lf-ink);
+  background: var(--lf-ground);
+  font-family: monospace;
+  font-size: 13px;
+  direction: ltr;
+  text-align: start;
+  user-select: all;
+}
+.secret__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lf-space-2);
+  margin-block-start: var(--lf-space-3);
+}
+
+.add-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--lf-touch);
+  margin-block-start: var(--lf-space-3);
+  padding-inline: var(--lf-space-4);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
+}
+.add-toggle:hover { background: var(--lf-ink); color: var(--lf-on-ink); }
+
+.add-panel {
+  margin-block-start: var(--lf-space-3);
+  border: 2px solid var(--lf-ink);
+  background: var(--lf-surface);
+  padding: var(--lf-space-4);
+}
+.add-panel lf-automation-editor {
+  display: block;
+}
+
+.b {
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-4);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
+}
+.b:hover:not(:disabled) { background: var(--lf-ink); color: var(--lf-on-ink); }
+.b:disabled { opacity: 0.6; cursor: default; }
+.b--bare { border-color: transparent; color: var(--lf-muted); }
+.b--bare:hover:not(:disabled) { background: transparent; color: var(--lf-red-text); }

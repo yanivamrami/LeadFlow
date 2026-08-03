@@ -1,0 +1,96 @@
+<section class="stages" aria-labelledby="stages-title">
+  <header class="stages__hd">
+    <h1 class="stages__title" id="stages-title">{{ copy.stages.title }}</h1>
+    <p class="stages__sub">{{ copy.stages.subtitle }}</p>
+  </header>
+
+  @if (loadFailed()) {
+    <div class="failed" role="alert">
+      <p class="failed__title">{{ copyStages.loadFailedTitle }}</p>
+      <p class="failed__body">{{ copyStages.loadFailedBody }}</p>
+      <button type="button" class="act" (click)="retryStages()">{{ copyStages.retry }}</button>
+    </div>
+  } @else if (loading() && !loaded()) {
+    <p class="lf-sr" role="status" aria-live="polite">{{ copyStages.loading }}</p>
+    <div class="list">
+      @for (row of skeletonRows; track row) {
+        <div class="sk-row" aria-hidden="true">
+          <span class="lf-sk sk-a"></span>
+          <span class="lf-sk sk-b"></span>
+          <span class="lf-sk sk-c"></span>
+        </div>
+      }
+    </div>
+  } @else if (active().length === 0) {
+    <div class="none">
+      <div class="none__mark" aria-hidden="true"><i></i><i></i><i></i></div>
+      <p class="none__title">{{ copyStages.emptyTitle }}</p>
+      <p class="none__body">{{ copyStages.emptyBody }}</p>
+    </div>
+  } @else {
+    @if (leadCountsFailed()) {
+      <p class="counts-warn" role="status">
+        {{ copyStages.leadCountFailed }}
+        <button type="button" class="link" (click)="retryLeadCounts()">{{ copyStages.retry }}</button>
+      </p>
+    }
+
+    <p class="reorder-hint">{{ copy.stages.reorderHint }} {{ copyStages.reorderKeyboardHint }}</p>
+
+    <div
+      class="list"
+      cdkDropList
+      [cdkDropListDisabled]="stagesStore.busyId() === 'reorder'"
+      (cdkDropListDropped)="onDrop($event)"
+    >
+      @for (stage of rows(); track stage.id) {
+        <lf-stage-row
+          cdkDrag
+          class="list__item"
+          [stage]="stage"
+          [leadCount]="leadCountFor(stage.id)"
+          [allStages]="all()"
+          [busy]="stagesStore.busyId() === stage.id"
+          (renamed)="onRenamed(stage, $event)"
+          (patched)="onPatched(stage, $event)"
+          (archiveRequested)="onArchive(stage, $event)"
+        >
+          <div class="drop-ph" *cdkDragPlaceholder>{{ copyStages.dropHere }}</div>
+          <div class="drag-ghost" *cdkDragPreview>
+            <span class="drag-ghost__name">{{ stage.name }}</span>
+          </div>
+        </lf-stage-row>
+      }
+    </div>
+  }
+
+  @if (!loadFailed() && loaded()) {
+    <lf-add-stage [busy]="stagesStore.busyId() === 'create'" (create)="onCreate($event)" />
+  }
+
+  @if (archivedStages().length) {
+    <section class="archived">
+      <button
+        type="button"
+        class="archived__toggle"
+        [attr.aria-expanded]="archivedOpen()"
+        (click)="toggleArchived()"
+      >
+        <svg lucideChevronDown aria-hidden="true" class="archived__chevron" [class.flip]="archivedOpen()"></svg>
+        {{ copy.stages.archived }} ({{ archivedStages().length }})
+      </button>
+
+      @if (archivedOpen()) {
+        <p class="archived__note">{{ copyStages.archivedNote }}</p>
+        @for (stage of archivedStages(); track stage.id) {
+          <div class="archived__row">
+            <lf-stage-tag [stage]="stage" />
+            <!-- SCREENS 9.2: a rule whose stage was archived is suspended, not deleted —
+                 read-only here so it stays visible with its reason. -->
+            <lf-automations-panel [stage]="stage" [allStages]="all()" [readOnly]="true" />
+          </div>
+        }
+      }
+    </section>
+  }
+</section>

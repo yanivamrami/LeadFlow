@@ -13,7 +13,7 @@
     <h2 class="hd__name">{{ create() ? copy.lead.createTitle : (lead()?.name ?? '') }}</h2>
 
     @if (!create() && lead(); as current) {
-      <lf-stage-tag [status]="current.status" />
+      <lf-stage-tag [stage]="current.stage" />
       <span class="hd__value lf-num">{{ formatValue(current.estimatedValue) }}</span>
     }
 
@@ -102,13 +102,13 @@
           <select
             id="status-select"
             class="pick__select"
-            [value]="status()"
+            [value]="stageId()"
             [disabled]="saving()"
             [attr.aria-describedby]="fieldHelpOpen() === 'status' ? 'status-why' : null"
-            (change)="setStatus($any($event.target).value)"
+            (change)="setStageId($any($event.target).value)"
           >
-            @for (stage of stages; track stage) {
-              <option [value]="stage">{{ statusLabel[stage] }}</option>
+            @for (stage of stages(); track stage.id) {
+              <option [value]="stage.id">{{ stage.name }}</option>
             }
           </select>
           @if (fieldHelpOpen() === 'status') {
@@ -162,7 +162,7 @@
       />
 
       <!-- closing: inline, never a second dialog -->
-      @if (status() === 'lost') {
+      @if (selectedKind() === 'lost') {
         <div class="close-block">
           <p class="close-block__q">{{ copy.lead.lostReason }}</p>
           <div class="chips">
@@ -194,7 +194,7 @@
         </div>
       }
 
-      @if (status() === 'won') {
+      @if (selectedKind() === 'won') {
         <div class="close-block">
           <p class="close-block__q">{{ copy.lead.wonAmount }}</p>
           <label class="bare">

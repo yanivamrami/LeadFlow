@@ -1,0 +1,123 @@
+/* One rule (SCREENS 9.2). Its own bordered card, same grammar as `stage-row.scss` —
+   a settings screen is read closely, not scanned. */
+
+:host {
+  display: block;
+  background: var(--lf-surface);
+  border: 2px solid var(--lf-ink);
+  padding: var(--lf-space-3) var(--lf-space-4);
+}
+:host + :host {
+  margin-block-start: var(--lf-space-3);
+}
+
+.rule__hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lf-space-3);
+}
+
+.rule__sentence {
+  margin: 0;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.5;
+  flex: 1 1 auto;
+}
+
+.badge {
+  flex: 0 0 auto;
+  padding: 2px 9px;
+  border: 2px solid var(--lf-ink);
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+/* Suspended is texture, not colour, matching the attention flag's own "solid vs hatch is a
+   texture difference" rule (DESIGN-SYSTEM.md §4) — it must read the same in greyscale. */
+.badge--suspended {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--lf-muted) 0 2px,
+    transparent 2px 8px
+  );
+  color: var(--lf-ink);
+  border-color: var(--lf-muted);
+}
+
+.suspended-reason {
+  margin: var(--lf-space-2) 0 0;
+  padding-inline-start: var(--lf-space-3);
+  border-inline-start: 2px solid var(--lf-muted);
+  font-size: var(--lf-size-small);
+  color: var(--lf-muted);
+  line-height: 1.5;
+}
+
+.enable {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-block-size: var(--lf-touch);
+  cursor: pointer;
+}
+.enable input {
+  inline-size: 22px;
+  block-size: 22px;
+  accent-color: var(--lf-ink);
+  cursor: pointer;
+}
+.enable__label {
+  font-size: 13px;
+  color: var(--lf-muted);
+  white-space: nowrap;
+}
+
+.editor-slot {
+  margin-block-start: var(--lf-space-3);
+  padding-block-start: var(--lf-space-3);
+  border-block-start: 1px solid var(--lf-rule-soft);
+}
+
+.rule__acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lf-space-2);
+  margin-block-start: var(--lf-space-3);
+}
+
+.delete-confirm {
+  flex-basis: 100%;
+  margin: 0 0 4px;
+  padding-inline-start: var(--lf-space-3);
+  border-inline-start: 2px solid var(--lf-red);
+  font-size: var(--lf-size-small);
+  color: var(--lf-muted);
+  line-height: 1.5;
+}
+
+.b {
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-4);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
+}
+.b:hover:not(:disabled) { background: var(--lf-ink); color: var(--lf-on-ink); }
+.b:disabled { opacity: 0.6; cursor: default; }
+
+.b--bare { border-color: transparent; color: var(--lf-muted); }
+.b--bare:hover:not(:disabled) { background: transparent; color: var(--lf-ink); }
+.b--danger-text:hover:not(:disabled) { background: transparent; color: var(--lf-red-text); }
+
+/* Red is commit-only: the destructive action itself, once actually confirmed. */
+.b--danger { border-color: var(--lf-red); color: var(--lf-red-text); }
+.b--danger:hover:not(:disabled) { background: var(--lf-red); border-color: var(--lf-red); color: var(--lf-on-red); }

@@ -9,7 +9,6 @@ import {
   ActivityType,
   ChecklistItem,
   LeadSource,
-  LeadStatus,
   OpenReason,
   QualificationAnswer,
   SortKey,
@@ -18,48 +17,18 @@ import {
 export const APP_NAME = 'LeadFlow';
 export const APP_SUB = 'Manager';
 
-export const STATUS_LABEL: Record<LeadStatus, string> = {
-  new: 'ליד חדש',
-  contacted: 'יצרנו קשר',
-  qualified: 'כשיר',
-  proposal_sent: 'נשלחה הצעה',
-  won: 'נסגר בהצלחה',
-  lost: 'לא יצא לפועל',
-};
-
-/** Short forms for the board headers and filter strip, where the column is already context. */
-export const STATUS_SHORT: Record<LeadStatus, string> = {
-  new: 'חדש',
-  contacted: 'קשר',
-  qualified: 'כשיר',
-  proposal_sent: 'הצעה',
-  won: 'נסגר',
-  lost: 'לא יצא',
-};
-
 /**
- * What the stage *is*, in the words someone who has never used a CRM would use.
- * STATUS_GUIDANCE below says what to do next; this says where you are. A beginner
- * needs both, and "כשיר" tells them neither on its own.
+ * STATUS_LABEL / STATUS_SHORT / STATUS_MEANING / STATUS_GUIDANCE used to live here as four
+ * `Record<LeadStatus, string>` maps. They are gone, and cannot come back in this shape: a
+ * stage is now a per-tenant row a user can rename, add and archive, so there is no longer a
+ * compile-time union to key a `Record` by.
+ *
+ * The words themselves did not move far or change — they are the seed data in
+ * supabase/migrations/20260804090000_pipeline_stages.sql (existing tenants) and
+ * 20260804090100_stage_functions.sql (`handle_new_user`, new tenants). A component that used
+ * to read `STATUS_LABEL[lead.status]` now reads `lead.stage.name`; `STATUS_MEANING` and
+ * `STATUS_GUIDANCE` are `stage.meaning` and `stage.guidance`, loaded by `core/stages.store.ts`.
  */
-export const STATUS_MEANING: Record<LeadStatus, string> = {
-  new: 'מישהו גילה עניין, ואתם עוד לא דיברתם איתו.',
-  contacted: 'דיברתם איתם לפחות פעם אחת, אבל עוד לא ברור אם יצא מזה משהו.',
-  qualified: 'בדקתם והם באמת מתאימים — שווה להשקיע בהם זמן.',
-  proposal_sent: 'שלחתם מחיר או הצעה, ועכשיו הכתובת אצלם.',
-  won: 'הם אמרו כן. זה לקוח.',
-  lost: 'זה לא קרה. רשמתם למה, וזה מה שיעזור לכם בפעם הבאה.',
-};
-
-/** The teaching layer: what this stage means and what to do next. */
-export const STATUS_GUIDANCE: Record<LeadStatus, string> = {
-  new: 'ליד חדש — הזמן להכשיר! צרו קשר וברַרו אם יש כאן עניין אמיתי.',
-  contacted: 'דיברתם. עכשיו כדאי לבדוק אם הם באמת צריכים את מה שאתם מציעים.',
-  qualified: 'הליד כשיר. השלב הבא הוא הצעה — כמה שיותר קרוב לשיחה, יותר טוב.',
-  proposal_sent: 'הצעה נשלחה. אם לא חוזרים אליכם תוך 3 ימים — הרימו טלפון.',
-  won: 'נסגר בהצלחה. שווה לרשום מאיפה הליד הגיע, כדי לדעת מה עובד.',
-  lost: 'לא יצא לפועל. רשמו את הסיבה — זה מה שיעזור לכם בפעם הבאה.',
-};
 
 export const SOURCE_LABEL: Record<LeadSource, string> = {
   website: 'אתר',
@@ -639,6 +608,31 @@ export const COPY = {
       cancel: 'ביטול',
       done: 'החשבון נמחק',
     },
+  },
+  /**
+   * The stage manager (settings/stages, 9.1). Small on purpose: most of what that screen
+   * shows is per-stage data — name, meaning, guidance — read straight off `Stage`, not a
+   * static string here.
+   */
+  stages: {
+    title: 'שלבי הפייפליין',
+    subtitle: 'אתם קובעים אילו שלבים יש, ומה קורה בכל אחד מהם.',
+    addStage: 'הוסף שלב',
+    archived: 'שלבים בארכיון',
+    archive: 'העבר לארכיון',
+    archiveNeedsDestination: (count: number) =>
+      count === 1
+        ? 'ליד אחד נמצא בשלב הזה — לאן להעביר אותו?'
+        : `${count} לידים נמצאים בשלב הזה — לאן להעביר אותם?`,
+    archiveDestination: 'העברה לשלב',
+    reorderHint: 'גררו לשינוי הסדר.',
+    created: (name: string) => `השלב "${name}" נוסף`,
+    renamed: 'השם עודכן',
+    archivedNotice: (name: string) => `"${name}" הועבר לארכיון`,
+    reordered: 'הסדר עודכן',
+    updated: 'השלב עודכן',
+    /** The `subject` a reorder reports to the failed-write popup — no single stage owns it. */
+    pipelineSubject: 'סדר השלבים',
   },
   /** Offline is a state: the banner states it, and every blocked write says so at the point of action. */
   offline: {

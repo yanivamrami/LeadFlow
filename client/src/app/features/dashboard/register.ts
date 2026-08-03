@@ -1,15 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import {
-  COPY,
-  SORT_LABEL,
-  SOURCE_LABEL,
-  STATUS_LABEL,
-  formatValue,
-  formatWhen,
-} from '../../core/copy';
-import { Lead, LeadStatus, SORT_KEYS, SortKey } from '../../core/lead.model';
+import { COPY, SORT_LABEL, SOURCE_LABEL, formatValue, formatWhen } from '../../core/copy';
+import { Lead, SORT_KEYS, SortKey, Stage } from '../../core/lead.model';
 import { LeadsStore } from '../../core/leads.store';
 import { LeadMenu } from '../../shared/lead-menu';
 import { StageTag } from '../../shared/stage-tag';
@@ -71,8 +64,8 @@ export class Register {
     return this.store.ageInDays(lead);
   }
 
-  protected move(lead: Lead, status: LeadStatus): void {
-    this.store.moveToStage(lead.id, status, STATUS_LABEL[status]);
+  protected move(lead: Lead, stage: Stage): void {
+    this.store.moveToStage(lead.id, stage);
   }
 
   /**

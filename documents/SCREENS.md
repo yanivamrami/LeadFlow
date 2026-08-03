@@ -117,17 +117,21 @@ eagerly and refuses to construct unconfigured.
 | 8.3 | Team invite / members | Post-launch. |
 | 8.4 | Custom checklist items | V2 backlog per the PM decisions doc. |
 
-## 9. Pipeline & automations — planned, nothing built
+## 9. Pipeline & automations — built 2026-08-04
 
-Two phases, both specified against the current code: `documents/PLAN-stages.md` and
-`documents/PLAN-automations.md`. Tracked as GAPS G-37 / G-38.
+Both phases built on `feat/stages-and-automations`; all nine migrations applied to dev, and
+`public.lead_status` no longer exists. Plans: `documents/PLAN-stages.md`,
+`documents/PLAN-automations.md`. The interface the parallel work was held to:
+`documents/CONTRACT-stages.md`. **None of these four has been opened by a human — GAPS G-40**;
+scenarios are in `MANUAL-TESTS.md` §7, and P1 (a rename must move no number) is the one that
+matters most.
 
 | # | Screen | Notes | TODO |
 |---|---|---|---|
-| 9.1 | **Stage manager** | Owner-only, at `/settings/stages`. Rename, reorder by drag, add via a template picker that brings its own guidance copy, archive with a destination for the leads left behind. Per stage: short name, swatch from a fixed set of eight, drift days, `expects_reply`, meaning and guidance text. | Whole screen. Blocked on the stage migration (`PLAN-stages.md` §2), which must land before any of this renders. |
-| 9.2 | **Automations on a stage** | Not its own route — an expandable section inside 9.1, because the model is "this stage does this". One line per rule with a plain-Hebrew restatement, an enabled toggle, and a visible suspended state when its stage is archived. | Whole screen. Blocked on 9.1. |
-| 9.3 | **Rule editor** | In-place expansion, never a modal — the pattern 3.6, 3.7 and 4.2 set. Trigger, then action, then the action's fields, ending in a full sentence describing what will happen. | Whole screen. |
-| 9.4 | **Automation run log** | Last 50 runs per rule: when, which lead, done / failed / skipped, and the skip reason in words. Plus a dry run that reports what *would* happen and writes nothing. **Not optional** — it is the only place a user can discover their webhook has been failing for a week. | Whole screen. Must ship before the webhook channel, not after. |
+| 9.1 | ~~**Stage manager**~~ | ~~Owner-only, at `/settings/stages`. Rename, reorder by drag (one atomic `reorder_stages` RPC), add via a template picker that brings its own guidance copy, archive with a destination for the leads left behind (`archive_stage`, one transaction). Per stage: short name, one of eight pre-contrast-checked swatches, drift days, `expects_reply`, meaning and guidance.~~ | Not visually verified (G-40). No un-archive control yet — archived stages are listed but cannot be brought back. |
+| 9.2 | ~~**Automations on a stage**~~ | ~~A section inside 9.1, not its own route, because the model is "this stage does this". One line per rule, restated in plain Hebrew from trigger + action + config. Suspended rules stay visible with their reason when the stage is archived — suspended is not disabled.~~ | Not visually verified (G-40). No per-tenant rule cap — `PLAN-automations.md` §10 Q2 is still an open PM question. |
+| 9.3 | ~~**Rule editor**~~ | ~~In-place expansion, never a modal — the pattern 3.6, 3.7 and 4.2 set. Trigger, then action, then the action's fields, ending in a full sentence read back before saving. Webhook URLs are refused at save time for non-HTTPS, embedded credentials and any literal private/loopback/link-local host.~~ | Not visually verified (G-40). |
+| 9.4 | ~~**Automation run log**~~ | ~~Last 50 runs per rule: when, which lead, done / failed / skipped / queued, and the skip reason in the words the database wrote. The only place a user can discover their webhook has been failing for a week.~~ | Not visually verified (G-40). **The dry run is a client-side simulation and says so** — a true one needs a `dry_run` branch in `fire_automation_run`. |
 
 ---
 

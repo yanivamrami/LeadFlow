@@ -1,0 +1,95 @@
+<div class="log">
+  <div class="log__toggles">
+    <button type="button" class="link-btn" [attr.aria-expanded]="open()" (click)="toggle()">
+      {{ copy.runLogToggle }}
+    </button>
+    <button type="button" class="link-btn" [attr.aria-expanded]="dryOpen()" (click)="toggleDryRun()">
+      {{ copy.dryRunToggle }}
+    </button>
+  </div>
+
+  @if (dryOpen()) {
+    <div class="dry">
+      <p class="dry__title">{{ copy.dryRunTitle }}</p>
+
+      @if (leadsFailed()) {
+        <p class="dry__note dry__note--warn">
+          {{ copy.dryRunLeadsLoadFailed }}
+          <button type="button" class="link" (click)="retryLeads()">{{ copy.retry }}</button>
+        </p>
+      } @else if (leads() === null) {
+        <p class="dry__note">{{ copy.working }}</p>
+      } @else if (leads()!.length === 0) {
+        <p class="dry__note">{{ copy.dryRunPickLead }} — {{ copy.runLogEmpty }}</p>
+      } @else {
+        <label class="select-field">
+          <span class="lf-label">{{ copy.dryRunPickLead }}</span>
+          <select
+            [value]="selectedLeadId()"
+            (change)="selectedLeadId.set($any($event.target).value)"
+          >
+            <option value="" disabled>{{ copy.dryRunChoose }}</option>
+            @for (l of leads(); track l.id) {
+              <option [value]="l.id">{{ l.name }}</option>
+            }
+          </select>
+        </label>
+        <button type="button" class="b" [disabled]="!selectedLeadId()" (click)="runDryRun()">
+          {{ copy.dryRunRun }}
+        </button>
+      }
+
+      @if (dryResult(); as result) {
+        <p class="dry__result">{{ result }}</p>
+      }
+
+      <p class="dry__disclaimer">{{ copy.dryRunDisclaimer }}</p>
+    </div>
+  }
+
+  @if (open()) {
+    <div class="runs">
+      <p class="runs__title">{{ copy.runLogTitle }}</p>
+
+      @if (runsFailed()) {
+        <div class="state state--failed" role="alert">
+          <p>{{ copy.runLogLoadFailedTitle }}</p>
+          <p class="state__body">{{ copy.runLogLoadFailedBody }}</p>
+          <button type="button" class="b b--bare" (click)="retryRuns()">{{ copy.retry }}</button>
+        </div>
+      } @else if (runsLoading() && !runsLoaded()) {
+        <div class="skeleton" aria-hidden="true">
+          <span class="lf-sk sk-row"></span>
+          <span class="lf-sk sk-row"></span>
+          <span class="lf-sk sk-row"></span>
+        </div>
+        <p class="lf-sr" role="status" aria-live="polite">{{ copy.runLogLoading }}</p>
+      } @else if (runs().length === 0) {
+        <div class="state state--empty">
+          <p>{{ copy.runLogEmpty }}</p>
+          @if (!automation().enabled || automation().suspendedAt !== null) {
+            <p class="state__body">{{ copy.runLogEmptyDisabled }}</p>
+          }
+        </div>
+      } @else {
+        <ul class="run-list">
+          @for (run of runs(); track run.id) {
+            <li class="run">
+              <div class="run__hd">
+                <span class="run__status run__status--{{ run.status }}">{{ statusLabel(run.status) }}</span>
+                <span class="run__when">{{ formatWhen(run.createdAt) }}</span>
+              </div>
+              <p class="run__lead">{{ leadLabel(run) }}</p>
+              @if (run.skipReason) {
+                <p class="run__reason">{{ run.skipReason }}</p>
+              }
+              @if (run.error) {
+                <p class="run__reason run__reason--error">{{ run.error }}</p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>

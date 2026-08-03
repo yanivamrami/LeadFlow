@@ -8,8 +8,8 @@ import {
   CdkDropListGroup,
 } from '@angular/cdk/drag-drop';
 
-import { COPY, STATUS_LABEL, formatValue, formatWhen } from '../../core/copy';
-import { CHECKLIST_ITEMS, Lead, LeadStatus } from '../../core/lead.model';
+import { COPY, formatValue, formatWhen } from '../../core/copy';
+import { CHECKLIST_ITEMS, Lead, Stage } from '../../core/lead.model';
 import { LeadsStore } from '../../core/leads.store';
 import { LeadMenu } from '../../shared/lead-menu';
 
@@ -31,7 +31,6 @@ export class Board {
   private readonly router = inject(Router);
 
   protected readonly copy = COPY;
-  protected readonly statusLabel = STATUS_LABEL;
   protected readonly formatValue = formatValue;
   protected readonly checklistTotal = CHECKLIST_ITEMS.length;
 
@@ -45,14 +44,14 @@ export class Board {
     return formatWhen(lead.lastTouchAt, this.store.now());
   }
 
-  protected drop(event: CdkDragDrop<LeadStatus>, status: LeadStatus): void {
+  protected drop(event: CdkDragDrop<Stage>, stage: Stage): void {
     if (event.previousContainer === event.container) return;
     const lead = event.item.data as Lead;
-    this.store.moveToStage(lead.id, status, STATUS_LABEL[status]);
+    this.store.moveToStage(lead.id, stage);
   }
 
-  protected move(lead: Lead, status: LeadStatus): void {
-    this.store.moveToStage(lead.id, status, STATUS_LABEL[status]);
+  protected move(lead: Lead, stage: Stage): void {
+    this.store.moveToStage(lead.id, stage);
   }
 
   /** Opens the composer rather than writing — see Register.log for why. */

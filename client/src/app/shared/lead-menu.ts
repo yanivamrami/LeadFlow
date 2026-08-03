@@ -13,8 +13,9 @@ import { CdkConnectedOverlay, CdkOverlayOrigin, ConnectedPosition } from '@angul
 
 import { LucideEllipsisVertical } from '@lucide/angular';
 
-import { COPY, STATUS_LABEL } from '../core/copy';
-import { Lead, LeadStatus, STAGE_ORDER } from '../core/lead.model';
+import { COPY } from '../core/copy';
+import { Lead, Stage } from '../core/lead.model';
+import { StagesStore } from '../core/stages.store';
 import { DuePicker } from './due-picker';
 
 /**
@@ -66,16 +67,16 @@ import { DuePicker } from './due-picker';
         @switch (page()) {
           @case ('menu') {
             <p class="menu__head lf-label">{{ copy.menu.moveTo }}</p>
-            @for (status of stages; track status) {
+            @for (stage of stages(); track stage.id) {
               <button
                 type="button"
                 role="menuitem"
                 class="menu__item"
-                [disabled]="status === lead().status"
-                (click)="pick(status)"
+                [disabled]="stage.id === lead().stage.id"
+                (click)="pick(stage)"
               >
-                {{ statusLabel[status] }}
-                @if (status === lead().status) {
+                {{ stage.name }}
+                @if (stage.id === lead().stage.id) {
                   <span class="menu__now">נוכחי</span>
                 }
               </button>
@@ -171,9 +172,11 @@ import { DuePicker } from './due-picker';
   `,
 })
 export class LeadMenu {
+  private readonly stagesStore = inject(StagesStore);
+
   readonly lead = input.required<Lead>();
 
-  readonly moveTo = output<LeadStatus>();
+  readonly moveTo = output<Stage>();
   readonly logActivity = output<void>();
   /** Emits the day the user picked — the store, not this menu, decides what "today" means. */
   readonly snooze = output<Date>();
@@ -185,8 +188,8 @@ export class LeadMenu {
   /** The overlay's second "page": the stage list, or the day picker in its place. */
   protected readonly page = signal<'menu' | 'snooze'>('menu');
   protected readonly copy = COPY;
-  protected readonly statusLabel = STATUS_LABEL;
-  protected readonly stages = STAGE_ORDER;
+  /** Live stages, in position order — every screen that offers "move to" reads this. */
+  protected readonly stages = this.stagesStore.active;
   protected readonly triggerLabel = computed(() => `${COPY.shell.openMenu} — ${this.lead().name}`);
 
   /**
@@ -229,8 +232,8 @@ export class LeadMenu {
     }
   }
 
-  protected pick(status: LeadStatus): void {
-    this.moveTo.emit(status);
+  protected pick(stage: Stage): void {
+    this.moveTo.emit(stage);
     this.closeAndFocus();
   }
 

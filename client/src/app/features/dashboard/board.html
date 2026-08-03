@@ -1,23 +1,23 @@
 <div class="board" cdkDropListGroup>
-  @for (column of columns(); track column.status) {
-    <section class="col" [class]="'col--' + column.status" [attr.aria-label]="statusLabel[column.status]">
+  @for (column of columns(); track column.stage.id) {
+    <section class="col" [class]="'col--' + column.stage.kind" [attr.aria-label]="column.stage.name">
       <header class="col__hd">
-        <h3 class="col__name">{{ statusLabel[column.status] }}</h3>
+        <h3 class="col__name">{{ column.stage.name }}</h3>
         <span class="col__count lf-num">{{ column.leads.length }}</span>
       </header>
 
       <div
         class="col__drop"
         cdkDropList
-        [cdkDropListData]="column.status"
-        (cdkDropListDropped)="drop($event, column.status)"
+        [cdkDropListData]="column.stage"
+        (cdkDropListDropped)="drop($event, column.stage)"
       >
         @for (lead of column.leads; track lead.id) {
           <article
             class="card"
             [class]="'card--' + attention(lead)"
-            [class.card--won]="lead.status === 'won'"
-            [class.card--lost]="lead.status === 'lost'"
+            [class.card--won]="lead.stage.kind === 'won'"
+            [class.card--lost]="lead.stage.kind === 'lost'"
             cdkDrag
             [cdkDragData]="lead"
           >
@@ -44,7 +44,7 @@
             </div>
 
             <p class="card__when">
-              @if (lead.checklistAnswered < checklistTotal && lead.status !== 'won' && lead.status !== 'lost') {
+              @if (lead.checklistAnswered < checklistTotal && lead.stage.kind === 'open') {
                 {{ copy.board.checklistProgress(lead.checklistAnswered, checklistTotal) }}
               } @else {
                 {{ when(lead) }}

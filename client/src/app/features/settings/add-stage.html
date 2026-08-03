@@ -1,0 +1,110 @@
+<section class="add">
+  <button type="button" class="add__toggle" [attr.aria-expanded]="open()" (click)="toggleOpen()">
+    <svg lucidePlus aria-hidden="true"></svg>
+    {{ copy.stages.addStage }}
+  </button>
+
+  @if (open()) {
+    <div class="add__panel">
+      <p class="add__title">{{ copyStages.addTitle }}</p>
+      <p class="add__lead">{{ copyStages.addLead }}</p>
+
+      <div class="templates">
+        @for (t of templates; track t.name) {
+          <button type="button" class="template" [disabled]="busy()" (click)="pickTemplate(t)">
+            <span class="template__name">{{ t.name }}</span>
+            <span class="template__meaning">{{ t.meaning }}</span>
+          </button>
+        }
+        <button
+          type="button"
+          class="template template--custom"
+          [class.on]="customOpen()"
+          [disabled]="busy()"
+          [attr.aria-expanded]="customOpen()"
+          (click)="toggleCustom()"
+        >
+          <span class="template__name">{{ copyStages.customLabel }}</span>
+        </button>
+      </div>
+
+      @if (customOpen()) {
+        <div class="custom">
+          <lf-text-field
+            #customName
+            name="customStageName"
+            [label]="copyStages.customNameLabel"
+            [error]="nameTried() && !customName.value().trim() ? copyStages.customNameRequired : null"
+            [disabled]="busy()"
+          />
+
+          <label class="textarea-field">
+            <span class="lf-label">{{ copyStages.meaningLabel }}</span>
+            <textarea
+              #customMeaning
+              rows="2"
+              [placeholder]="copyStages.meaningPlaceholder"
+              [disabled]="busy()"
+            ></textarea>
+          </label>
+
+          <label class="textarea-field">
+            <span class="lf-label">{{ copyStages.guidanceLabel }}</span>
+            <textarea
+              #customGuidance
+              rows="2"
+              [placeholder]="copyStages.guidancePlaceholder"
+              [disabled]="busy()"
+            ></textarea>
+          </label>
+
+          <lf-text-field
+            #customDrift
+            name="customStageDrift"
+            inputmode="numeric"
+            [label]="copyStages.driftLabel"
+            [help]="copyStages.driftHelp"
+            [disabled]="busy()"
+          />
+
+          <label class="check">
+            <input type="checkbox" #customExpects [disabled]="busy()" />
+            <span class="check__text">
+              <span class="check__label lf-label">{{ copyStages.expectsReplyLabel }}</span>
+              <span class="check__help">{{ copyStages.expectsReplyHelp }}</span>
+            </span>
+          </label>
+
+          <div class="swatches" role="group" [attr.aria-label]="copyStages.swatchLabel">
+            @for (sw of swatches; track sw) {
+              <button
+                type="button"
+                class="swatch swatch--{{ sw }}"
+                [class.on]="customSwatch() === sw"
+                [attr.aria-pressed]="customSwatch() === sw"
+                [disabled]="busy()"
+                (click)="customSwatch.set(sw)"
+              >
+                {{ copyStages.swatchName[sw] }}
+              </button>
+            }
+          </div>
+
+          <div class="custom__acts">
+            <button
+              type="button"
+              class="b"
+              [disabled]="busy()"
+              (click)="submitCustom(customName, customMeaning, customGuidance, customDrift, customExpects)"
+            >
+              {{ busy() ? copyStages.working : copyStages.addConfirm }}
+            </button>
+            <button type="button" class="b b--bare" [disabled]="busy()" (click)="toggleCustom()">
+              {{ copyStages.addCancel }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

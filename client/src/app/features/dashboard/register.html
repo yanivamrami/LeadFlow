@@ -83,7 +83,7 @@
       </div>
 
       <div class="row__stage">
-        <lf-stage-tag [status]="lead.status" />
+        <lf-stage-tag [stage]="lead.stage" />
         @if (attention(lead) !== 'none') {
           <span class="lf-sr">
             {{ attention(lead) === 'now' ? copy.a11y.attentionNow : copy.a11y.attentionDrift }}

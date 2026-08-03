@@ -178,10 +178,18 @@
   min-inline-size: 2px;
   transition: inline-size var(--lf-dur-settle) var(--lf-ease);
 }
-.bar__fill--new { background: var(--lf-ground); box-shadow: inset 0 0 0 2px var(--lf-ink); }
-.bar__fill--contacted { background: var(--lf-tan); }
-.bar__fill--qualified { background: var(--lf-tan-deep); }
-.bar__fill--proposal_sent { background: var(--lf-ink); }
+/* Coloured by the stage's own swatch — a user-defined stage still fits the ramp instead of
+   needing its own CSS rule. `kind` overrides both ends regardless of swatch, same as
+   lf-stage-tag: won is always the red fill, lost is always the hatched outline, because
+   that is what the *outcome* means, not what colour the stage happened to be given. */
+.bar__fill--sw-chalk { background: var(--lf-sw-chalk-bg); }
+.bar__fill--sw-sky { background: var(--lf-sw-sky-bg); }
+.bar__fill--sw-moss { background: var(--lf-sw-moss-bg); }
+.bar__fill--sw-amber { background: var(--lf-sw-amber-bg); }
+.bar__fill--sw-plum { background: var(--lf-sw-plum-bg); }
+.bar__fill--sw-clay { background: var(--lf-sw-clay-bg); }
+.bar__fill--sw-slate { background: var(--lf-sw-slate-bg); }
+.bar__fill--sw-sand { background: var(--lf-sw-sand-bg); }
 .bar__fill--won { background: var(--lf-red); }
 .bar__fill--lost {
   background: repeating-linear-gradient(

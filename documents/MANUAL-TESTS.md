@@ -467,6 +467,143 @@ though the density is compact. Reduce motion at the OS level: the per-row busy s
 
 ---
 
+## 7. Custom stages & automations (SCREENS §9 — never opened by a human: GAPS G-40)
+
+Run on branch `feat/stages-and-automations`. The dev database has **already been migrated** —
+`public.lead_status` no longer exists — so `main` will NOT work against dev until this branch
+merges. That is expected, not a bug.
+
+The single most important test is **P1**: a rename must change no arithmetic at all. That is the
+whole point of the `kind` column, and if it fails, the design is wrong rather than the code.
+
+### P1 — Renaming a stage changes no number *(the load-bearing test)*
+1. Note every figure on `/insights`: total, conversion %, open value, won value, each funnel bar.
+2. `/settings/stages` → rename `נסגר בהצלחה` to something else, e.g. `לקוח`. Save.
+3. Return to `/insights`.
+
+**Expected:** every figure is **identical**. The funnel bar's label changed and nothing else did.
+Conversion still has a numerator. The lead sheet still offers the won-amount confirmation on that
+stage, and the board column still carries the reserved red treatment — because those follow
+`kind`, not the name. If any number moved, stop and report: something is keyed on a name.
+
+### P2 — Add a stage from a template
+1. `/settings/stages` → `הוסף שלב` → pick `ממתין לחתימה`.
+
+**Expected:** it arrives **with its own teaching copy already filled in** (meaning, guidance, drift
+days) and `expects_reply` already on. It appends at the end as an open stage. It appears
+immediately as a board column and as a filter chip on the dashboard.
+
+### P3 — A user-created stage drives the day sheet
+1. Move a lead into the `ממתין לחתימה` stage you just made.
+2. Wait past its drift threshold, or temporarily set its drift days to 1 and use a lead whose last
+   touch is older than that.
+
+**Expected:** that lead appears on the yellow day sheet with the "waiting on them" reason —
+the same behaviour the built-in proposal stage has, with nobody writing code for it. This is
+`expects_reply` working.
+
+### P4 — Reorder survives a refresh
+1. Drag stages into a new order. Reload the page.
+
+**Expected:** the new order holds, on the manager, the board columns and the filter strip. No
+column shows a duplicate position and nothing renders in a nonsensical order.
+
+### P5 — Archive refusals explain themselves
+Try to archive, in turn: the won stage, the lost stage, and (having archived down to one) the last
+remaining open stage.
+
+**Expected:** each is **refused with a readable Hebrew reason shown on screen** — not a silently
+disabled button. The reasons differ per case.
+
+### P6 — Archiving a stage that holds leads
+1. Pick a stage with at least one lead. Archive it.
+
+**Expected:** it asks where the leads go and says **how many** will move, and the archive action
+stays unavailable until you choose. After confirming: the leads are in the destination, the stage
+is gone from the board and the filter strip, and **each moved lead has a timeline entry** showing
+the move — a silent bulk move would leave the timeline lying.
+
+### P7 — Archived stages still resolve in history
+1. Open a lead that was previously in the stage you just archived, and read its timeline.
+
+**Expected:** the old entry still shows a real stage name and tag, not a blank. This is why stages
+are archived rather than deleted.
+
+### P8 — A stages load failure is not an empty pipeline *(regression guard)*
+1. On the dashboard, devtools → Network → Offline, then reload.
+
+**Expected:** a load-failure state with a retry. **Never** "you have no leads yet". This path
+specifically: leads resolve their stage at read time, so a failed *stages* read used to empty the
+pipeline and render the empty state over it.
+
+### P9 — A reminder automation fires
+1. `/settings/stages` → on any stage, open its automations section → add a rule:
+   `כשליד מגיע לשלב הזה` → `קבע תזכורת` → 3 days.
+2. Read the sentence the editor shows back to you before saving. Save.
+3. Move a **non-demo** lead into that stage.
+
+**Expected:** the rule's row restates itself in plain Hebrew. After the move, a reminder exists on
+that lead 3 days out — visible on `/reminders` and on the lead sheet's follow-up line. The run log
+shows one run, `done`. Move the same lead out and back in: it fires **again** (a new entry), but a
+single move never produces two runs.
+
+### P10 — Demo leads never fire
+1. Move the seeded demo lead (`דנה כהן`) into a stage with a rule.
+
+**Expected:** **nothing happens.** No reminder, no note, and the run log stays empty for that lead.
+
+### P11 — `suggest_advance` suggests and does not move
+1. Add a rule with action `הצע להעביר` targeting another stage. Move a lead in.
+
+**Expected:** the lead gets a **note proposing** the move and **stays exactly where it is**. If the
+lead moved on its own, that is a serious finding — nothing in this product moves a lead for you.
+
+### P12 — Idle rule re-checks before firing
+1. Add a `כשליד נשאר בשלב הזה` rule with 1 day. Move a lead in, then move it straight out again.
+2. Wait for the sweep (runs every minute; the delay itself is a day, so to test properly set the
+   rule to the shortest value the UI allows and use a lead that has been sitting).
+
+**Expected:** when the queued run comes due and the lead is no longer in that stage, the run log
+shows `skipped` **with the reason in words**, and nothing was written.
+
+### P13 — Webhook URL guard
+In the rule editor, try each as a webhook URL: `http://example.com`, `https://localhost/hook`,
+`https://127.0.0.1/hook`, `https://169.254.169.254/`, `https://user:pw@example.com/hook`, and
+finally a real `https://` endpoint (webhook.site gives you one).
+
+**Expected:** the first five are refused at save time with readable Hebrew reasons. The real one
+saves, and shows you a signing secret **once**, with a warning that it will not be shown again.
+
+### P14 — A webhook actually arrives, signed
+1. With the webhook.site rule saved, move a non-demo lead into that stage. Wait up to ~2 minutes
+   (the sender and reconciler each run once a minute).
+
+**Expected:** webhook.site shows a POST with `X-LeadFlow-Signature: sha256=…`, and a JSON body
+containing `version: 1`, the lead's name, company, source, value and its stage. It must **not**
+contain checklist answers or note bodies. The run log flips `queued` → `done`.
+**Known limitation (G-42):** if the endpoint issues a redirect, we have not verified whether
+`pg_net` follows it — do not test with a redirecting URL and treat that case as unknown.
+
+### P15 — A failing endpoint is visible, not silent
+1. Point a rule at an `https://` URL that returns a 500 (webhook.site can be configured to).
+   Trigger it.
+
+**Expected:** the run log shows the failure with the status code, and retries with growing gaps
+(1m, 5m, 30m, 2h) up to five attempts before giving up. This screen is the only way a user can
+discover their endpoint has been broken for a week.
+
+### P16 — Suspended is not disabled
+1. Archive a stage that has automations on it.
+
+**Expected:** its rules show as **מושהה with a reason**, still visible in the archived section —
+not deleted and not merely switched off. Nothing re-enables them by itself.
+
+### P17 — A member cannot reshape the pipeline
+Only testable once invites exist (8.3). Recorded so it is not forgotten: a non-owner member must
+be refused on every stage and automation write, with a readable message rather than a raw error.
+
+---
+
 ## 5. Cross-cutting checks (run once, anywhere)
 
 | # | Check | Expected |

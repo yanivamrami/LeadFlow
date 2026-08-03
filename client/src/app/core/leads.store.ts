@@ -1,7 +1,8 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { COPY, STATUS_GUIDANCE, STATUS_LABEL, daysBetween, formatDue } from './copy';
+import { openReasonFor } from './attention';
+import { COPY, daysBetween, formatDue } from './copy';
 import {
   Activity,
   ActivityType,
@@ -9,20 +10,18 @@ import {
   CHECKLIST_ITEMS,
   ChecklistAnswers,
   ChecklistItem,
-  DRIFT_DAYS,
   Lead,
   LeadDraft,
   LeadSaveExtras,
   LeadSource,
-  LeadStatus,
   OPEN_ITEMS_CAP,
   OpenItem,
-  OpenReason,
   QualificationAnswer,
-  STAGE_ORDER,
   SortKey,
+  Stage,
 } from './lead.model';
 import { NotifyService } from './notify.service';
+import { StagesStore } from './stages.store';
 import { AppError, SupabaseService, costsData, isAppError } from './supabase.service';
 
 export type DashboardView = 'list' | 'board';
@@ -50,7 +49,7 @@ interface LeadRow {
   email: string | null;
   phone: string | null;
   source: Lead['source'];
-  status: LeadStatus;
+  stage_id: string;
   estimated_value: number | string | null;
   lost_reason: string | null;
   is_demo: boolean;
@@ -63,7 +62,7 @@ interface LeadRow {
 }
 
 const SELECT = `
-  id, tenant_id, name, company, email, phone, source, status, estimated_value,
+  id, tenant_id, name, company, email, phone, source, stage_id, estimated_value,
   lost_reason, is_demo, assigned_to, created_at, updated_at,
   activities ( id, type, body, occurred_at ),
   reminders ( id, title, due_at, done_at ),
@@ -80,10 +79,12 @@ const SELECT = `
 export class LeadsStore {
   private readonly supabase = inject(SupabaseService);
   private readonly notify = inject(NotifyService);
+  private readonly stages = inject(StagesStore);
   /** Only for the checklist nudge's action, which is a navigation and nothing else. */
   private readonly router = inject(Router);
 
-  private readonly _leads = signal<Lead[]>([]);
+  /** Raw rows as PostgREST returned them — `leads` resolves them against StagesStore. */
+  private readonly _rows = signal<LeadRow[]>([]);
   private readonly _now = signal(new Date());
   private readonly _loading = signal(false);
   private readonly _loaded = signal(false);
@@ -92,7 +93,7 @@ export class LeadsStore {
 
   readonly search = signal('');
   readonly sort = signal<SortKey>('urgency');
-  readonly statusFilter = signal<LeadStatus | 'all'>('all');
+  readonly stageFilter = signal<string | 'all'>('all');
   /** Arrives from an insights row (`?source=`); validated by the caller before it lands here. */
   readonly sourceFilter = signal<LeadSource | 'all'>('all');
   readonly view = signal<DashboardView>('list');
@@ -101,39 +102,60 @@ export class LeadsStore {
   /** Announced politely to screen readers after a stage move. */
   readonly announcement = signal('');
 
-  readonly leads = this._leads.asReadonly();
+  /**
+   * Folded against whatever StagesStore currently holds, rather than at fetch time — a
+   * plain computed, so a stage rename in the manager updates every lead holding it
+   * without a re-read of the pipeline, and so a row whose stage has not arrived yet
+   * (StagesStore.load() still in flight) resolves the moment it does, instead of being
+   * dropped for the rest of the session. A row that never resolves (a dangling id) is
+   * skipped rather than shown with a blank stage — see `toLead`.
+   */
+  readonly leads = computed<Lead[]>(() =>
+    this._rows()
+      .map((row) => this.toLead(row))
+      .filter((lead): lead is Lead => lead !== null),
+  );
+
   readonly now = this._now.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly loaded = this._loaded.asReadonly();
   /**
    * A read that failed is not an empty pipeline. Without this the register renders
    * "you have no leads yet" over a network error — a lie about the user's own data.
+   *
+   * It includes the *stages* read, and has to: since `leads` resolves each row against
+   * StagesStore and skips what it cannot resolve, a failed stage read with a perfectly
+   * good lead read would empty the pipeline and render the empty state over it — the exact
+   * failure SCREENS 2.9 was raised for, arriving by a new route. Either read failing means
+   * the screen cannot be trusted, so both report through here.
    */
-  readonly loadFailed = this._loadFailed.asReadonly();
+  readonly loadFailed = computed(() => this._loadFailed() || this.stages.loadFailed());
   readonly tenantId = this._tenantId.asReadonly();
 
   /**
-   * Leads narrowed by source alone — the shared base for `total`, `countByStatus` and
+   * Leads narrowed by source alone — the shared base for `total`, `countByStage` and
    * `visibleLeads`, so a source filter arriving from insights stays consistent across
    * every figure the filter row shows, not just the list underneath it.
    */
   private readonly sourceScopedLeads = computed(() => {
     const source = this.sourceFilter();
-    return source === 'all' ? this._leads() : this._leads().filter((l) => l.source === source);
+    return source === 'all' ? this.leads() : this.leads().filter((l) => l.source === source);
   });
 
   readonly total = computed(() => this.sourceScopedLeads().length);
 
-  readonly countByStatus = computed(() => {
-    const counts = Object.fromEntries(STAGE_ORDER.map((s) => [s, 0])) as Record<
-      LeadStatus,
-      number
-    >;
-    for (const lead of this.sourceScopedLeads()) counts[lead.status]++;
+  /** Keyed by stage id now, not by an enum name — one entry per live stage, in position order. */
+  readonly countByStage = computed(() => {
+    const counts: Record<string, number> = Object.fromEntries(
+      this.stages.active().map((s) => [s.id, 0]),
+    );
+    for (const lead of this.sourceScopedLeads()) {
+      if (lead.stage.id in counts) counts[lead.stage.id]++;
+    }
     return counts;
   });
 
-  readonly clearedToday = computed(() => this._leads().filter((l) => l.clearedToday !== null));
+  readonly clearedToday = computed(() => this.leads().filter((l) => l.clearedToday !== null));
 
   /**
    * Everything owed right now, most-overdue first. Drifting leads are the soft signal:
@@ -144,7 +166,7 @@ export class LeadsStore {
     const now = this._now();
     const items: OpenItem[] = [];
 
-    for (const lead of this._leads()) {
+    for (const lead of this.leads()) {
       if (lead.clearedToday !== null) continue;
       const reason = this.openReason(lead, now);
       if (!reason) continue;
@@ -163,12 +185,12 @@ export class LeadsStore {
 
   readonly visibleLeads = computed(() => {
     const term = this.search().trim().toLowerCase();
-    const status = this.statusFilter();
+    const stageId = this.stageFilter();
     const key = this.sort();
     const now = this._now();
 
     return this.sourceScopedLeads()
-      .filter((lead) => status === 'all' || lead.status === status)
+      .filter((lead) => stageId === 'all' || lead.stage.id === stageId)
       .filter((lead) => {
         if (!term) return true;
         return [lead.name, lead.company, lead.phone, lead.email]
@@ -203,15 +225,16 @@ export class LeadsStore {
 
   readonly isFiltered = computed(
     () =>
-      this.statusFilter() !== 'all' ||
+      this.stageFilter() !== 'all' ||
       this.sourceFilter() !== 'all' ||
       this.search().trim().length > 0,
   );
 
+  /** One column per live stage, in position order — six today, N once a tenant edits its pipeline. */
   readonly columns = computed(() =>
-    STAGE_ORDER.map((status) => ({
-      status,
-      leads: this.visibleLeads().filter((lead) => lead.status === status),
+    this.stages.active().map((stage) => ({
+      stage,
+      leads: this.visibleLeads().filter((lead) => lead.stage.id === stage.id),
     })),
   );
 
@@ -227,13 +250,13 @@ export class LeadsStore {
 
   /** Back to the state a fresh load starts from. Filters and view preferences go too. */
   reset(): void {
-    this._leads.set([]);
+    this._rows.set([]);
     this._tenantId.set(null);
     this._loaded.set(false);
     this._loadFailed.set(false);
     this._loading.set(false);
     this.search.set('');
-    this.statusFilter.set('all');
+    this.stageFilter.set('all');
     this.sourceFilter.set('all');
     this.sort.set('urgency');
     this.sheetExpanded.set(false);
@@ -256,6 +279,13 @@ export class LeadsStore {
       const tenantId = await this.resolveTenant();
       if (!tenantId) return;
 
+      // Stages resolve every lead's `stage_id` in `leads` (the computed above), so they
+      // must be in flight before — or at least alongside — the rows themselves. Awaited
+      // rather than raced: if another caller already started this load, the guard inside
+      // StagesStore.load() makes this call a no-op, but `leads` still resolves correctly
+      // the moment that other call finishes, because it is a computed over both signals.
+      await this.stages.load();
+
       const rows = await this.supabase.run<LeadRow[]>(
         this.supabase.client
           .from('leads')
@@ -264,7 +294,7 @@ export class LeadsStore {
           .order('created_at', { ascending: false }) as never,
       );
 
-      this._leads.set((rows ?? []).map((row) => this.toLead(row)));
+      this._rows.set(rows ?? []);
       this._loaded.set(true);
     } catch (error) {
       this._loadFailed.set(true);
@@ -290,8 +320,17 @@ export class LeadsStore {
     return tenantId;
   }
 
-  /** Folds the embedded child rows into the shape the dashboard reasons about. */
-  private toLead(row: LeadRow): Lead {
+  /**
+   * Folds one raw row into the shape the dashboard reasons about. Returns `null` when the
+   * row's stage cannot be resolved — in practice only a transient state while StagesStore's
+   * own load is still in flight, since the database FK guarantees `stage_id` always points
+   * at a real row in the lead's own tenant. `leads` filters these out rather than showing a
+   * blank stage; the computed re-runs and picks the lead back up the moment stages arrive.
+   */
+  private toLead(row: LeadRow): Lead | null {
+    const stage = this.stages.byId(row.stage_id);
+    if (!stage) return null;
+
     const activities: Activity[] = (row.activities ?? [])
       .map((a) => ({
         id: a.id,
@@ -311,9 +350,7 @@ export class LeadsStore {
       .sort((a, b) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime())[0];
 
     const updatedAt = new Date(row.updated_at);
-    const closedToday =
-      (row.status === 'won' || row.status === 'lost') &&
-      daysBetween(updatedAt, new Date()) === 0;
+    const closedToday = stage.kind !== 'open' && daysBetween(updatedAt, new Date()) === 0;
 
     return {
       id: row.id,
@@ -322,7 +359,7 @@ export class LeadsStore {
       email: row.email,
       phone: row.phone,
       source: row.source,
-      status: row.status,
+      stage,
       estimatedValue: Number(row.estimated_value ?? 0),
       lostReason: row.lost_reason,
       isDemo: row.is_demo,
@@ -334,7 +371,7 @@ export class LeadsStore {
       checklistAnswered: Object.keys(answers).length,
       answers,
       activities,
-      clearedToday: closedToday ? COPY.notify.stageMoved('', row.status) : null,
+      clearedToday: closedToday ? COPY.notify.stageMoved('', stage.name) : null,
     };
   }
 
@@ -352,22 +389,10 @@ export class LeadsStore {
     return 'none';
   }
 
-  private openReason(lead: Lead, now: Date): OpenReason | null {
-    if (lead.status === 'won' || lead.status === 'lost') return null;
-
-    if (lead.reminderDueAt && daysBetween(lead.reminderDueAt, now) >= 0) {
-      return 'reminder_due';
-    }
-    if (lead.status === 'proposal_sent' && this.ageInDays(lead, now) >= DRIFT_DAYS.proposal_sent) {
-      return 'proposal_silent';
-    }
-    if (lead.status === 'new' && lead.checklistAnswered === 0 && this.ageInDays(lead, now) >= 1) {
-      return 'unqualified';
-    }
-    if (this.ageInDays(lead, now) >= DRIFT_DAYS[lead.status]) {
-      return 'drifting';
-    }
-    return null;
+  /** Thin wrapper over the pure rule in core/attention.ts, supplying the one thing it
+   *  cannot know on its own: which live stage new leads land in. */
+  private openReason(lead: Lead, now: Date) {
+    return openReasonFor(lead, now, this.stages.firstOpen()?.id ?? null);
   }
 
   openChecklistCount(lead: Lead): number {
@@ -380,8 +405,8 @@ export class LeadsStore {
     this.search.set(term);
   }
 
-  setStatusFilter(status: LeadStatus | 'all'): void {
-    this.statusFilter.set(status);
+  setStageFilter(stageId: string | 'all'): void {
+    this.stageFilter.set(stageId);
   }
 
   /** Invalid or absent values are the caller's job to catch; `'all'` is always safe here. */
@@ -399,7 +424,7 @@ export class LeadsStore {
 
   clearFilters(): void {
     this.search.set('');
-    this.statusFilter.set('all');
+    this.stageFilter.set('all');
     this.sourceFilter.set('all');
   }
 
@@ -415,22 +440,27 @@ export class LeadsStore {
 
   /**
    * Stage moves are never blocked by the checklist. A DB trigger appends the
-   * `status_changed` activity, so this writes the status and nothing else.
+   * `status_changed` activity, so this writes the stage and nothing else.
    */
-  moveToStage(leadId: string, status: LeadStatus, statusLabel: string): void {
+  moveToStage(leadId: string, stage: Stage): void {
     const lead = this.byId(leadId);
-    if (!lead || lead.status === status) return;
+    if (!lead || lead.stage.id === stage.id) return;
 
     void this.commit(
       lead.name,
       () =>
         this.supabase.run(
-          this.supabase.client.from('leads').update({ status }).eq('id', leadId) as never,
+          this.supabase.client
+            .from('leads')
+            // stage_id is not yet in the generated Database types (see rpc()'s doc
+            // comment below) — widened the same way, on the value rather than the table.
+            .update({ stage_id: stage.id } as never)
+            .eq('id', leadId) as never,
         ),
       () => {
-        this.announcement.set(COPY.a11y.stageChanged(lead.name, statusLabel));
+        this.announcement.set(COPY.a11y.stageChanged(lead.name, stage.name));
         const open = this.openChecklistCount(lead);
-        if (open > 0 && status !== 'won' && status !== 'lost') {
+        if (open > 0 && stage.kind === 'open') {
           // The action opens the lead at its checklist. It never answers anything — that is
           // why it waited for the checklist to have a screen rather than shipping as a
           // one-tap "mark done", which would have been a lie about the user's own data.
@@ -441,8 +471,10 @@ export class LeadsStore {
                 queryParams: { at: 'checklist' },
               }),
           });
-        } else {
-          this.notify.info(STATUS_GUIDANCE[status]);
+        } else if (stage.guidance) {
+          // A user-created stage may carry no guidance at all (documents/PLAN-stages.md
+          // §4.4) — silence is the right answer there, not a blank toast.
+          this.notify.info(stage.guidance);
         }
       },
     );
@@ -572,7 +604,7 @@ export class LeadsStore {
         p_email: draft.email,
         p_phone: draft.phone,
         p_source: draft.source,
-        p_status: draft.status,
+        p_stage_id: draft.stageId,
         p_estimated_value: draft.estimatedValue,
       });
       await this.reload();
@@ -605,7 +637,7 @@ export class LeadsStore {
           p_email: draft.email,
           p_phone: draft.phone,
           p_source: draft.source,
-          p_status: draft.status,
+          p_stage_id: draft.stageId,
           p_estimated_value: draft.estimatedValue,
           p_lost_reason: draft.lostReason,
           p_note: extras.note,
@@ -620,8 +652,9 @@ export class LeadsStore {
       () => {
         this.notify.succeeded(COPY.lead.saved);
         const before = this.byId(leadId);
-        if (before && before.status !== draft.status) {
-          this.announcement.set(COPY.a11y.stageChanged(draft.name, STATUS_LABEL[draft.status]));
+        if (before && before.stage.id !== draft.stageId) {
+          const stageName = this.stages.byId(draft.stageId)?.name ?? '';
+          this.announcement.set(COPY.a11y.stageChanged(draft.name, stageName));
         }
       },
     );
@@ -686,7 +719,7 @@ export class LeadsStore {
         .order('created_at', { ascending: false }) as never,
     );
     this._now.set(new Date());
-    this._leads.set((rows ?? []).map((row) => this.toLead(row)));
+    this._rows.set(rows ?? []);
   }
 
   /**
@@ -731,6 +764,6 @@ export class LeadsStore {
   }
 
   private byId(leadId: string): Lead | undefined {
-    return this._leads().find((l) => l.id === leadId);
+    return this.leads().find((l) => l.id === leadId);
   }
 }

@@ -1,12 +1,19 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 
 import { COPY } from './copy';
-import { LeadSource, LeadStatus } from './lead.model';
+import { LeadSource } from './lead.model';
 import { LeadsStore } from './leads.store';
 import { NotifyService } from './notify.service';
+import { StagesStore } from './stages.store';
 import { AppError, SupabaseService, isAppError } from './supabase.service';
 
-/** What lead_stats() returns. Aggregated server-side, in one round trip. */
+/**
+ * What lead_stats() returns. Aggregated server-side, in one round trip.
+ *
+ * `by_status` and `reached` are keyed by stage id (uuid as text), not by a status name —
+ * the pipeline is user-defined now, so the RPC has no enum left to key on. The key names
+ * themselves are unchanged from the enum-based version so this interface does not churn.
+ */
 export interface LeadStats {
   total: number;
   won: number;
@@ -15,8 +22,8 @@ export interface LeadStats {
   open: number;
   open_value: number;
   won_value: number;
-  by_status: Partial<Record<LeadStatus, number>> | null;
-  reached: Partial<Record<LeadStatus, number>> | null;
+  by_status: Partial<Record<string, number>> | null;
+  reached: Partial<Record<string, number>> | null;
   sources: { source: LeadSource; total: number; won: number; lost: number }[];
 }
 
@@ -34,6 +41,7 @@ export class InsightsStore {
   private readonly supabase = inject(SupabaseService);
   private readonly notify = inject(NotifyService);
   private readonly leads = inject(LeadsStore);
+  private readonly stages = inject(StagesStore);
 
   private readonly _stats = signal<LeadStats | null>(null);
   private readonly _loading = signal(false);
@@ -73,12 +81,16 @@ export class InsightsStore {
     return Math.round((s.won / s.decided) * 100);
   });
 
-  /** Stage reach in pipeline order, with the widest bar as the scale. */
+  /**
+   * Stage reach in pipeline order, with the widest bar as the scale.
+   *
+   * `active()` already excludes archived stages and is already ordered by position, which
+   * is exactly the funnel's shape — the RPC keyed `reached` by stage id for the same
+   * reason, so no name ever has to survive a rename or a reorder to stay correct here.
+   */
   readonly flow = computed(() => {
     const reached = this._stats()?.reached ?? {};
-    const rows = (['new', 'contacted', 'qualified', 'proposal_sent', 'won', 'lost'] as const).map(
-      (status) => ({ status, leads: reached[status] ?? 0 }),
-    );
+    const rows = this.stages.active().map((stage) => ({ stage, leads: reached[stage.id] ?? 0 }));
     const max = Math.max(1, ...rows.map((r) => r.leads));
     return rows.map((r) => ({ ...r, share: Math.round((r.leads / max) * 100) }));
   });

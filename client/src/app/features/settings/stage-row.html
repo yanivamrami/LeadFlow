@@ -1,0 +1,171 @@
+<article class="row" [attr.aria-label]="stage().name">
+  <div class="row__hd">
+    <button
+      type="button"
+      class="handle lf-hit"
+      cdkDragHandle
+      [disabled]="busy()"
+      [attr.aria-label]="copyStages.dragHandleLabel(stage().name)"
+    >
+      <svg lucideGripVertical aria-hidden="true"></svg>
+    </button>
+
+    <lf-stage-tag class="row__tag" [stage]="stage()" />
+  </div>
+
+  @if (stage().kind !== 'open') {
+    <p class="row__kindnote">
+      {{ stage().kind === 'won' ? copyStages.kindLockedWon : copyStages.kindLockedLost }}
+    </p>
+  }
+
+  <div class="row__fields" (focusout)="commitRename()">
+    <lf-text-field
+      #nameField
+      [name]="uid + '-name'"
+      [label]="copyStages.nameLabel"
+      [value]="stage().name"
+      [disabled]="busy()"
+    />
+    <lf-text-field
+      #shortNameField
+      [name]="uid + '-short'"
+      [label]="copyStages.shortNameLabel"
+      [help]="copyStages.shortNameHelp"
+      [value]="stage().shortName ?? ''"
+      [disabled]="busy()"
+    />
+  </div>
+
+  <div class="row__swatch">
+    <span class="lf-label">{{ copyStages.swatchLabel }}</span>
+    @if (swatchLocked()) {
+      <p class="row__note">{{ copyStages.swatchLocked }}</p>
+    } @else {
+      <div class="swatches" role="group" [attr.aria-label]="copyStages.swatchLabel">
+        @for (sw of swatches; track sw) {
+          <button
+            type="button"
+            class="swatch swatch--{{ sw }}"
+            [class.on]="stage().swatch === sw"
+            [attr.aria-pressed]="stage().swatch === sw"
+            [disabled]="busy()"
+            (click)="pickSwatch(sw)"
+          >
+            {{ copyStages.swatchName[sw] }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="row__grid">
+    <div class="field" (focusout)="commitDrift()">
+      <lf-text-field
+        #driftField
+        [name]="uid + '-drift'"
+        inputmode="numeric"
+        [label]="copyStages.driftLabel"
+        [help]="copyStages.driftHelp"
+        [value]="driftDisplay()"
+        [disabled]="busy()"
+      />
+    </div>
+
+    <label class="check">
+      <input
+        type="checkbox"
+        [checked]="stage().expectsReply"
+        [disabled]="busy()"
+        (change)="toggleExpectsReply($any($event.target).checked)"
+      />
+      <span class="check__text">
+        <span class="check__label lf-label">{{ copyStages.expectsReplyLabel }}</span>
+        <span class="check__help">{{ copyStages.expectsReplyHelp }}</span>
+      </span>
+    </label>
+  </div>
+
+  <label class="textarea-field">
+    <span class="lf-label">{{ copyStages.meaningLabel }}</span>
+    <textarea
+      #meaningField
+      rows="2"
+      [value]="stage().meaning ?? ''"
+      [placeholder]="copyStages.meaningPlaceholder"
+      [disabled]="busy()"
+      (focusout)="commitMeaning()"
+    ></textarea>
+    <p class="field-help">{{ copyStages.meaningHelp }}</p>
+  </label>
+
+  <label class="textarea-field">
+    <span class="lf-label">{{ copyStages.guidanceLabel }}</span>
+    <textarea
+      #guidanceField
+      rows="2"
+      [value]="stage().guidance ?? ''"
+      [placeholder]="copyStages.guidancePlaceholder"
+      [disabled]="busy()"
+      (focusout)="commitGuidance()"
+    ></textarea>
+    <p class="field-help">{{ copyStages.guidanceHelp }}</p>
+  </label>
+
+  <div class="row__ft">
+    <p class="row__count">
+      {{ leadCount() === null ? copyStages.leadCountUnknown : copyStages.leadCount(leadCount()!) }}
+    </p>
+
+    <div class="archive">
+      @if (leadCount() === null) {
+        <!-- nothing to offer yet — the count line above already says why -->
+      } @else if (refusedReason(); as reason) {
+        <p class="archive__refused">{{ reason }}</p>
+      } @else if (!archiveOpen()) {
+        <button type="button" class="b b--bare" [disabled]="busy()" (click)="openArchive()">
+          {{ copy.stages.archive }}
+        </button>
+      } @else {
+        @if (verdict() === 'needs-destination') {
+          <p class="archive__note">{{ copy.stages.archiveNeedsDestination(leadCount()!) }}</p>
+          <label class="dest">
+            <span class="lf-label">{{ copy.stages.archiveDestination }}</span>
+            <select
+              [value]="destinationId() ?? ''"
+              (change)="destinationId.set($any($event.target).value || null)"
+            >
+              <option value="" disabled>{{ copyStages.chooseDestination }}</option>
+              @for (opt of destinationOptions(); track opt.id) {
+                <option [value]="opt.id">{{ opt.name }}</option>
+              }
+            </select>
+          </label>
+          @if (destinationId(); as dest) {
+            <p class="archive__note">{{ copyStages.willMove(leadCount()!, destinationName(dest)) }}</p>
+          }
+        } @else {
+          <p class="archive__note">{{ copyStages.archiveConfirm(stage().name) }}</p>
+        }
+
+        <div class="archive__acts">
+          <button
+            type="button"
+            class="b b--danger"
+            [disabled]="busy() || (verdict() === 'needs-destination' && !destinationId())"
+            (click)="confirmArchive()"
+          >
+            {{ busy() ? copyStages.working : copy.stages.archive }}
+          </button>
+          <button type="button" class="b b--bare" [disabled]="busy()" (click)="cancelArchive()">
+            {{ copyStages.cancel }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- SCREENS 9.2 — automations on this stage (documents/CONTRACT-stages.md §4: one
+       section outlet, owned and built by the automations feature, not this file). -->
+  <lf-automations-panel [stage]="stage()" [allStages]="allStages()" />
+</article>
