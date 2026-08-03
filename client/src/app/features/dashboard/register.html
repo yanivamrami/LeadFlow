@@ -1,0 +1,92 @@
+<section class="reg" aria-labelledby="reg-title">
+  <header class="reg__hd">
+    <h2 class="reg__title" id="reg-title">{{ copy.register.title }}</h2>
+    <span class="reg__count lf-num">{{ leads().length }}</span>
+    <span class="reg__sort">{{ copy.register.sort }}</span>
+  </header>
+
+  <div class="reg__cols" aria-hidden="true">
+    <span></span>
+    <span class="lf-label">{{ copy.register.columns.lead }}</span>
+    <span class="lf-label">{{ copy.register.columns.stage }}</span>
+    <span class="lf-label col-source">{{ copy.register.columns.source }}</span>
+    <span class="lf-label">{{ copy.register.columns.value }}</span>
+    <span class="lf-label col-when">{{ copy.register.columns.lastTouch }}</span>
+    <span></span>
+  </div>
+
+  @for (lead of leads(); track lead.id) {
+    <article class="row" [class]="'row--' + attention(lead)" [class.row--demo]="lead.isDemo">
+      <span class="row__flag" aria-hidden="true"></span>
+
+      <div class="row__id">
+        <h3 class="row__name">
+          {{ lead.name }}
+          @if (lead.isDemo) {
+            <span class="stamp">{{ copy.register.demoFlag }}</span>
+          }
+        </h3>
+        <p class="row__meta">
+          @if (lead.isDemo) {
+            {{ copy.register.demoNote }}
+          } @else {
+            @if (lead.company) {
+              <span>{{ lead.company }}</span>
+            }
+            @if (attention(lead) === 'drift') {
+              <span class="row__sep">·</span>
+              <span>{{ silentDays(lead) }} ימים {{ copy.register.noContact }}</span>
+            } @else if (lead.lostReason) {
+              <span class="row__sep">·</span>
+              <span>סיבה: {{ lead.lostReason }}</span>
+            }
+          }
+        </p>
+      </div>
+
+      <div class="row__stage">
+        <lf-stage-tag [status]="lead.status" />
+        @if (attention(lead) !== 'none') {
+          <span class="lf-sr">
+            {{ attention(lead) === 'now' ? copy.a11y.attentionNow : copy.a11y.attentionDrift }}
+          </span>
+        }
+      </div>
+
+      <div class="row__source">{{ sourceLabel[lead.source] }}</div>
+      <div class="row__value lf-num">{{ formatValue(lead.estimatedValue) }}</div>
+      <div class="row__when">{{ when(lead) }}</div>
+
+      <lf-lead-menu
+        [lead]="lead"
+        (moveTo)="move(lead, $event)"
+        (logActivity)="log(lead)"
+        (snooze)="snooze(lead)"
+        (deleteLead)="remove(lead)"
+      />
+    </article>
+  } @empty {
+    <div class="none">
+      <div class="none__mark" aria-hidden="true">
+        <i></i><i></i><i></i>
+      </div>
+      <p class="none__title">
+        {{ isFiltered() ? copy.register.noResultsTitle : copy.register.emptyTitle }}
+      </p>
+      <p class="none__body">
+        {{ isFiltered() ? copy.register.noResultsBody : copy.register.emptyBody }}
+      </p>
+      @if (isFiltered()) {
+        <button type="button" class="none__act" (click)="clearFilters()">
+          {{ copy.register.clearFilters }}
+        </button>
+      }
+    </div>
+  }
+
+  @if (leads().length) {
+    <p class="reg__foot">
+      {{ copy.register.showing(leads().length, total()) }} · {{ copy.register.end }}
+    </p>
+  }
+</section>

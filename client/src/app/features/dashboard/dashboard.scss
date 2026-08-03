@@ -1,0 +1,134 @@
+:host {
+  display: block;
+  position: relative;
+}
+
+/* mobile: the sheet is a band. desktop: it stands as a column beside the register. */
+.dash {
+  display: block;
+}
+
+.dash__sheet {
+  display: flex;
+  min-inline-size: 0;
+}
+.dash__sheet lf-day-sheet {
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.dash__main {
+  min-inline-size: 0;
+}
+
+/* search + view toggle */
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--lf-space-3);
+  padding: var(--lf-space-4) var(--lf-space-4) 0;
+}
+
+.tools__search {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-3);
+  border: 2px solid var(--lf-ink);
+  background: var(--lf-surface);
+  color: var(--lf-muted);
+}
+.tools__search svg { flex: 0 0 auto; inline-size: 18px; block-size: 18px; stroke-width: 2.4; }
+.tools__search input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--lf-ink);
+}
+.tools__search input::placeholder { color: var(--lf-muted); }
+.tools__search:focus-within { outline: 3px solid var(--lf-red); outline-offset: 0; }
+.tools__search input:focus-visible { outline: none; }
+
+.tools__view {
+  display: flex;
+  flex: 0 0 auto;
+  border: 2px solid var(--lf-ink);
+}
+
+.seg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-4);
+  border: 0;
+  background: transparent;
+  color: var(--lf-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.seg + .seg { border-inline-start: 2px solid var(--lf-ink); }
+.seg svg { inline-size: 17px; block-size: 17px; stroke-width: 2.4; }
+.seg--on {
+  background: var(--lf-day);
+  color: var(--lf-on-day);
+  font-weight: 500;
+}
+
+/* stage filters — a strip of posted chips, horizontally scrollable on a phone */
+.filters {
+  display: flex;
+  margin-block-start: var(--lf-space-4);
+  border-block-end: 3px solid var(--lf-ink);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+
+.filters__chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-4);
+  border: 0;
+  background: transparent;
+  color: var(--lf-muted);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.filters__chip + .filters__chip { border-inline-start: 1px solid var(--lf-rule-soft); }
+.filters__chip .lf-num { font-size: 12px; }
+.filters__chip--on {
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+  font-weight: 500;
+}
+
+/* The checklist nudge is no longer rendered here — it is a sticky toast in the shared
+   pasted stack (lf-toast-stack), since it is the same object in the same place. */
+
+@media (min-width: 900px) {
+  .dash {
+    display: grid;
+    /* the sheet gives width back to the register on narrower desktops */
+    grid-template-columns: clamp(300px, 31vw, 420px) minmax(0, 1fr);
+    align-items: stretch;
+    min-block-size: calc(100vh - 76px);
+  }
+
+  .tools { padding: 20px var(--lf-space-6) 0; }
+  .filters { margin-inline: var(--lf-space-6); }
+}
+
+@media (min-width: 1200px) {
+  .tools { padding-inline: var(--lf-space-8); }
+  .filters { margin-inline: var(--lf-space-8); }
+}

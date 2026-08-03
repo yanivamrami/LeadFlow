@@ -1,0 +1,74 @@
+<section class="sheet" [class.sheet--empty]="allItems().length === 0" aria-labelledby="sheet-title">
+  <header class="sheet__hd">
+    <h2 class="sheet__title" id="sheet-title">{{ copy.sheet.title }}</h2>
+    <span class="sheet__unit lf-label">{{ copy.sheet.open }}</span>
+    <span class="sheet__count lf-num">{{ allItems().length }}</span>
+  </header>
+
+  @for (item of items(); track item.lead.id) {
+    <article class="item">
+      <div class="item__l1">
+        <h3 class="item__name">{{ item.lead.name }}</h3>
+        <span class="item__value lf-num">{{ formatValue(item.lead.estimatedValue) }}</span>
+      </div>
+
+      <p class="item__why">
+        <span class="item__age lf-label">{{ formatAge(item.age) }}</span>
+        <span>{{ reasonLabel[item.reason] }}</span>
+      </p>
+
+      <div class="item__actions">
+        <button type="button" class="b b--solid" (click)="act(item)">
+          @if (actionLabel[item.reason] === 'חייג') {
+            <svg lucidePhone aria-hidden="true"></svg>
+          }
+          {{ actionLabel[item.reason] }}
+        </button>
+        <button type="button" class="b b--bare" (click)="snooze(item.lead)">
+          {{ copy.sheet.snooze }}
+        </button>
+      </div>
+    </article>
+  }
+
+  @if (allItems().length === 0) {
+    <div class="empty">
+      <p class="empty__title">{{ copy.sheet.emptyTitle }}</p>
+      <p class="empty__body">{{ copy.sheet.emptyBody }}</p>
+    </div>
+  }
+
+  @if (hasHidden()) {
+    <button type="button" class="sheet__more" (click)="toggle()">
+      {{ expanded() ? copy.sheet.showLess : copy.sheet.showAll }}
+      <span class="lf-num">{{ allItems().length }}</span>
+    </button>
+  }
+
+  @if (cleared().length) {
+    <div class="done">
+      <p class="done__label lf-label">{{ copy.sheet.doneToday }}</p>
+      @for (lead of cleared(); track lead.id) {
+        <div class="done__row">
+          <span class="done__name">{{ lead.name }}</span>
+          <span class="done__note">{{ lead.clearedToday }}</span>
+          <span class="done__value lf-num">{{ formatValue(lead.estimatedValue) }}</span>
+        </div>
+      }
+    </div>
+  }
+
+  @if (!explainerDismissed()) {
+    <aside class="explain">
+      <p>{{ copy.sheet.explainer }}</p>
+      <button
+        type="button"
+        class="explain__x lf-hit"
+        [attr.aria-label]="copy.sheet.dismiss"
+        (click)="dismissExplainer()"
+      >
+        <svg lucideX aria-hidden="true"></svg>
+      </button>
+    </aside>
+  }
+</section>

@@ -1,0 +1,13 @@
+{
+  "surface": "dashboard + app shell",
+  "mode": "operate",
+  "scope": "replacement visual world",
+  "direction": "street bill-posting / market signage — שלט שוק (direction seed af571fb8, candidate 6)",
+  "viewports": [
+    "390 mobile",
+    "1440 desktop register",
+    "1440 desktop kanban"
+  ],
+  "fonts": "Karantina 700 display + Heebo UI, Hebrew subsets embedded",
+  "approved": false
+}

@@ -55,7 +55,7 @@ Mobile-first and Hebrew/RTL-native from the first pixel — not a desktop CRM sq
 - `prefers-reduced-motion` honoured globally.
 - Nothing may read as a gate or a punishment. Advisory, never blocking.
 - No emoji in the interface. No sales jargon.
-- Only the anon Supabase key ships to the client; the service-role key never leaves Edge Function secrets.
+- Only the Supabase **publishable** key (`sb_publishable_…`) ships to the client; the **secret** key (`sb_secret_…`) never leaves Edge Function secrets. The legacy `anon` / `service_role` JWTs are deprecated by end of 2026 — do not introduce them.
 
 **Explicitly deferred (do not design as if shipped):** embeddable web-form capture, team invite flow, user-editable checklist items, email/push notifications, PWA/offline, preview environments.
 
@@ -65,13 +65,13 @@ Mobile-first and Hebrew/RTL-native from the first pixel — not a desktop CRM sq
 
 - **Name:** "LeadFlow Manager", in Latin script, including inside the Hebrew UI. No Hebrew product name exists. No logo, wordmark, or other brand asset exists yet.
 - **Voice (confirmed and split by context):** stage tips and empty states may be energetic ("ליד חדש — הזמן להכשיר!"); checklist questions stay plain and conversational ("אתם מדברים עם מי שמחליט?"); errors are factual and state the fix. Warm-instructional, never teacherly, never cutesy — the user meets this copy many times a week.
-- **Visual system:** `docs/DESIGN-SYSTEM.md` (Modernist base — flat, zero radius, 2px rules, near-mono neutral ramp with `#ec3013` accent reserved for primary action / Won / guidance rule / focus; Fredoka for Hebrew and UI, Archivo for numerals and labels). The user has confirmed this is **directional, not frozen** — it may be tuned to fit the product's vibe. The mono discipline, radius-0 language, and the guidance layer as signature component are the parts worth defending; specific values are open to refinement.
+- **Visual system:** `docs/DESIGN-SYSTEM.md` v2.0 — the **שלט שוק / market sign** world, drawn from Israeli street bill-posting and market-stall signage: ink `#14110f` on poster stock `#f7f1e4`, one fluorescent `#ffe000` field for the day, one `#cc1b12` for commit. Zero radius, no shadows, heavy rules, hatching and rotation for depth. Fredoka carries Hebrew and the display voice; Archivo carries figures, Latin and labels. This replaced the Modernist near-mono register of v1.0 after the user judged three variants of it interchangeable; nothing from v1.0 should be reintroduced piecemeal. The parts worth defending: the day-as-a-sheet mechanic, attention as texture rather than hue, and the guidance layer as annotation rather than interruption.
 - **Product intent:** free tool / lead magnet. No paid tier is planned. Value is adoption and goodwill, not revenue — so no upsell surfaces, no plan gates, no "upgrade" affordances anywhere.
 
 ## Evidence on Hand
 
-- **Exists:** the PRD, architecture doc, design-system doc and PM decision record listed above; an interactive design-system prototype at `documents/design_handoff_design_system/prototype/LeadFlow Design System.dc.html`; implemented tokens at `client/src/theme/tokens.css` and a PrimeNG preset at `client/src/theme/leadflow-preset.ts`. Angular 20 app is scaffolded (`client/`) with routes still empty — effectively pre-feature.
-- **Does not exist — must not be fabricated:** customers, testimonials, case studies, usage statistics, conversion benchmarks, press, logos, screenshots of real usage, pricing, launch dates, team bios, security certifications. There is no `supabase/` folder or applied schema in the repo yet either; the ER model in `docs/ARCHITECTURE.md` is the design, not a deployed database.
+- **Exists:** the PRD, architecture doc, design-system doc and PM decision record listed above; implemented tokens at `client/src/theme/tokens.css` and a PrimeNG preset at `client/src/theme/leadflow-preset.ts`; approved comps under `.impeccable/mocks/`. The Angular 20 app builds and runs the dashboard route (register + board + day sheet + shell) against authored demo data in `client/src/app/core/demo-leads.ts` — no Supabase connection yet. The v1.0 Modernist prototype under `documents/design_handoff_design_system/` is superseded and kept only as history.
+- **Does not exist — must not be fabricated:** customers, testimonials, case studies, usage statistics, conversion benchmarks, press, logos, screenshots of real usage, pricing, launch dates, team bios, security certifications. The ER model in `docs/ARCHITECTURE.md` **is** deployed as of 2026-08-02: the Supabase CLI project lives at `client/supabase/`, and its migrations are applied to the cloud **dev** project (tables, RLS policies, signup and status triggers, realtime on `leads`). No production Supabase project exists yet, and the dev database holds no real data.
 - Demo/sample lead content is Hebrew and explicitly labelled as demo — never present it as a real customer.
 
 ## Product Principles
