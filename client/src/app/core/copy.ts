@@ -469,6 +469,18 @@ export const COPY = {
       optional: 'לא חובה',
     },
 
+    /** Tooltip on the drag grip. Desktop only — there is nowhere to move a bottom drawer. */
+    moveSheet: 'גרירה להזזת החלון',
+
+    /**
+     * The stage teaching, shown live under the status control as the selection changes —
+     * so "what does כשיר mean" is answered before the move, not five seconds after it.
+     */
+    stageNext: 'הצעד הבא',
+    /** The one next thing for this lead, at the top of the sheet. */
+    nextStep: 'מה עושים עכשיו',
+    nextStepDone: 'הליד סגור. אין מה לעשות איתו.',
+
     /** The per-field help toggle. Same words as the checklist's, because it is the same act. */
     fieldHelpShow: 'למה זה חשוב?',
     fieldHelpHide: 'סגור',
@@ -619,6 +631,15 @@ export const COPY = {
     themeLight: 'בהיר',
     themeDark: 'כהה',
     themeSystem: 'לפי המכשיר',
+    /**
+     * How much the app explains itself. Starts full, because someone who does not know what
+     * a stage means will not come here looking for the switch that would tell them.
+     */
+    guidance: 'הסברים',
+    guidanceLabel: 'כמה להסביר',
+    guidanceFull: 'מלא',
+    guidanceQuiet: 'מצומצם',
+    guidanceHelp: 'במצב מלא ההסברים על השדות והשלבים פתוחים כברירת מחדל. במצב מצומצם הם במרחק הקלקה.',
     session: 'החשבון',
     signOut: 'יציאה',
     signedOut: 'יצאתם',

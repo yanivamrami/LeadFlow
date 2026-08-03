@@ -14,8 +14,9 @@ import { map } from 'rxjs';
 
 import { LucideColumns3, LucideList, LucideSearch } from '@lucide/angular';
 
-import { COPY, STATUS_LABEL, STATUS_SHORT } from '../../core/copy';
+import { COPY, STATUS_LABEL, STATUS_MEANING, STATUS_SHORT } from '../../core/copy';
 import { LEAD_SOURCES, LeadSource, LeadStatus, STAGE_ORDER } from '../../core/lead.model';
+import { GuidanceService } from '../../core/guidance.service';
 import { LeadsStore } from '../../core/leads.store';
 import { Board } from './board';
 import { DaySheet } from './day-sheet';
@@ -42,6 +43,7 @@ const BOARD_MIN_WIDTH = 768;
 })
 export class Dashboard {
   private readonly store = inject(LeadsStore);
+  protected readonly guidance = inject(GuidanceService);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly copy = COPY;
@@ -52,6 +54,16 @@ export class Dashboard {
   protected readonly counts = this.store.countByStatus;
   protected readonly total = this.store.total;
   protected readonly statusFilter = this.store.statusFilter;
+
+  /**
+   * The filtered stage's meaning, or null while everything is showing. Narrowed here rather
+   * than indexed in the template: `statusFilter` carries `'all'`, which is not a stage and
+   * has no meaning to state.
+   */
+  protected readonly filteredStageMeaning = computed(() => {
+    const status = this.statusFilter();
+    return status === 'all' ? null : STATUS_MEANING[status];
+  });
   protected readonly search = this.store.search;
   protected readonly announcement = this.store.announcement;
 

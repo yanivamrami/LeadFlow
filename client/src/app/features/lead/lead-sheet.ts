@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   computed,
   effect,
@@ -13,8 +14,9 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { A11yModule } from '@angular/cdk/a11y';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
-import { LucideX } from '@lucide/angular';
+import { LucideGripVertical, LucideX } from '@lucide/angular';
 
 import {
   ACTIVITY_LABEL,
@@ -27,10 +29,14 @@ import {
   LeadFieldKey,
   LOST_REASONS,
   SOURCE_LABEL,
+  STATUS_GUIDANCE,
   STATUS_LABEL,
+  STATUS_MEANING,
   formatValue,
   formatDue,
 } from '../../core/copy';
+import { GuidanceService } from '../../core/guidance.service';
+import { nextStepOf } from '../../core/guidance';
 import {
   Activity,
   CHECKLIST_ITEMS,
@@ -75,13 +81,25 @@ type FooterMode = 'default' | 'dirty' | 'delete';
 @Component({
   selector: 'lf-lead-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, A11yModule, LucideX, TextField, FormError, StageTag, DuePicker],
+  imports: [
+    FormsModule,
+    A11yModule,
+    DragDropModule,
+    LucideX,
+    LucideGripVertical,
+    TextField,
+    FormError,
+    StageTag,
+    DuePicker,
+  ],
   templateUrl: './lead-sheet.html',
   styleUrl: './lead-sheet.scss',
 })
 export class LeadSheet {
   private readonly store = inject(LeadsStore);
   private readonly router = inject(Router);
+  /** Read by the template: how much of the teaching layer is expanded by default. */
+  protected readonly guidance = inject(GuidanceService);
 
   /** Bound from the route: absent on /lead/new, the lead id on /lead/:id. */
   readonly id = input<string | undefined>(undefined);
@@ -101,6 +119,8 @@ export class LeadSheet {
   protected readonly answerLabel = ANSWER_LABEL;
   protected readonly answerAria = ANSWER_ARIA;
   protected readonly fieldHelp = LEAD_FIELD_HELP;
+  protected readonly stageMeaning = STATUS_MEANING;
+  protected readonly stageGuidance = STATUS_GUIDANCE;
   protected readonly lostReasons = LOST_REASONS;
   protected readonly stages = STAGE_ORDER;
   protected readonly sources = SOURCES;
@@ -159,6 +179,14 @@ export class LeadSheet {
   protected readonly fieldHelpOpen = signal<LeadFieldKey | null>(null);
   protected readonly timelineExpanded = signal(false);
 
+  /**
+   * Whether the sheet can be dragged. Desktop only: under 900px it is a full-width drawer
+   * on the bottom edge, so there is nowhere to move it to and dragging would only let the
+   * user hide their own form. Tracked live rather than read once, because a window resized
+   * across the breakpoint must not leave a drawer that can be dragged off screen.
+   */
+  protected readonly canDrag = signal(false);
+
   private readonly checklistEl = viewChild<ElementRef<HTMLElement>>('checklist');
   private readonly composerEl = viewChild<ElementRef<HTMLElement>>('composer');
   private readonly noteInputEl = viewChild<ElementRef<HTMLTextAreaElement>>('noteInput');
@@ -167,6 +195,14 @@ export class LeadSheet {
   private landedNote = false;
 
   constructor() {
+    if (typeof matchMedia === 'function') {
+      const wide = matchMedia('(min-width: 900px)');
+      this.canDrag.set(wide.matches);
+      const onChange = (event: MediaQueryListEvent) => this.canDrag.set(event.matches);
+      wide.addEventListener('change', onChange);
+      inject(DestroyRef).onDestroy(() => wide.removeEventListener('change', onChange));
+    }
+
     // Fill the form once the lead arrives — on a deep link the store may still be reading.
     effect(() => {
       const lead = this.lead();
@@ -230,6 +266,28 @@ export class LeadSheet {
     this.value.set(lead.estimatedValue ? String(lead.estimatedValue) : '');
     this.lostReason.set(lead.lostReason ?? '');
   }
+
+  /**
+   * The one next thing to do with this lead. Derived, never stored: it is a function of the
+   * stage, the follow-up and how long the lead has been silent, all of which the store
+   * already knows. Absent in create mode (no lead yet) and for closed leads (nothing owed).
+   */
+  /**
+   * The two hand-rolled select blocks ask this instead of comparing signals inline three
+   * times each: the `@if`, the `aria-expanded` and the `aria-describedby` must agree, and
+   * three copies of the same condition is how they stop agreeing.
+   */
+  protected readonly statusHelpOpen = computed(
+    () => this.guidance.verbose() || this.fieldHelpOpen() === 'status',
+  );
+  protected readonly sourceHelpOpen = computed(
+    () => this.guidance.verbose() || this.fieldHelpOpen() === 'source',
+  );
+
+  protected readonly nextStep = computed(() => {
+    const lead = this.lead();
+    return lead ? nextStepOf(lead, this.store.now()) : null;
+  });
 
   /* ---------- answers ---------- */
 

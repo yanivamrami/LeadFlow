@@ -6,6 +6,7 @@ import { LucideLogOut } from '@lucide/angular';
 import { COPY } from '../../core/copy';
 import { NotifyService } from '../../core/notify.service';
 import { isAppError, SupabaseService } from '../../core/supabase.service';
+import { GuidanceService } from '../../core/guidance.service';
 import { ThemeChoice, ThemeService } from '../../core/theme.service';
 import { FormError } from '../../shared/form-error';
 import { TextField } from '../../shared/text-field';
@@ -35,6 +36,7 @@ export class Profile {
   private readonly notify = inject(NotifyService);
 
   protected readonly theme = inject(ThemeService);
+  protected readonly guidance = inject(GuidanceService);
   protected readonly copy = COPY;
 
   protected readonly email = this.supabase.email;

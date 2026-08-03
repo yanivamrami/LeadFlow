@@ -103,6 +103,14 @@
   font-size: var(--lf-size-label);
 }
 
+/* What a segmented choice actually changes. Same register as the read-only email note. */
+.seg__n {
+  margin: 8px 0 0;
+  color: var(--lf-muted);
+  font-size: var(--lf-size-small);
+  line-height: 1.45;
+}
+
 /* the dashboard's view toggle, same organ: one ink frame, selected segment fills yellow */
 .seg {
   display: inline-flex;

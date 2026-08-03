@@ -2,6 +2,7 @@ import { Injectable, computed, effect, inject, signal, untracked } from '@angula
 import { Router } from '@angular/router';
 
 import { COPY, STATUS_GUIDANCE, STATUS_LABEL, daysBetween, formatDue } from './copy';
+import { ageInDays, openReasonOf } from './guidance';
 import {
   Activity,
   ActivityType,
@@ -9,7 +10,6 @@ import {
   CHECKLIST_ITEMS,
   ChecklistAnswers,
   ChecklistItem,
-  DRIFT_DAYS,
   Lead,
   LeadDraft,
   LeadSaveExtras,
@@ -17,7 +17,6 @@ import {
   LeadStatus,
   OPEN_ITEMS_CAP,
   OpenItem,
-  OpenReason,
   QualificationAnswer,
   STAGE_ORDER,
   SortKey,
@@ -146,7 +145,7 @@ export class LeadsStore {
 
     for (const lead of this._leads()) {
       if (lead.clearedToday !== null) continue;
-      const reason = this.openReason(lead, now);
+      const reason = openReasonOf(lead, now);
       if (!reason) continue;
       items.push({ lead, reason, age: this.ageInDays(lead, now) });
     }
@@ -340,34 +339,22 @@ export class LeadsStore {
 
   /* ---------- derivation ---------- */
 
+  /**
+   * Both of these now delegate to `core/guidance.ts`. The rules moved out of this store
+   * unchanged, because the lead sheet needs the same answer and `openReason` was private —
+   * so the screen where a beginner asks "what now?" could not reach what the day sheet was
+   * already computing. One rule, one place, two screens.
+   */
   ageInDays(lead: Lead, now = this._now()): number {
-    return daysBetween(lead.lastTouchAt ?? lead.createdAt, now);
+    return ageInDays(lead, now);
   }
 
   attentionOf(lead: Lead, now = this._now()): Attention {
     if (lead.clearedToday !== null) return 'none';
-    const reason = this.openReason(lead, now);
+    const reason = openReasonOf(lead, now);
     if (reason && reason !== 'drifting') return 'now';
     if (reason === 'drifting') return 'drift';
     return 'none';
-  }
-
-  private openReason(lead: Lead, now: Date): OpenReason | null {
-    if (lead.status === 'won' || lead.status === 'lost') return null;
-
-    if (lead.reminderDueAt && daysBetween(lead.reminderDueAt, now) >= 0) {
-      return 'reminder_due';
-    }
-    if (lead.status === 'proposal_sent' && this.ageInDays(lead, now) >= DRIFT_DAYS.proposal_sent) {
-      return 'proposal_silent';
-    }
-    if (lead.status === 'new' && lead.checklistAnswered === 0 && this.ageInDays(lead, now) >= 1) {
-      return 'unqualified';
-    }
-    if (this.ageInDays(lead, now) >= DRIFT_DAYS[lead.status]) {
-      return 'drifting';
-    }
-    return null;
   }
 
   openChecklistCount(lead: Lead): number {

@@ -106,6 +106,16 @@
 }
 .filters__chip + .filters__chip { border-inline-start: 1px solid var(--lf-rule-soft); }
 .filters__chip .lf-num { font-size: 12px; }
+/* What the filtered stage means. The phone's answer to the board's column captions. */
+.stage-meaning {
+  margin: 0;
+  padding: var(--lf-space-3) var(--lf-space-4);
+  border-block-end: 1px solid var(--lf-rule-soft);
+  color: var(--lf-muted);
+  font-size: var(--lf-size-small);
+  line-height: 1.45;
+}
+
 .filters__chip--on {
   background: var(--lf-ink);
   color: var(--lf-on-ink);

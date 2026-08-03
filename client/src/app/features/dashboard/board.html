@@ -6,6 +6,12 @@
         <span class="col__count lf-num">{{ column.leads.length }}</span>
       </header>
 
+      <!-- What the stage IS, never what to do about it: six columns of "what to do next"
+           side by side would read as six simultaneous nudges. -->
+      @if (guidance.verbose()) {
+        <p class="col__meaning">{{ stageMeaning[column.status] }}</p>
+      }
+
       <div
         class="col__drop"
         cdkDropList

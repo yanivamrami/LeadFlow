@@ -32,7 +32,7 @@ let seq = 0;
   template: `
     <div class="lf-row">
       <label class="lf-label" [attr.for]="id">{{ label() }}</label>
-      @if (fieldHelp(); as text) {
+      @if (fieldHelp() && !fieldHelpToggleHidden()) {
         <button
           type="button"
           class="why"
@@ -218,6 +218,16 @@ export class TextField {
   readonly fieldHelpOpen = input(false);
   readonly fieldHelpAria = input<string | null>(null);
   readonly fieldHelpToggled = output<void>();
+
+  /**
+   * Drops the toggle while keeping the line. For the caller that holds the help permanently
+   * open — the guidance preference set to `full` — the button would say "close" and then do
+   * nothing, because the caller ORs its own state with the preference. A control that
+   * announces `aria-expanded="true"` and refuses to collapse is worse than no control.
+   *
+   * Defaults to false, so every other consumer of this field is untouched.
+   */
+  readonly fieldHelpToggleHidden = input(false);
 
   readonly value = model<string>('');
 

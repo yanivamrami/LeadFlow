@@ -8,8 +8,9 @@ import {
   CdkDropListGroup,
 } from '@angular/cdk/drag-drop';
 
-import { COPY, STATUS_LABEL, formatValue, formatWhen } from '../../core/copy';
+import { COPY, STATUS_LABEL, STATUS_MEANING, formatValue, formatWhen } from '../../core/copy';
 import { CHECKLIST_ITEMS, Lead, LeadStatus } from '../../core/lead.model';
+import { GuidanceService } from '../../core/guidance.service';
 import { LeadsStore } from '../../core/leads.store';
 import { LeadMenu } from '../../shared/lead-menu';
 
@@ -28,10 +29,12 @@ import { LeadMenu } from '../../shared/lead-menu';
 })
 export class Board {
   private readonly store = inject(LeadsStore);
+  protected readonly guidance = inject(GuidanceService);
   private readonly router = inject(Router);
 
   protected readonly copy = COPY;
   protected readonly statusLabel = STATUS_LABEL;
+  protected readonly stageMeaning = STATUS_MEANING;
   protected readonly formatValue = formatValue;
   protected readonly checklistTotal = CHECKLIST_ITEMS.length;
 

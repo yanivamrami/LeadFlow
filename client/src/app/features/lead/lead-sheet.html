@@ -7,9 +7,26 @@
   [attr.aria-label]="create() ? copy.lead.createTitle : copy.lead.editAria"
   cdkTrapFocus
   [cdkTrapFocusAutoCapture]="true"
+  cdkDrag
+  cdkDragBoundary="body"
+  [cdkDragDisabled]="!canDrag()"
   (keydown.escape)="attemptClose()"
 >
   <header class="hd">
+    <!-- Pointer-only affordance, so it is hidden from assistive tech rather than
+         advertised as a control that cannot be operated by keyboard. Nothing depends on
+         moving the sheet: every task in it works where it opens. -->
+    <button
+      type="button"
+      class="hd__grip"
+      cdkDragHandle
+      tabindex="-1"
+      aria-hidden="true"
+      [attr.title]="copy.lead.moveSheet"
+    >
+      <svg lucideGripVertical></svg>
+    </button>
+
     <h2 class="hd__name">{{ create() ? copy.lead.createTitle : (lead()?.name ?? '') }}</h2>
 
     @if (!create() && lead(); as current) {
@@ -32,6 +49,17 @@
         <p class="sub">{{ copy.lead.createSubtitle }}</p>
       }
 
+      <!-- What to do with this lead, before any field. Urgent reasons carry a verb; a healthy
+           lead carries the stage's own next step. Advisory: it names an action, never blocks. -->
+      @if (nextStep(); as step) {
+        <p class="next" [class.next--urgent]="step.urgent">
+          <span class="next__l lf-label">{{ copy.lead.nextStep }}</span>
+          <span class="next__t">
+            {{ step.text }}@if (step.action) { · {{ step.action }}}
+          </span>
+        </p>
+      }
+
       <!-- fields -->
       <lf-text-field
         [label]="copy.lead.fields.name"
@@ -41,7 +69,8 @@
         [disabled]="saving()"
         enterkeyhint="next"
         [fieldHelp]="fieldHelp.name"
-        [fieldHelpOpen]="fieldHelpOpen() === 'name'"
+        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'name'"
+        [fieldHelpToggleHidden]="guidance.verbose()"
         [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.name)"
         (fieldHelpToggled)="toggleFieldHelp('name')"
       />
@@ -52,7 +81,8 @@
         [help]="copy.lead.fields.optional"
         [disabled]="saving()"
         [fieldHelp]="fieldHelp.company"
-        [fieldHelpOpen]="fieldHelpOpen() === 'company'"
+        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'company'"
+        [fieldHelpToggleHidden]="guidance.verbose()"
         [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.company)"
         (fieldHelpToggled)="toggleFieldHelp('company')"
       />
@@ -65,7 +95,8 @@
         [help]="copy.lead.fields.optional"
         [disabled]="saving()"
         [fieldHelp]="fieldHelp.phone"
-        [fieldHelpOpen]="fieldHelpOpen() === 'phone'"
+        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'phone'"
+        [fieldHelpToggleHidden]="guidance.verbose()"
         [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.phone)"
         (fieldHelpToggled)="toggleFieldHelp('phone')"
       />
@@ -79,7 +110,8 @@
         [help]="copy.lead.fields.optional"
         [disabled]="saving()"
         [fieldHelp]="fieldHelp.email"
-        [fieldHelpOpen]="fieldHelpOpen() === 'email'"
+        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'email'"
+        [fieldHelpToggleHidden]="guidance.verbose()"
         [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.email)"
         (fieldHelpToggled)="toggleFieldHelp('email')"
       />
@@ -88,61 +120,74 @@
         <div class="pick">
           <div class="pick__row">
             <label class="pick__label lf-label" for="status-select">{{ copy.lead.fields.status }}</label>
-            <button
-              type="button"
-              class="why"
-              [attr.aria-expanded]="fieldHelpOpen() === 'status'"
-              aria-controls="status-why"
-              [attr.aria-label]="copy.lead.fieldHelpAria(copy.lead.fields.status)"
-              (click)="toggleFieldHelp('status')"
-            >
-              {{ fieldHelpOpen() === 'status' ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
-            </button>
+            @if (!guidance.verbose()) {
+              <button
+                type="button"
+                class="why"
+                [attr.aria-expanded]="statusHelpOpen()"
+                aria-controls="status-why"
+                [attr.aria-label]="copy.lead.fieldHelpAria(copy.lead.fields.status)"
+                (click)="toggleFieldHelp('status')"
+              >
+                {{ statusHelpOpen() ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
+              </button>
+            }
           </div>
           <select
             id="status-select"
             class="pick__select"
             [value]="status()"
             [disabled]="saving()"
-            [attr.aria-describedby]="fieldHelpOpen() === 'status' ? 'status-why' : null"
+            [attr.aria-describedby]="statusHelpOpen() ? 'status-why status-next' : 'status-next'"
             (change)="setStatus($any($event.target).value)"
           >
             @for (stage of stages; track stage) {
               <option [value]="stage">{{ statusLabel[stage] }}</option>
             }
           </select>
-          @if (fieldHelpOpen() === 'status') {
-            <p class="why-text" id="status-why">{{ fieldHelp.status }}</p>
+
+          <!-- Keyed off status(), so both lines answer for the stage currently selected —
+               before the save, which is when the question is actually being asked. The
+               meaning follows the guidance setting; the next step is always shown, because
+               it is the actionable half and it is short. -->
+          @if (statusHelpOpen()) {
+            <p class="why-text" id="status-why">{{ stageMeaning[status()] }}</p>
           }
+          <p class="why-text" id="status-next">
+            <span class="lf-label">{{ copy.lead.stageNext }}</span>
+            {{ stageGuidance[status()] }}
+          </p>
         </div>
 
         <div class="pick">
           <div class="pick__row">
             <label class="pick__label lf-label" for="source-select">{{ copy.lead.fields.source }}</label>
-            <button
-              type="button"
-              class="why"
-              [attr.aria-expanded]="fieldHelpOpen() === 'source'"
-              aria-controls="source-why"
-              [attr.aria-label]="copy.lead.fieldHelpAria(copy.lead.fields.source)"
-              (click)="toggleFieldHelp('source')"
-            >
-              {{ fieldHelpOpen() === 'source' ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
-            </button>
+            @if (!guidance.verbose()) {
+              <button
+                type="button"
+                class="why"
+                [attr.aria-expanded]="sourceHelpOpen()"
+                aria-controls="source-why"
+                [attr.aria-label]="copy.lead.fieldHelpAria(copy.lead.fields.source)"
+                (click)="toggleFieldHelp('source')"
+              >
+                {{ sourceHelpOpen() ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
+              </button>
+            }
           </div>
           <select
             id="source-select"
             class="pick__select"
             [value]="source()"
             [disabled]="saving()"
-            [attr.aria-describedby]="fieldHelpOpen() === 'source' ? 'source-why' : null"
+            [attr.aria-describedby]="sourceHelpOpen() ? 'source-why' : null"
             (change)="setSource($any($event.target).value)"
           >
             @for (option of sources; track option) {
               <option [value]="option">{{ sourceLabel[option] }}</option>
             }
           </select>
-          @if (fieldHelpOpen() === 'source') {
+          @if (sourceHelpOpen()) {
             <p class="why-text" id="source-why">{{ fieldHelp.source }}</p>
           }
         </div>
@@ -156,7 +201,8 @@
         [error]="valueError()"
         [disabled]="saving()"
         [fieldHelp]="fieldHelp.value"
-        [fieldHelpOpen]="fieldHelpOpen() === 'value'"
+        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'value'"
+        [fieldHelpToggleHidden]="guidance.verbose()"
         [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.value)"
         (fieldHelpToggled)="toggleFieldHelp('value')"
       />
