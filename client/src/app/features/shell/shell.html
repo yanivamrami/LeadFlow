@@ -1,7 +1,7 @@
 <a class="skip" href="#main">{{ copy.shell.skipToContent }}</a>
 
 <header class="mast">
-  <p class="mast__brand">{{ appName }}<i>{{ appSub }}</i></p>
+  <p class="mast__brand"><span class="mast__brand-name">{{ appName }}</span><i>{{ appSub }}</i></p>
 
   <nav class="mast__nav" [attr.aria-label]="copy.nav.dashboard">
     <a routerLink="/" routerLinkActive="on" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">

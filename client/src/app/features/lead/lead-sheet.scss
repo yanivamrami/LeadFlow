@@ -27,6 +27,16 @@
   animation: sheet-rise var(--lf-dur-settle) var(--lf-ease) backwards;
 }
 
+/* On a phone the drawer stops short of the edges, so a strip of scrim stays visible
+   either side and the sheet reads as a thing resting on the page rather than a new
+   screen. Desktop below re-centres it as a dialog and sets its own width. */
+@media (max-width: 899px) {
+  .sheet {
+    max-inline-size: 95vw;
+    margin-inline: auto;
+  }
+}
+
 /* header: the lead's identity, and the one way out that is always visible */
 .hd {
   flex: 0 0 auto;
