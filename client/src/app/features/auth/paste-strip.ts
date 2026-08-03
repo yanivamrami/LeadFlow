@@ -28,12 +28,23 @@ export interface StripRow {
     }
   `,
   styles: `
+    /*
+     * Fixed tokens, not theme-flipping ones.
+     *
+     * This is an *ink* strip with yellow for the emphasis — that is the design system's
+     * description of the guidance aside, and yellow only reads on dark. With --lf-ink the
+     * strip inverted in dark mode to a near-white panel, and the yellow link on it measured
+     * about 1.2:1: the one route off the sign-in screen, invisible.
+     *
+     * So the strip is a fixed object in both themes, like the day sheet and the toast stack.
+     * It does not follow the theme because its whole construction depends on being dark.
+     */
     :host {
       display: block;
       margin-block: var(--lf-space-6);
       padding: var(--lf-space-3) var(--lf-space-4);
-      background: var(--lf-ink);
-      color: var(--lf-on-ink);
+      background: var(--lf-fixed-ink);
+      color: var(--lf-fixed-paper);
       rotate: var(--lf-paste-tilt);
     }
 
@@ -45,7 +56,7 @@ export interface StripRow {
     .row + .row {
       margin-block-start: 10px;
       padding-block-start: 10px;
-      border-block-start: 1px solid color-mix(in srgb, var(--lf-on-ink) 28%, transparent);
+      border-block-start: 1px solid color-mix(in srgb, var(--lf-fixed-paper) 28%, transparent);
     }
 
     a {
