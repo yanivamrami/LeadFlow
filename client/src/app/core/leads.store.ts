@@ -381,11 +381,12 @@ export class LeadsStore {
   }
 
   /** Logging contact writes an activity; last-contact is derived from it on reload. */
-  logActivity(leadId: string, note: string): void {
+  /** Returns whether it landed, so a caller can show a busy state and wait for it. */
+  logActivity(leadId: string, note: string): Promise<boolean> {
     const lead = this.byId(leadId);
-    if (!lead) return;
+    if (!lead) return Promise.resolve(false);
 
-    void this.commit(
+    return this.commit(
       lead.name,
       async () => {
         const tenantId = await this.requireTenant();
@@ -404,12 +405,12 @@ export class LeadsStore {
   }
 
   /** Pushes the follow-up to tomorrow. Creates one if the lead has none open. */
-  snooze(leadId: string): void {
+  snooze(leadId: string): Promise<boolean> {
     const lead = this.byId(leadId);
-    if (!lead) return;
+    if (!lead) return Promise.resolve(false);
     const tomorrow = new Date(this._now().getTime() + 86_400_000).toISOString();
 
-    void this.commit(
+    return this.commit(
       lead.name,
       async () => {
         const tenantId = await this.requireTenant();

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { LucidePhone, LucideX } from '@lucide/angular';
@@ -40,12 +40,35 @@ export class DaySheet {
   protected readonly loading = this.store.loading;
   protected readonly loaded = this.store.loaded;
 
-  protected act(item: OpenItem): void {
-    this.store.logActivity(item.lead.id, this.actionLabel[item.reason]);
+  /**
+   * Which item is mid-write. The sheet's actions each take a round trip, and without
+   * this the tap looks ignored right up until the row vanishes — the worst possible
+   * feedback on the one surface that is supposed to say what is happening.
+   */
+  protected readonly busyId = signal<string | null>(null);
+
+  protected busy(lead: Lead): boolean {
+    return this.busyId() === lead.id;
   }
 
-  protected snooze(lead: Lead): void {
-    this.store.snooze(lead.id);
+  protected async act(item: OpenItem): Promise<void> {
+    if (this.busyId()) return;
+    this.busyId.set(item.lead.id);
+    try {
+      await this.store.logActivity(item.lead.id, this.actionLabel[item.reason]);
+    } finally {
+      this.busyId.set(null);
+    }
+  }
+
+  protected async snooze(lead: Lead): Promise<void> {
+    if (this.busyId()) return;
+    this.busyId.set(lead.id);
+    try {
+      await this.store.snooze(lead.id);
+    } finally {
+      this.busyId.set(null);
+    }
   }
 
   protected toggle(): void {

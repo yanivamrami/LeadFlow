@@ -238,6 +238,28 @@ body::before {
   to { opacity: 0.45; }
 }
 
+/* In-progress: a rule that runs along the top edge, like a press making a pass.
+   A bar, not a spinner — nothing in this world spins. Inherits `currentColor`, so it
+   is correct on paper and on the yellow sheet without knowing which it is on. */
+.lf-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.lf-sweep::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  block-size: 3px;
+  inline-size: 40%;
+  background: currentColor;
+  animation: lf-sweep-run 1.1s ease-in-out infinite;
+}
+@keyframes lf-sweep-run {
+  from { translate: -110% 0; }
+  to { translate: 260% 0; }
+}
+
 /* screen-reader only */
 .lf-sr {
   position: absolute;
@@ -274,5 +296,11 @@ body::before {
   .lf-sk {
     animation: none !important;
     opacity: 0.7;
+  }
+  /* same hazard: a looping sweep sped up to 80ms is a strobe, not a hint */
+  .lf-sweep::after {
+    animation: none !important;
+    inline-size: 100%;
+    opacity: 0.5;
   }
 }

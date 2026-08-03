@@ -21,7 +21,12 @@
     }
   } @else {
   @for (item of items(); track item.lead.id) {
-    <article class="item">
+    <article
+      class="item"
+      [class.item--busy]="busy(item.lead)"
+      [class.lf-sweep]="busy(item.lead)"
+      [attr.aria-busy]="busy(item.lead)"
+    >
       <div class="item__l1">
         <h3 class="item__name">
           <a class="item__open" [routerLink]="['/lead', item.lead.id]">{{ item.lead.name }}</a>
@@ -35,13 +40,27 @@
       </p>
 
       <div class="item__actions">
-        <button type="button" class="b b--solid" (click)="act(item)">
-          @if (actionLabel[item.reason] === 'חייג') {
-            <svg lucidePhone aria-hidden="true"></svg>
+        <button
+          type="button"
+          class="b b--solid"
+          [disabled]="busy(item.lead)"
+          (click)="act(item)"
+        >
+          @if (busy(item.lead)) {
+            {{ copy.sheet.working }}
+          } @else {
+            @if (actionLabel[item.reason] === 'חייג') {
+              <svg lucidePhone aria-hidden="true"></svg>
+            }
+            {{ actionLabel[item.reason] }}
           }
-          {{ actionLabel[item.reason] }}
         </button>
-        <button type="button" class="b b--bare" (click)="snooze(item.lead)">
+        <button
+          type="button"
+          class="b b--bare"
+          [disabled]="busy(item.lead)"
+          (click)="snooze(item.lead)"
+        >
           {{ copy.sheet.snooze }}
         </button>
       </div>

@@ -50,6 +50,12 @@
   animation: settle var(--lf-dur-enter) var(--lf-ease) backwards;
 }
 
+/* mid-write: the item recedes slightly and the sweep runs along its top rule, so the
+   tap is visibly received instead of looking ignored until the row disappears */
+.item--busy {
+  opacity: 0.72;
+}
+
 .item__l1 {
   display: flex;
   align-items: baseline;
