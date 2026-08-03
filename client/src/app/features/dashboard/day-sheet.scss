@@ -20,11 +20,49 @@
   background: var(--lf-day);
 }
 
+/* Sits above the title on its own line. Every colour here is a --lf-fixed-* token: the
+   yellow field does not flip with the theme, so a theme-following ink would turn this
+   control light-on-yellow in dark mode — a bug this surface has already had. */
+.sheet__why {
+  display: flex;
+  padding: 10px var(--lf-space-4) 0;
+}
+
+.why {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  margin-inline-start: -8px; /* optical: aligns the glyph with the title below it */
+  border: 0;
+  background: transparent;
+  color: var(--lf-fixed-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  /* No underline, per the standing rule — hover changes colour instead. */
+  text-decoration: none;
+}
+
+.why svg {
+  inline-size: 15px;
+  block-size: 15px;
+  stroke-width: 2.25;
+}
+
+.why:hover { color: var(--lf-fixed-red); }
+.why:focus-visible {
+  outline: 3px solid var(--lf-fixed-red);
+  outline-offset: 2px;
+}
+
 .sheet__hd {
   display: flex;
   align-items: flex-end;
   gap: var(--lf-space-3);
-  padding: 14px var(--lf-space-4) 10px;
+  /* Top padding moved onto .sheet__why above, so the header keeps its rhythm. */
+  padding: 4px var(--lf-space-4) 10px;
 }
 
 .sheet__title {

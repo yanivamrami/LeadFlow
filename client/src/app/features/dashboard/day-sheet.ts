@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
-import { LucidePhone, LucideX } from '@lucide/angular';
+import { LucideCircleQuestionMark, LucidePhone, LucideX } from '@lucide/angular';
 
 import { COPY, OPEN_ACTION, OPEN_REASON, formatAge, formatValue } from '../../core/copy';
 import { Lead, OpenItem } from '../../core/lead.model';
 import { HelpService } from '../../core/help.service';
 import { LeadsStore } from '../../core/leads.store';
 import { DuePicker } from '../../shared/due-picker';
+import { DaySheetHelp } from './day-sheet-help';
 
 /**
  * The day sheet — the surface's thesis. What is owed today is posted at display scale on
@@ -18,7 +19,14 @@ import { DuePicker } from '../../shared/due-picker';
 @Component({
   selector: 'lf-day-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, LucidePhone, LucideX, DuePicker],
+  imports: [
+    RouterLink,
+    LucideCircleQuestionMark,
+    LucidePhone,
+    LucideX,
+    DuePicker,
+    DaySheetHelp,
+  ],
   templateUrl: './day-sheet.html',
   styleUrl: './day-sheet.scss',
 })
@@ -32,6 +40,10 @@ export class DaySheet {
   protected readonly actionLabel = OPEN_ACTION;
   protected readonly formatValue = formatValue;
   protected readonly formatAge = formatAge;
+
+  /** Local, not in HelpService: that one owns the product-wide legend reached from the
+   *  masthead, and this popup answers one question about one screen. */
+  protected readonly helpOpen = signal(false);
 
   protected readonly items = this.store.visibleOpenItems;
   protected readonly allItems = this.store.openItems;

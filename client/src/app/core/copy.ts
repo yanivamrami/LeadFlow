@@ -184,6 +184,64 @@ export const COPY = {
      * so the label stops promising a specific amount of time.
      */
     snooze: 'דחה',
+
+    /**
+     * "Why is this lead here?" — the rules behind the yellow page, in one popup.
+     *
+     * The sheet is the screen a beginner opens first and the one whose contents look most
+     * like magic: four different rules put leads on it, one of them deliberately holds
+     * leads back, and since the stages work all the thresholds are editable. None of that
+     * was stated anywhere the user could read it.
+     *
+     * Ordered exactly as the code evaluates it (core/attention.ts), because a list of rules
+     * in a different order from the engine is worse than no list.
+     */
+    help: {
+      trigger: 'למה לידים מופיעים כאן?',
+      title: 'איך נבנה הדף של היום',
+      subtitle: 'ארבע סיבות מכניסות ליד לדף הזה. אלה הן, לפי הסדר.',
+
+      neverTitle: 'מה לא מגיע לכאן בכלל',
+      neverClosed:
+        'ליד בשלב סגור — כזה שסימנתם כ"נסגר" או כ"לא יצא לפועל" — לא מופיע כאן לעולם, גם אם השלב נקרא אחרת אצלכם. מה שקובע הוא סוג השלב, לא השם שנתתם לו.',
+      neverDone: 'ליד שטיפלתם בו היום יורד מהדף ומופיע למטה עם קו מוחק.',
+
+      reasonsTitle: 'ארבע הסיבות, לפי סדר עדיפות',
+      reasonsLead:
+        'הראשונה שמתאימה היא זו שתוצג. תזכורת שקבעתם בעצמכם קודמת לכל מה שהמערכת הסיקה לבד.',
+      reason1: 'תזכורת שקבעתם הגיעה למועד שלה — היום או באיחור.',
+      reason2:
+        'השלב מסומן "מחכים לתשובה" והליד שקט יותר ימים ממה שהוגדר לשלב הזה. זה מה שקורה למשל אחרי שנשלחה הצעה.',
+      reason3: 'הליד נמצא בשלב הראשון בפייפליין, עוד לא ענו על שאלה אחת בהכשרה, ועבר יום.',
+      reason4: 'הליד שקט יותר ימים ממה שהוגדר לשלב שהוא נמצא בו.',
+
+      silenceTitle: 'איך נמדד "שקט"',
+      silenceBody:
+        'ימים מאז המגע האחרון עם הליד — ואם עוד לא היה מגע, מאז שהוספתם אותו.',
+
+      quietTitle: 'למה לפעמים ליד שקט לא מופיע',
+      quietBody:
+        'לידים ששקטים בלי סיבה דחופה נשמרים לסוף: כל עוד יש כאן משהו דחוף, הם לא יופיעו — אחרת הדף מפסיק להיות "היום" ומתחיל להיות "מתישהו". בינתיים הם מסומנים ברשימת הלידים.',
+      capBody: 'הדף מציג שלוש שורות, והשאר מחכות מאחורי "הצג הכול".',
+
+      defaultsTitle: 'הערכים שמוגדרים כרגע',
+      defaultsLead:
+        'שני הערכים האלה יושבים על כל שלב ואפשר לשנות אותם. "בלי ערך" בימי שקט פירושו שהשלב הזה לא נחשב שקט לעולם — ככה שלבים סגורים נשארים מחוץ לדף.',
+      defaultsQuietCol: 'ימי שקט',
+      defaultsReplyCol: 'מחכים לתשובה',
+      defaultsNone: 'בלי ערך',
+      defaultsYes: 'כן',
+      defaultsNo: 'לא',
+
+      newStageTitle: 'שלב חדש שתיצרו',
+      newStageBody:
+        'שלב שנוצר מתבנית מגיע עם הערכים של התבנית. שלב שתבנו לגמרי בעצמכם מתחיל בלי ימי שקט (כלומר לא נחשב שקט אף פעם) ועם "מחכים לתשובה" כבוי, עד שתגדירו אחרת.',
+
+      whereTitle: 'איפה משנים',
+      whereBody: 'בניהול השלבים אפשר לערוך את שני הערכים לכל שלב בנפרד.',
+      whereAction: 'לניהול השלבים',
+      close: 'סגור',
+    },
   },
   register: {
     title: 'כל הלידים',
