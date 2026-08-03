@@ -36,7 +36,7 @@ import { OfflineBanner } from '../../shared/offline-banner';
 
         <!-- novalidate: the browser's own bubbles are English, and this product's
              error copy is part of the design. -->
-        <form class="form" novalidate (ngSubmit)="submitted.emit()">
+        <form class="form" novalidate (submit)="commit($event)">
           <ng-content />
         </form>
 
@@ -165,4 +165,15 @@ export class AuthPage {
 
   /** The page owns the `<form>` so every screen inherits its layout and its submit path. */
   readonly submitted = output<void>();
+
+  /**
+   * The native `submit` event, not `ngSubmit`: nothing here uses `ngModel`, so there is no
+   * `FormsModule` in this component's imports and therefore no `NgForm` on the form. Bound
+   * as `(ngSubmit)` this was a listener for a DOM event that never fires, so the browser
+   * navigated and the screen appeared to reload. Cancelling the default is ours to do now.
+   */
+  protected commit(event: Event): void {
+    event.preventDefault();
+    this.submitted.emit();
+  }
 }
