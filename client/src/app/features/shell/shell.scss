@@ -47,7 +47,6 @@
    is already on the box, so flex-end is the screen edge the masthead starts from. */
 .mast__brand {
   margin: 0;
-  margin-inline-end: auto;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -103,6 +102,13 @@
   background: transparent;
   color: inherit;
   cursor: pointer;
+  /* Help is the first of the four controls, so its start margin is the seam between the
+     wordmark and the button cluster — `auto` here hands every spare pixel to that one
+     gap, which pins the cluster to the far edge and the brand to its own. Putting it on
+     the group's leading edge rather than on the brand keeps the rule where the meaning
+     is: it is the cluster that is being pushed away. Desktop resets it, because there
+     the CTA already owns the auto margin and two of them would split the free space. */
+  margin-inline-start: auto;
 }
 .mast__help svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
 /* yellow was the hover on an ink ground; on paper it is invisible, so red carries it */
@@ -243,7 +249,9 @@
     gap: var(--lf-space-6);
     padding-inline: var(--lf-space-8);
   }
-  .mast__brand { font-size: 34px; margin-inline-end: 0; }
+  .mast__brand { font-size: 34px; }
+  /* the CTA takes the auto margin from here up — see .mast__help */
+  .mast__help { margin-inline-start: 0; }
 
   .mast__nav {
     display: flex;
