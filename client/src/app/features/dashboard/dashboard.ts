@@ -47,7 +47,12 @@ export class Dashboard {
   protected readonly canBoard = this.wide.asReadonly();
   protected readonly view = computed(() => (this.wide() ? this.store.view() : 'list'));
 
+  protected readonly loading = this.store.loading;
+  protected readonly loaded = this.store.loaded;
+
   constructor() {
+    void this.store.load();
+
     if (typeof window !== 'undefined') {
       const query = window.matchMedia(`(min-width: ${BOARD_MIN_WIDTH}px)`);
       const onChange = () => this.wide.set(query.matches);

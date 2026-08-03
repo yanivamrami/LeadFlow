@@ -54,11 +54,17 @@ export const OPEN_REASON: Record<OpenReason, string> = {
   drifting: 'הרבה זמן בלי מגע',
 };
 
-/** The action the day sheet offers per reason. One primary verb, never a menu. */
+/**
+ * The action the day sheet offers per reason. One primary verb, never a menu.
+ *
+ * All four log contact today. `unqualified` said "התחל הכשרה" while the checklist was
+ * local state; the real checklist lives on the lead-detail screen, so until that exists
+ * the honest verb is the one this button actually performs.
+ */
 export const OPEN_ACTION: Record<OpenReason, string> = {
   reminder_due: 'רשום פעילות',
   proposal_silent: 'חייג',
-  unqualified: 'התחל הכשרה',
+  unqualified: 'רשום פעילות',
   drifting: 'חייג',
 };
 
@@ -171,6 +177,15 @@ export const COPY = {
     activityLogged: 'הפעילות נרשמה',
     leadDeleted: 'הליד נמחק',
     checklistFilled: 'שאלות ההכשרה סומנו',
+  },
+  auth: {
+    title: 'כניסה',
+    subtitle: 'הלידים שלכם מחכים.',
+    email: 'אימייל',
+    password: 'סיסמה',
+    signIn: 'כניסה',
+    signingIn: 'מתחבר…',
+    signOut: 'יציאה',
   },
   /** Offline is a state: the banner states it, and every blocked write says so at the point of action. */
   offline: {

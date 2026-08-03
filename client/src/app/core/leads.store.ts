@@ -1,9 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
-import { DEMO_LEADS } from './demo-leads';
-import { COPY, STATUS_GUIDANCE } from './copy';
-import { ServerError, mapError } from './error-map';
-import { NotifyService } from './notify.service';
+import { COPY, STATUS_GUIDANCE, daysBetween } from './copy';
 import {
   Attention,
   CHECKLIST_ITEMS,
@@ -15,22 +12,61 @@ import {
   OpenReason,
   STAGE_ORDER,
 } from './lead.model';
-import { daysBetween } from './copy';
+import { NotifyService } from './notify.service';
+import { AppError, SupabaseService, costsData, isAppError } from './supabase.service';
 
 export type DashboardView = 'list' | 'board';
 
 /**
+ * The row shape PostgREST returns for the dashboard query. The `leads` table carries
+ * none of the derived fields the dashboard needs — last contact lives in `activities`,
+ * follow-ups in `reminders`, checklist progress in `qualification_answers` — so they
+ * are embedded and folded in `toLead` rather than denormalized onto the table.
+ */
+interface LeadRow {
+  id: string;
+  tenant_id: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  source: Lead['source'];
+  status: LeadStatus;
+  estimated_value: number | string | null;
+  lost_reason: string | null;
+  is_demo: boolean;
+  assigned_to: string | null;
+  created_at: string;
+  updated_at: string;
+  activities: { occurred_at: string }[] | null;
+  reminders: { id: string; title: string | null; due_at: string; done_at: string | null }[] | null;
+  qualification_answers: { item: string }[] | null;
+}
+
+const SELECT = `
+  id, tenant_id, name, company, email, phone, source, status, estimated_value,
+  lost_reason, is_demo, assigned_to, created_at, updated_at,
+  activities ( occurred_at ),
+  reminders ( id, title, due_at, done_at ),
+  qualification_answers ( item )
+`;
+
+/**
  * Dashboard state. Signals only — the app is small enough that NgRx would be ceremony
- * (docs/ARCHITECTURE.md §4). Server becomes the source of truth when Supabase lands;
- * every mutation here is already shaped as an optimistic local write.
+ * (docs/ARCHITECTURE.md §4). Supabase is the source of truth; every mutation writes
+ * first and updates local state from what came back, so the screen can never show a
+ * lead the database refused.
  */
 @Injectable({ providedIn: 'root' })
 export class LeadsStore {
+  private readonly supabase = inject(SupabaseService);
   private readonly notify = inject(NotifyService);
 
-  private readonly _leads = signal<Lead[]>(DEMO_LEADS);
-  /** Captured once so a long-lived tab doesn't recompute "today" on every read. */
+  private readonly _leads = signal<Lead[]>([]);
   private readonly _now = signal(new Date());
+  private readonly _loading = signal(false);
+  private readonly _loaded = signal(false);
+  private readonly _tenantId = signal<string | null>(null);
 
   readonly search = signal('');
   readonly statusFilter = signal<LeadStatus | 'all'>('all');
@@ -42,6 +78,9 @@ export class LeadsStore {
 
   readonly leads = this._leads.asReadonly();
   readonly now = this._now.asReadonly();
+  readonly loading = this._loading.asReadonly();
+  readonly loaded = this._loaded.asReadonly();
+  readonly tenantId = this._tenantId.asReadonly();
 
   readonly total = computed(() => this._leads().length);
 
@@ -54,7 +93,6 @@ export class LeadsStore {
     return counts;
   });
 
-  /** Cleared today — kept visible, struck through, until the day rolls over. */
   readonly clearedToday = computed(() => this._leads().filter((l) => l.clearedToday !== null));
 
   /**
@@ -83,12 +121,10 @@ export class LeadsStore {
 
   readonly hasHiddenOpenItems = computed(() => this.openItems().length > OPEN_ITEMS_CAP);
 
-  /** Register contents: filter, then search, then rank by urgency. */
   readonly visibleLeads = computed(() => {
     const term = this.search().trim().toLowerCase();
     const status = this.statusFilter();
     const now = this._now();
-
     const rank: Record<Attention, number> = { now: 0, drift: 1, none: 2 };
 
     return this._leads()
@@ -100,8 +136,7 @@ export class LeadsStore {
           .some((v) => v.toLowerCase().includes(term));
       })
       .sort((a, b) => {
-        const byAttention =
-          rank[this.attentionOf(a, now)] - rank[this.attentionOf(b, now)];
+        const byAttention = rank[this.attentionOf(a, now)] - rank[this.attentionOf(b, now)];
         if (byAttention !== 0) return byAttention;
         return this.ageInDays(b, now) - this.ageInDays(a, now);
       });
@@ -118,9 +153,92 @@ export class LeadsStore {
     })),
   );
 
+  /* ---------- loading ---------- */
+
+  /**
+   * Reads the pipeline. A failed read costs a refresh, never data, so it announces
+   * rather than interrupting — and it leaves `loaded` false so the screen can say so.
+   */
+  async load(): Promise<void> {
+    if (this._loading()) return;
+    this._loading.set(true);
+    this._now.set(new Date());
+
+    try {
+      const tenantId = await this.resolveTenant();
+      if (!tenantId) return;
+
+      const rows = await this.supabase.run<LeadRow[]>(
+        this.supabase.client
+          .from('leads')
+          .select(SELECT)
+          .eq('tenant_id', tenantId)
+          .order('created_at', { ascending: false }) as never,
+      );
+
+      this._leads.set((rows ?? []).map((row) => this.toLead(row)));
+      this._loaded.set(true);
+    } catch (error) {
+      this.report(error, false);
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  /**
+   * The tenant the user is working in. Access control is RLS, not this value — it
+   * scopes the query so a multi-tenant member sees one pipeline at a time.
+   */
+  private async resolveTenant(): Promise<string | null> {
+    const known = this._tenantId();
+    if (known) return known;
+
+    const rows = await this.supabase.run<{ tenant_id: string }[]>(
+      this.supabase.client.from('memberships').select('tenant_id').limit(1) as never,
+    );
+    const tenantId = rows?.[0]?.tenant_id ?? null;
+    this._tenantId.set(tenantId);
+    return tenantId;
+  }
+
+  /** Folds the embedded child rows into the shape the dashboard reasons about. */
+  private toLead(row: LeadRow): Lead {
+    const touches = (row.activities ?? [])
+      .map((a) => new Date(a.occurred_at))
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    const openReminder = (row.reminders ?? [])
+      .filter((r) => r.done_at === null)
+      .sort((a, b) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime())[0];
+
+    const updatedAt = new Date(row.updated_at);
+    const closedToday =
+      (row.status === 'won' || row.status === 'lost') &&
+      daysBetween(updatedAt, new Date()) === 0;
+
+    return {
+      id: row.id,
+      name: row.name,
+      company: row.company,
+      email: row.email,
+      phone: row.phone,
+      source: row.source,
+      status: row.status,
+      estimatedValue: Number(row.estimated_value ?? 0),
+      lostReason: row.lost_reason,
+      isDemo: row.is_demo,
+      assignedTo: row.assigned_to,
+      createdAt: new Date(row.created_at),
+      lastTouchAt: touches[0] ?? null,
+      reminderDueAt: openReminder ? new Date(openReminder.due_at) : null,
+      reminderTitle: openReminder?.title ?? null,
+      checklistAnswered: (row.qualification_answers ?? []).length,
+      clearedToday: closedToday ? COPY.notify.stageMoved('', row.status) : null,
+    };
+  }
+
   /* ---------- derivation ---------- */
 
-  /** Days since the last thing that counts as contact. */
   ageInDays(lead: Lead, now = this._now()): number {
     return daysBetween(lead.lastTouchAt ?? lead.createdAt, now);
   }
@@ -133,10 +251,6 @@ export class LeadsStore {
     return 'none';
   }
 
-  /**
-   * Why a lead needs the user, in priority order. `drifting` is the soft signal —
-   * it flags the row but does not claim the day sheet unless nothing else does.
-   */
   private openReason(lead: Lead, now: Date): OpenReason | null {
     if (lead.status === 'won' || lead.status === 'lost') return null;
 
@@ -159,7 +273,7 @@ export class LeadsStore {
     return CHECKLIST_ITEMS.length - lead.checklistAnswered;
   }
 
-  /* ---------- mutations ---------- */
+  /* ---------- view state ---------- */
 
   setSearch(term: string): void {
     this.search.set(term);
@@ -186,35 +300,27 @@ export class LeadsStore {
     this.explainerDismissed.set(true);
   }
 
+  /* ---------- mutations ---------- */
+
   /**
-   * Stage moves are never blocked by the checklist. If questions are still open the move
-   * still happens and a dismissible nudge follows it — a teaching moment, not a gate.
+   * Stage moves are never blocked by the checklist. A DB trigger appends the
+   * `status_changed` activity, so this writes the status and nothing else.
    */
   moveToStage(leadId: string, status: LeadStatus, statusLabel: string): void {
-    const lead = this._leads().find((l) => l.id === leadId);
+    const lead = this.byId(leadId);
     if (!lead || lead.status === status) return;
 
     void this.commit(
       lead.name,
+      () =>
+        this.supabase.run(
+          this.supabase.client.from('leads').update({ status }).eq('id', leadId) as never,
+        ),
       () => {
-        this.patch(leadId, (l) => ({
-          ...l,
-          status,
-          lastTouchAt: new Date(),
-          reminderDueAt: null,
-          reminderTitle: null,
-          clearedToday: status === 'won' || status === 'lost' ? statusLabel : l.clearedToday,
-        }));
         this.announcement.set(COPY.a11y.stageChanged(lead.name, statusLabel));
-      },
-      () => {
         const open = this.openChecklistCount(lead);
         if (open > 0 && status !== 'won' && status !== 'lost') {
-          this.notify.nudge(
-            COPY.nudge.checklist(open),
-            { label: COPY.nudge.fillNow, run: () => this.answerChecklist(leadId) },
-            COPY.nudge.later,
-          );
+          this.notify.nudge(COPY.nudge.checklist(open), COPY.nudge.later);
         } else {
           this.notify.info(STATUS_GUIDANCE[status]);
         }
@@ -222,66 +328,95 @@ export class LeadsStore {
     );
   }
 
-  /** Logging contact resets the clock and clears the item off today's sheet. */
+  /** Logging contact writes an activity; last-contact is derived from it on reload. */
   logActivity(leadId: string, note: string): void {
     const lead = this.byId(leadId);
     if (!lead) return;
+
     void this.commit(
       lead.name,
-      () => {
-        this.patch(leadId, (l) => ({
-          ...l,
-          lastTouchAt: new Date(),
-          reminderDueAt: null,
-          reminderTitle: null,
-          clearedToday: note,
-        }));
+      async () => {
+        const tenantId = await this.requireTenant();
+        await this.supabase.run(
+          this.supabase.client.from('activities').insert({
+            lead_id: leadId,
+            tenant_id: tenantId,
+            type: 'note',
+            body: note,
+          }) as never,
+        );
+        await this.closeOpenReminders(leadId);
       },
       () => this.notify.succeeded(COPY.notify.activityLogged),
     );
   }
 
-  /** Push a reminder to tomorrow. The item leaves today's sheet and nothing is lost. */
+  /** Pushes the follow-up to tomorrow. Creates one if the lead has none open. */
   snooze(leadId: string): void {
     const lead = this.byId(leadId);
     if (!lead) return;
-    const tomorrow = new Date(this._now().getTime() + 86_400_000);
+    const tomorrow = new Date(this._now().getTime() + 86_400_000).toISOString();
+
     void this.commit(
       lead.name,
-      () => {
-        this.patch(leadId, (l) => ({
-          ...l,
-          reminderDueAt: tomorrow,
-          reminderTitle: l.reminderTitle ?? COPY.notify.snoozed,
-          lastTouchAt: new Date(),
-        }));
+      async () => {
+        const tenantId = await this.requireTenant();
+        const open = await this.supabase.run<{ id: string }[]>(
+          this.supabase.client
+            .from('reminders')
+            .select('id')
+            .eq('lead_id', leadId)
+            .is('done_at', null)
+            .limit(1) as never,
+        );
+
+        if (open?.length) {
+          await this.supabase.run(
+            this.supabase.client
+              .from('reminders')
+              .update({ due_at: tomorrow })
+              .eq('id', open[0].id) as never,
+          );
+        } else {
+          await this.supabase.run(
+            this.supabase.client.from('reminders').insert({
+              lead_id: leadId,
+              tenant_id: tenantId,
+              title: COPY.notify.snoozed,
+              due_at: tomorrow,
+            }) as never,
+          );
+        }
       },
       () => this.notify.succeeded(COPY.notify.snoozed),
-    );
-  }
-
-  /** Answering the checklist is what the nudge asks for; it never changes the stage. */
-  answerChecklist(leadId: string): void {
-    const lead = this.byId(leadId);
-    if (!lead) return;
-    void this.commit(
-      lead.name,
-      () => this.patch(leadId, (l) => ({ ...l, checklistAnswered: CHECKLIST_ITEMS.length })),
-      () => this.notify.succeeded(COPY.notify.checklistFilled),
     );
   }
 
   remove(leadId: string): void {
     const lead = this.byId(leadId);
     if (!lead) return;
+
     void this.commit(
       lead.name,
-      () => this._leads.update((leads) => leads.filter((l) => l.id !== leadId)),
+      () =>
+        this.supabase.run(
+          this.supabase.client.from('leads').delete().eq('id', leadId) as never,
+        ),
       () => this.notify.succeeded(COPY.notify.leadDeleted),
     );
   }
 
-  /* ---------- writes ---------- */
+  private async closeOpenReminders(leadId: string): Promise<void> {
+    await this.supabase.run(
+      this.supabase.client
+        .from('reminders')
+        .update({ done_at: new Date().toISOString() })
+        .eq('lead_id', leadId)
+        .is('done_at', null) as never,
+    );
+  }
+
+  /* ---------- the write path ---------- */
 
   /**
    * Every mutation goes through here, so the notification rules live in one place.
@@ -290,12 +425,13 @@ export class LeadsStore {
    * and accepting a write we cannot honour would mean showing the user a lead that does
    * not exist. Nothing is attempted, so nothing is lost — that is a toast, not the popup.
    *
-   * A write that *is* attempted and fails raises the interrupt with its own retry, which
-   * re-runs this exact mutation rather than asking the user to redo it by hand.
+   * On success the pipeline is re-read rather than patched locally: derived fields
+   * (last contact, open reminder, checklist progress) live in three other tables and a
+   * trigger writes one of them, so the server's answer is the only trustworthy one.
    */
   private async commit(
     subject: string,
-    apply: () => void,
+    write: () => Promise<unknown>,
     onSuccess?: () => void,
   ): Promise<void> {
     if (!this.notify.online()) {
@@ -304,36 +440,62 @@ export class LeadsStore {
     }
 
     const run = async () => {
-      await this.persist();
-      apply();
+      await write();
+      await this.reload();
     };
 
     try {
       await run();
       onSuccess?.();
     } catch (error) {
-      const mapped = mapError(error as ServerError, true);
-      if (mapped.costsData) {
-        this.notify.failedToPersist({ subject, run }, mapped.code);
-      } else {
-        this.notify.failed(mapped.message);
-      }
+      this.report(error, true, subject, run);
     }
   }
 
+  /** Re-reads without the loading guard, so it can follow a write. */
+  private async reload(): Promise<void> {
+    const tenantId = await this.requireTenant();
+    const rows = await this.supabase.run<LeadRow[]>(
+      this.supabase.client
+        .from('leads')
+        .select(SELECT)
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false }) as never,
+    );
+    this._now.set(new Date());
+    this._leads.set((rows ?? []).map((row) => this.toLead(row)));
+  }
+
   /**
-   * The Supabase seam. The store is local until the schema is deployed, so this resolves;
-   * swapping in `supabase.from('leads').update(...)` changes this method and nothing else.
+   * One place that turns a thrown error into the right mechanism. `costsData` in
+   * SupabaseService owns the severity rule; this only routes what it decides.
    */
-  private persist(): Promise<void> {
-    return Promise.resolve();
+  private report(
+    error: unknown,
+    wasWrite: boolean,
+    subject?: string,
+    retry?: () => Promise<void>,
+  ): void {
+    const appError: AppError = isAppError(error)
+      ? error
+      : { message: COPY.errors.generic, code: 'unknown', cause: error };
+
+    if (wasWrite && subject && retry && costsData(appError, true)) {
+      this.notify.failedToPersist({ subject, run: retry }, appError.code);
+      return;
+    }
+    this.notify.failed(appError.message);
+  }
+
+  private async requireTenant(): Promise<string> {
+    const tenantId = await this.resolveTenant();
+    if (!tenantId) {
+      throw { message: COPY.errors.notAllowed, code: '42501', cause: null } satisfies AppError;
+    }
+    return tenantId;
   }
 
   private byId(leadId: string): Lead | undefined {
     return this._leads().find((l) => l.id === leadId);
-  }
-
-  private patch(leadId: string, fn: (lead: Lead) => Lead): void {
-    this._leads.update((leads) => leads.map((l) => (l.id === leadId ? fn(l) : l)));
   }
 }

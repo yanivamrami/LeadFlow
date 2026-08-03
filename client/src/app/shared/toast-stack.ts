@@ -50,11 +50,13 @@ import { Toast } from '../core/notify.model';
             </button>
           }
 
-          @if (toast.action) {
+          @if (toast.action || toast.sticky) {
             <div class="toast__acts">
-              <button type="button" class="tb tb--solid" (click)="run(toast)">
-                {{ toast.action.label }}
-              </button>
+              @if (toast.action) {
+                <button type="button" class="tb tb--solid" (click)="run(toast)">
+                  {{ toast.action.label }}
+                </button>
+              }
               @if (toast.sticky) {
                 <button type="button" class="tb" (click)="dismiss(toast)">
                   {{ toast.dismissLabel ?? copy.notify.dismiss }}

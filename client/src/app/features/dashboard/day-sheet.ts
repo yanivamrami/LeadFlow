@@ -36,10 +36,6 @@ export class DaySheet {
   protected readonly explainerDismissed = this.store.explainerDismissed;
 
   protected act(item: OpenItem): void {
-    if (item.reason === 'unqualified') {
-      this.store.answerChecklist(item.lead.id);
-      return;
-    }
     this.store.logActivity(item.lead.id, this.actionLabel[item.reason]);
   }
 

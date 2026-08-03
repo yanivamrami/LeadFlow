@@ -102,13 +102,18 @@ export class NotifyService {
     this.toast('error', COPY.offline.blocked);
   }
 
-  /** The checklist nudge lives in the same pasted stack as toasts — same object, same place. */
-  nudge(message: string, action: ToastAction, dismissLabel: string): void {
+  /**
+   * The checklist nudge lives in the same pasted stack as toasts — same object, same place.
+   *
+   * It carries no "fill them in now" action yet: the checklist lives on the lead-detail
+   * screen, which does not exist. Offering a button that silently marks five questions
+   * answered would be a lie about the user's own data, so the nudge informs and waits.
+   */
+  nudge(message: string, dismissLabel: string): void {
     this.push({
       id: ++this.seq,
       kind: 'info',
       message,
-      action,
       sticky: true,
       dismissLabel,
       createdAt: Date.now(),

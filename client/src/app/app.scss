@@ -89,12 +89,14 @@
   flex: 0 0 auto;
   inline-size: 34px;
   block-size: 34px;
+  border: 0;
   background: var(--lf-day);
   color: var(--lf-on-day);
   /* a Hebrew monogram — Archivo has no glyph for it */
   font-family: var(--lf-font-ui);
   font-weight: 600;
   font-size: 16px;
+  cursor: pointer;
 }
 
 /* ---------- mobile action band + tabs ---------- */
