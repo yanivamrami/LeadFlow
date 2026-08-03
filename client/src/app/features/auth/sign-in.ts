@@ -1,137 +1,108 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { COPY } from '../../core/copy';
-import { NotifyService } from '../../core/notify.service';
-import { SupabaseService, isAppError } from '../../core/supabase.service';
+import { isAppError, SupabaseService } from '../../core/supabase.service';
+import { TextField } from '../../shared/text-field';
+import { AuthPage } from './auth-page';
+import { CommitBand } from './commit-band';
+import { FormError } from '../../shared/form-error';
+import { PasteStrip, StripRow } from './paste-strip';
+import { emailError, passwordError, safeReturnUrl } from './validate';
 
 /**
- * Sign-in. Deliberately minimal: every lead policy is `to authenticated`, so without a
- * session the dashboard reads an empty pipeline that looks identical to an empty tenant.
- * This exists to make the app reachable, not to be the finished auth surface — sign-up,
- * password reset and confirmation are still unbuilt (documents/SCREENS.md §6).
+ * 6.1 — sign in. The overwhelmingly common arrival: someone who already has an account,
+ * on a phone, wanting the board. So there is nothing here to read, no value proposition,
+ * and no third field. Two lines and a red band.
+ *
+ * The password error never names which of the two was wrong — that would tell an
+ * attacker which addresses are registered.
  */
 @Component({
   selector: 'lf-sign-in',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [AuthPage, TextField, CommitBand, FormError, PasteStrip],
   template: `
-    <main class="wrap">
-      <form class="card" (ngSubmit)="submit()">
-        <h1 class="title">{{ copy.auth.title }}</h1>
-        <p class="sub">{{ copy.auth.subtitle }}</p>
+    <lf-auth-page [title]="copy.auth.signIn.title" (submitted)="submit()">
+      <lf-text-field
+        name="email"
+        type="email"
+        autocomplete="email"
+        inputmode="email"
+        enterkeyhint="next"
+        [label]="copy.auth.emailLabel"
+        [error]="emailProblem()"
+        [disabled]="busy()"
+        [(value)]="email"
+      />
 
-        <label class="field">
-          <span class="field__label lf-label">{{ copy.auth.email }}</span>
-          <input
-            name="email"
-            type="email"
-            autocomplete="email"
-            dir="ltr"
-            required
-            [(ngModel)]="email"
-            [disabled]="busy()"
-          />
-        </label>
+      <lf-text-field
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        enterkeyhint="go"
+        [label]="copy.auth.passwordLabel"
+        [error]="passwordProblem()"
+        [disabled]="busy()"
+        [(value)]="password"
+      />
 
-        <label class="field">
-          <span class="field__label lf-label">{{ copy.auth.password }}</span>
-          <input
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            dir="ltr"
-            required
-            [(ngModel)]="password"
-            [disabled]="busy()"
-          />
-        </label>
+      <lf-form-error [message]="serverProblem()" />
 
-        <button type="submit" class="submit" [disabled]="busy()">
-          {{ busy() ? copy.auth.signingIn : copy.auth.signIn }}
-        </button>
-      </form>
-    </main>
-  `,
-  styles: `
-    :host { display: block; }
+      <lf-commit-band [label]="copy.auth.signIn.submit" [busy]="busy()" />
 
-    .wrap {
-      min-block-size: 100vh;
-      display: grid;
-      place-items: center;
-      padding: var(--lf-space-4);
-      background: var(--lf-ground);
-    }
-
-    .card {
-      inline-size: min(400px, 100%);
-      background: var(--lf-ground);
-      border: 3px solid var(--lf-ink);
-      padding: var(--lf-space-8) var(--lf-space-6) var(--lf-space-6);
-    }
-
-    .title {
-      margin: 0;
-      font-weight: 600;
-      font-size: 34px;
-      line-height: 1;
-    }
-    .sub {
-      margin: var(--lf-space-2) 0 var(--lf-space-6);
-      font-size: 14px;
-      color: var(--lf-muted);
-    }
-
-    .field { display: block; margin-block-end: var(--lf-space-4); }
-    .field__label { display: block; margin-block-end: 6px; color: var(--lf-muted); }
-    .field input {
-      inline-size: 100%;
-      min-block-size: var(--lf-touch);
-      padding-inline: var(--lf-space-3);
-      border: 2px solid var(--lf-ink);
-      border-radius: 0;
-      background: var(--lf-surface);
-      color: var(--lf-ink);
-      font: inherit;
-    }
-    .field input:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 0; }
-    .field input:disabled { opacity: 0.6; }
-
-    .submit {
-      inline-size: 100%;
-      min-block-size: 52px;
-      border: 0;
-      background: var(--lf-red);
-      color: var(--lf-on-red);
-      font: inherit;
-      font-weight: 600;
-      font-size: 17px;
-      cursor: pointer;
-    }
-    .submit:disabled { opacity: 0.7; cursor: default; }
+      <lf-paste-strip foot [rows]="footRows" />
+    </lf-auth-page>
   `,
 })
 export class SignIn {
   private readonly supabase = inject(SupabaseService);
-  private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly copy = COPY;
-  protected email = '';
-  protected password = '';
+
+  protected readonly email = signal('');
+  protected readonly password = signal('');
   protected readonly busy = signal(false);
+  protected readonly serverProblem = signal<string | null>(null);
+
+  /** Nothing is marked wrong until they have asked for it to be checked. */
+  private readonly tried = signal(false);
+
+  protected readonly emailProblem = computed(() =>
+    this.tried() ? emailError(this.email()) : null,
+  );
+  /** No length rule on sign-in: an old password that predates the rule still has to work. */
+  protected readonly passwordProblem = computed(() =>
+    this.tried() ? passwordError(this.password(), false) : null,
+  );
+
+  protected readonly footRows: readonly StripRow[] = [
+    {
+      text: this.copy.auth.signIn.noAccount,
+      linkLabel: this.copy.auth.signIn.createOne,
+      link: '/auth/sign-up',
+    },
+    {
+      text: this.copy.auth.signIn.forgot,
+      linkLabel: this.copy.auth.reset.title,
+      link: '/auth/reset',
+    },
+  ];
 
   protected async submit(): Promise<void> {
-    if (this.busy()) return;
+    this.tried.set(true);
+    this.serverProblem.set(null);
+    if (this.emailProblem() || this.passwordProblem() || this.busy()) return;
+
     this.busy.set(true);
     try {
-      await this.supabase.signIn(this.email.trim(), this.password);
-      await this.router.navigate(['/']);
+      await this.supabase.signIn(this.email().trim(), this.password());
+      const target = safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
+      await this.router.navigateByUrl(target);
     } catch (error) {
-      // Sign-in failures are recoverable by definition — the user tries again.
-      this.notify.failed(isAppError(error) ? error.message : COPY.errors.generic);
+      this.serverProblem.set(isAppError(error) ? error.message : COPY.errors.generic);
     } finally {
       this.busy.set(false);
     }

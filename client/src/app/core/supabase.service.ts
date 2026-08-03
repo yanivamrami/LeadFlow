@@ -54,7 +54,16 @@ const AUTH_MESSAGES: Record<string, string> = {
   over_request_rate_limit: COPY.errors.tooManyRequests,
   over_email_send_rate_limit: COPY.errors.tooManyRequests,
   session_expired: COPY.errors.sessionExpired,
+  same_password: COPY.errors.samePassword,
+  // A recovery link that is expired, already used, or was never valid. GoTrue reports
+  // all three differently; to the person holding a dead link they are one situation.
+  otp_expired: COPY.errors.recoveryInvalid,
+  reauthentication_needed: COPY.errors.recoveryInvalid,
+  session_not_found: COPY.errors.recoveryInvalid,
 };
+
+/** Tables the delete-account screen counts before it lets anyone press the button. */
+export type CountableTable = 'leads' | 'activities' | 'reminders';
 
 /**
  * Codes where the server told us plainly why it refused. The user can act on the
@@ -99,6 +108,7 @@ export class SupabaseService {
 
   private readonly _session = signal<Session | null>(null);
   private readonly _ready = signal(false);
+  private readonly _recovery = signal(false);
 
   readonly session = this._session.asReadonly();
   /** False until the stored session has been restored — route guards must wait on it. */
@@ -106,7 +116,35 @@ export class SupabaseService {
   readonly user = computed(() => this._session()?.user ?? null);
   readonly isAuthenticated = computed(() => this._session() !== null);
 
+  /**
+   * True between a recovery link being consumed and the new password being saved.
+   * A recovery link mints a real session, so this is the only way the set-new-password
+   * screen can tell "arrived from the email" apart from "was already signed in".
+   */
+  readonly inRecovery = this._recovery.asReadonly();
+
+  /** The name the trigger wrote at signup, and what the masthead monogram is cut from. */
+  readonly displayName = computed(() => {
+    const user = this.user();
+    if (!user) return '';
+    const meta = user.user_metadata as { display_name?: unknown } | undefined;
+    const name = typeof meta?.display_name === 'string' ? meta.display_name.trim() : '';
+    return name || (user.email ?? '').split('@')[0];
+  });
+
+  readonly email = computed(() => this.user()?.email ?? '');
+
+  /**
+   * Resolves once the stored session has been restored. Route guards await this instead
+   * of polling `ready`, so a signed-in user never sees the sign-in screen flash past on
+   * a cold load — and an unauthenticated one is not redirected before we know.
+   */
+  readonly whenReady: Promise<void>;
+  private markReady!: () => void;
+
   constructor() {
+    this.whenReady = new Promise<void>((resolve) => (this.markReady = resolve));
+
     const { supabaseUrl, supabasePublishableKey } = environment;
 
     if (!supabaseUrl || !supabasePublishableKey) {
@@ -124,9 +162,13 @@ export class SupabaseService {
 
     // Fires once with the restored session, then on every sign-in, sign-out and
     // token refresh. This is the only writer of `_session`.
-    this.client.auth.onAuthStateChange((_event, session) => {
+    this.client.auth.onAuthStateChange((event, session) => {
       this._session.set(session);
       this._ready.set(true);
+      this.markReady();
+
+      if (event === 'PASSWORD_RECOVERY') this._recovery.set(true);
+      if (event === 'SIGNED_OUT') this._recovery.set(false);
     });
   }
 
@@ -180,6 +222,96 @@ export class SupabaseService {
   async signOut(): Promise<void> {
     const { error } = await this.client.auth.signOut();
     if (error) throw this.fromAuth(error);
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    const redirectTo =
+      typeof window === 'undefined' ? undefined : `${window.location.origin}/auth/reset/new`;
+
+    const { error } = await this.client.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw this.fromAuth(error);
+  }
+
+  /**
+   * Sets a new password on the current session — used by both the recovery screen and
+   * the profile. `secure_password_change` is off in config.toml, so GoTrue does not ask
+   * for the old password; when the caller is a signed-in user rather than a recovery
+   * link, `reauthenticate` is what supplies that check.
+   */
+  async updatePassword(password: string): Promise<void> {
+    const { error } = await this.client.auth.updateUser({ password });
+    if (error) throw this.fromAuth(error);
+    this._recovery.set(false);
+  }
+
+  /**
+   * Proves the person at the keyboard knows the current password, by using it. Throws
+   * `wrongPassword` if not. Succeeds silently — the returned session replaces the
+   * current one, which is the same user and the same tenant.
+   */
+  async reauthenticate(password: string): Promise<void> {
+    const email = this.email();
+    if (!email) throw this.fromTransport(new Error('no session'));
+
+    const { error } = await this.client.auth.signInWithPassword({ email, password });
+    if (error) {
+      const mapped = this.fromAuth(error);
+      throw mapped.code === 'invalid_credentials'
+        ? { ...mapped, message: COPY.errors.wrongPassword }
+        : mapped;
+    }
+  }
+
+  /**
+   * Renames the user in both places that hold the name: the auth metadata (which the
+   * masthead reads) and the `profiles` row (which co-members read). The tenant name is
+   * left alone on purpose — it was seeded from this name at signup but is a separate
+   * thing the moment a second person joins.
+   */
+  async updateDisplayName(displayName: string): Promise<void> {
+    const user = this.user();
+    if (!user) throw this.fromTransport(new Error('no session'));
+
+    const { error } = await this.client.auth.updateUser({ data: { display_name: displayName } });
+    if (error) throw this.fromAuth(error);
+
+    await this.run(
+      this.client.from('profiles').update({ display_name: displayName }).eq('id', user.id) as never,
+    );
+  }
+
+  /**
+   * Deletes the auth user, which is the only domino that has to be pushed by hand:
+   * `profiles` cascades from `auth.users`, `memberships` cascades from `profiles`, and
+   * the `memberships_delete_orphan_tenant` trigger drops any tenant left without members
+   * — taking its leads, activities, reminders and answers with it.
+   *
+   * It runs in an Edge Function because deleting a user needs the secret key, which
+   * never ships to the browser.
+   */
+  async deleteAccount(): Promise<void> {
+    const { error } = await this.client.functions.invoke('delete-account', { body: {} });
+    if (error) {
+      throw { message: COPY.errors.deleteFailed, code: 'delete_account_failed', cause: error };
+    }
+    await this.client.auth.signOut();
+  }
+
+  /**
+   * How many rows this user can see in a table. RLS makes that "this tenant's rows",
+   * which is exactly what the delete-account screen has to state out loud.
+   */
+  async countRows(table: CountableTable): Promise<number> {
+    try {
+      const { count, error } = await this.client
+        .from(table)
+        .select('*', { count: 'exact', head: true });
+      if (error) throw this.fromPostgrest(error);
+      return count ?? 0;
+    } catch (cause) {
+      if (isAppError(cause)) throw cause;
+      throw this.fromTransport(cause);
+    }
   }
 
   /* ---------- error normalization ---------- */

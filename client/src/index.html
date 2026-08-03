@@ -9,6 +9,24 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;800&family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    // The theme has to be on the element before the first paint. Angular boots too late:
+    // without this, every load flashes poster stock at someone who chose dark. tokens.css
+    // switches on [data-theme] alone, so this script is also what makes the dark palette
+    // reachable at all.
+    // Mirrors ThemeService — keep the storage key and the values in step.
+    (function () {
+      try {
+        var choice = localStorage.getItem('lf-theme') || 'system';
+        var dark =
+          choice === 'dark' ||
+          (choice === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

@@ -1,0 +1,165 @@
+/* Account settings as a register: sections under rules, one row per thing. */
+
+:host {
+  display: block;
+  padding-block-end: var(--lf-space-12);
+}
+
+.page {
+  max-inline-size: 620px;
+  padding-inline: var(--lf-space-4);
+}
+
+.ttl {
+  margin: var(--lf-space-6) 0 0;
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: var(--lf-size-name);
+  line-height: 1.05;
+}
+
+.sec {
+  margin-block-start: var(--lf-space-8);
+  padding-block-start: var(--lf-space-3);
+  border-block-start: var(--lf-rule-w) solid var(--lf-ink);
+}
+
+/* more air above a heading than below it — the rule belongs to what follows */
+.sec__h {
+  margin: 0 0 var(--lf-space-2);
+  color: var(--lf-muted);
+}
+
+/* ---------- controls ---------- */
+
+.b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-block-start: var(--lf-space-4);
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-6);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--lf-dur-state) linear,
+    color var(--lf-dur-state) linear;
+}
+.b:hover:not(:disabled) {
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+}
+.b:disabled {
+  border-color: var(--lf-muted);
+  color: var(--lf-muted);
+  cursor: not-allowed;
+}
+.b svg {
+  inline-size: 19px;
+  block-size: 19px;
+  stroke-width: 2.4;
+}
+
+/* ---------- read-only row ---------- */
+
+.ro {
+  margin-block-start: var(--lf-space-6);
+  padding-block-start: var(--lf-space-3);
+  border-block-start: var(--lf-rule-w-3) solid var(--lf-rule-soft);
+}
+.ro__l {
+  margin: 0;
+  color: var(--lf-muted);
+}
+.ro__v {
+  margin: 4px 0 0;
+  direction: ltr;
+  text-align: end;
+  font-family: var(--lf-font-num);
+  font-weight: 500;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.ro__n {
+  margin: 8px 0 0;
+  color: var(--lf-muted);
+  font-size: var(--lf-size-small);
+  line-height: 1.45;
+}
+
+/* ---------- theme segments ---------- */
+
+.seg__l {
+  margin: 0 0 8px;
+  color: var(--lf-muted);
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: var(--lf-size-label);
+}
+
+/* the dashboard's view toggle, same organ: one ink frame, selected segment fills yellow */
+.seg {
+  display: inline-flex;
+  border: 2px solid var(--lf-ink);
+}
+.seg button {
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-4);
+  border: 0;
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--lf-dur-state) linear;
+}
+.seg button + button {
+  border-inline-start: 2px solid var(--lf-ink);
+}
+.seg button:hover:not(.on) {
+  background: var(--lf-surface);
+}
+.seg button.on {
+  background: var(--lf-day);
+  color: var(--lf-on-day);
+  font-weight: 600;
+}
+
+/* ---------- the end of the account ---------- */
+
+.sec--danger {
+  margin-block-start: var(--lf-space-12);
+  padding: var(--lf-space-4);
+  /* the same hatch that means drift on a row and lost on a tag: texture, not a red panel */
+  background: var(--lf-flag-drift);
+}
+.danger__b {
+  margin: 0;
+  max-inline-size: 52ch;
+  line-height: 1.5;
+}
+.b--danger {
+  border-color: var(--lf-red);
+  color: var(--lf-red-text);
+}
+.b--danger:hover {
+  background: var(--lf-red);
+  border-color: var(--lf-red);
+  color: var(--lf-on-red);
+}
+
+@media (min-width: 900px) {
+  .page {
+    padding-inline: var(--lf-space-8);
+  }
+  .ttl {
+    margin-block-start: var(--lf-space-8);
+    font-size: var(--lf-size-display);
+  }
+}

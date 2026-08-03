@@ -2,7 +2,9 @@
 
 > Derived from the PRD's four pillars, `docs/ARCHITECTURE.md` §7 (route map), and `PRODUCT.md`.
 > ~~Struck through~~ = built and running. Everything else is unbuilt.
-> Last updated: 2026-08-02
+> The **TODO** column is never struck through: it is what is still open on that screen,
+> whether the screen is built or not. "Whole screen" means nothing exists yet.
+> Last updated: 2026-08-03
 
 Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYSTEM.md` v2.0.
 "Screen" here means a route or a full-surface overlay (drawer/dialog), not a component.
@@ -11,78 +13,86 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 
 ## 1. Shell
 
-| # | Screen | Notes |
-|---|---|---|
-| 1.1 | ~~**App shell — masthead**~~ | ~~Ink masthead, brand lockup, reminders bell + badge, tenant monogram. Desktop adds inline nav.~~ |
-| 1.2 | ~~**App shell — bottom tabs**~~ | ~~Four tabs under 900px; active item marked by the yellow rule. Unbuilt destinations are `aria-disabled`, not dead links.~~ |
-| 1.3 | ~~**App shell — primary action band**~~ | ~~Full-width red band above the tabs on mobile; red button in the masthead on desktop. Currently a button with no target.~~ |
-| 1.4 | **Tenant switcher** | Only matters once a user belongs to more than one tenant. Post-launch with invites. |
-| 1.5 | ~~**Global notifications — critical popup**~~ | ~~Fires for one case only: a write that did not persist. Torn-sheet mark, structured text, `נסה שוב` re-runs the failed mutation, always dismissible.~~ |
-| 1.6 | ~~**Global notifications — toast stack**~~ | ~~Success, info, recoverable failures, and the checklist nudge, which shares the stack. Max 3, auto-dismiss, holds on hover/focus.~~ |
-| 1.7 | ~~**Offline banner**~~ | ~~Ink strip under the masthead that pushes content; writes are blocked with an explanation while it is up; confirms on reconnect.~~ |
+| # | Screen | Notes | TODO |
+|---|---|---|---|
+| 1.1 | ~~**App shell — masthead**~~ | ~~Ink masthead, brand lockup, reminders bell + badge, tenant monogram. Desktop adds inline nav. The monogram is a link to the profile.~~ | Badge count is the literal `3` (`shell.ts:49`) although the store now loads reminders and exposes `openItems` — a small wiring job. Bell opens nothing until 4.1. Desktop `+ ליד חדש` has no target until 3.1. |
+| 1.2 | ~~**App shell — bottom tabs**~~ | ~~Four tabs under 900px; active item marked by the yellow rule and `aria-current="page"`. Unbuilt destinations are `aria-disabled`, not dead links.~~ | Reminders and Insights are still `aria-disabled` spans; promote to links when 4.1 and 5.1 land. |
+| 1.3 | ~~**App shell — primary action band**~~ | ~~Full-width red band above the tabs on mobile; red button in the masthead on desktop.~~ | Still a button with no target. Blocked on 3.1. |
+| 1.4 | **Tenant switcher** | Only matters once a user belongs to more than one tenant. Post-launch with invites. | Whole screen. Blocked on 8.3. |
+| 1.5 | ~~**Global notifications — critical popup**~~ | ~~Fires for one case only: a write that did not persist. Torn-sheet mark, structured text, `נסה שוב` re-runs the failed mutation, always dismissible.~~ | The one rule it runs on (`costsData`) has unit cover in `supabase.service.spec.ts`. Nothing open. |
+| 1.6 | ~~**Global notifications — toast stack**~~ | ~~Success, info, recoverable failures, and the checklist nudge, which shares the stack. Max 3, auto-dismiss, holds on hover/focus.~~ | The impeccable detector flags `border-inline-start: 4px solid` on the toast (`toast-stack.ts:93`) as the side-tab accent anti-pattern. Either justify it as the world's rule idiom or drop it. |
+| 1.7 | ~~**Offline banner**~~ | ~~Ink strip under the masthead that pushes content; writes are blocked with an explanation while it is up; confirms on reconnect.~~ | It lives inside `Shell`, because the design puts it under the masthead — so the signed-out screens have no offline signal at all, and a sign-in attempt with no network surfaces only as a toast. Decide whether the auth screens get their own. |
 
 ## 2. Dashboard (PRD pillar 1)
 
-| # | Screen | Notes |
-|---|---|---|
-| 2.1 | ~~**Dashboard — day sheet**~~ | ~~The yellow sheet: open items at display scale, per-item action, snooze, cleared-today strikethrough, show-all, pasted explainer.~~ |
-| 2.2 | ~~**Dashboard — register (list view)**~~ | ~~Attention flags, stage tags, values, last touch, per-row menu. Real columns at ≥900px.~~ |
-| 2.3 | ~~**Dashboard — board (kanban)**~~ | ~~Six columns RTL, CDK drag-and-drop, drop placeholder, per-card stage menu. Activates at ≥768px only.~~ |
-| 2.4 | ~~**Dashboard — search & stage filters**~~ | ~~Search across name, company, phone, email; stage chip strip with counts.~~ |
-| 2.5 | ~~**Dashboard — empty & no-results states**~~ | ~~Dashed container, geometric mark, one action. Separate copy for "no leads yet" vs "nothing matched".~~ |
-| 2.6 | ~~**Dashboard — checklist nudge**~~ | ~~Pasted advisory after a stage move with open questions. Always carries `לא עכשיו`.~~ |
-| 2.7 | ~~**Dashboard — loading skeleton**~~ | ~~Opaque `--lf-skeleton` bars that breathe, never a shimmer sweep. Day sheet and register both. Shows only on the first read, not after a write.~~ |
-| 2.8 | ~~**Dashboard — sort control**~~ | ~~Four sorts — דחיפות (default), שווי, מי שקט מזמן, תאריך הוספה. Native select: on a phone the OS picker beats a custom menu and is accessible for free.~~ |
-| 2.9 | ~~**Dashboard — load failure**~~ | ~~A failed read used to render "you have no leads yet". Now its own state, with a retry, replacing both regions so there is one message rather than two.~~ |
+| # | Screen | Notes | TODO |
+|---|---|---|---|
+| 2.1 | ~~**Dashboard — day sheet**~~ | ~~The yellow sheet: open items at display scale, per-item action, snooze, cleared-today strikethrough, show-all, pasted explainer. Reads real rows.~~ | Items point at lead detail (3.2), which does not exist. Snooze is a fixed one-tap "tomorrow" until 4.2. |
+| 2.2 | ~~**Dashboard — register (list view)**~~ | ~~Attention flags, stage tags, values, last touch, per-row menu. Real columns at ≥900px.~~ | Rows do not navigate (3.2). Row-menu delete is the demo path only (3.7). |
+| 2.3 | ~~**Dashboard — board (kanban)**~~ | ~~Six columns RTL, CDK drag-and-drop, drop placeholder, per-card stage menu. Activates at ≥768px only. Stage moves persist.~~ | Cards do not open 3.2. |
+| 2.4 | ~~**Dashboard — search & stage filters**~~ | ~~Search across name, company, phone, email; stage chip strip with counts.~~ | Filters the loaded array client-side. Revisit as PostgREST filters once a tenant can hold more rows than one fetch. |
+| 2.5 | ~~**Dashboard — empty & no-results states**~~ | ~~Dashed container, geometric mark, one action. Separate copy for "no leads yet" vs "nothing matched".~~ | The "no leads yet" action has no target until 3.1. |
+| 2.6 | ~~**Dashboard — checklist nudge**~~ | ~~Pasted advisory after a stage move with open questions. Always carries `לא עכשיו`.~~ | It now informs and waits — the "fill them in now" action was removed, because marking five questions answered without asking them is a lie about the user's own data. The action returns with 3.4. |
+| 2.7 | ~~**Dashboard — loading skeleton**~~ | ~~Opaque `--lf-skeleton` bars that breathe, never a shimmer sweep. Day sheet and register both, in the layout the rows will occupy. Shows only on the first read, never after a write.~~ | Not visually verified — it renders behind `authGuard`. Reduced motion stops the loop outright: the global 80ms override would otherwise turn it into a ~12Hz strobe. |
+| 2.8 | ~~**Dashboard — sort control**~~ | ~~Four sorts — דחיפות (default), שווי, מי שקט מזמן, תאריך הוספה. A native select on purpose: on a phone the OS picker beats a custom menu and is accessible for free.~~ | Not visually verified. The open list is the platform's, not the world's — accepted, per the Operate rule that native expectations outrank expression. |
+| 2.9 | ~~**Dashboard — load failure**~~ | ~~Found while building 2.7: a failed read rendered "you have no leads yet". Now its own state with a retry, replacing both regions so there is one message rather than two.~~ | Not visually verified. |
 
 ## 3. Lead capture & administration (PRD pillars 2 & 3)
 
-| # | Screen | Notes |
-|---|---|---|
-| 3.1 | **Add lead** | Bottom drawer on mobile, dialog on desktop. Essential fields with per-field tooltips, source selection, inline validation. The `ליד חדש` action has nothing behind it today. |
-| 3.2 | **Lead detail** | The biggest unbuilt surface: header, fields, stage control, qualification checklist, activity timeline, reminders. |
-| 3.3 | **Edit lead** | Same form as 3.1 in edit mode; decide whether it is a separate route or an inline mode on 3.2. |
-| 3.4 | **Qualification checklist** | Fixed 5 items, tri-state (`yes` / `no` / `unknown`), stored per lead. Lives inside 3.2 but is its own design problem. |
-| 3.5 | **Log activity** | Call · email · meeting · note. Reachable from the day sheet, the row menu, and lead detail — one surface, three entries. |
-| 3.6 | **Close lead (won / lost)** | Won confirmation; Lost requires a reason, per the PRD's Close step. |
-| 3.7 | **Delete lead confirmation** | Destructive, so it confirms. Demo leads delete without ceremony. |
+| # | Screen | Notes | TODO |
+|---|---|---|---|
+| 3.1 | **Add lead** | Bottom drawer on mobile, dialog on desktop. Essential fields with per-field tooltips, source selection, inline validation. | Whole screen. Three built entry points already point at it: the mobile band, the desktop CTA, and the empty state. `lf-text-field` and `lf-form-error` are ready to reuse. |
+| 3.2 | **Lead detail** | The biggest unbuilt surface: header, fields, stage control, qualification checklist, activity timeline, reminders. | Whole screen. Every row, card and day-sheet item points here and today they point at nothing. |
+| 3.3 | **Edit lead** | Same form as 3.1 in edit mode. | Whole screen, plus the open decision: separate route or an inline mode on 3.2. |
+| 3.4 | **Qualification checklist** | Fixed 5 items, tri-state (`yes` / `no` / `unknown`), stored per lead. | Whole screen. `qualification_answers` is read for progress but never written. 2.6 currently fakes the completion it asks for. |
+| 3.5 | **Log activity** | Call · email · meeting · note. | Whole screen. The store already inserts activities, so this is the surface, not the plumbing. |
+| 3.6 | **Close lead (won / lost)** | Won confirmation; Lost requires a reason, per the PRD's Close step. | Whole screen. The stage control already reaches `won`/`lost` with no ceremony and no reason captured. |
+| 3.7 | **Delete lead confirmation** | Destructive, so it confirms. Demo leads delete without ceremony. | Whole screen. `lf-alert-dialog` is available; the delete-account page is the worked example of the two-step pattern. |
 
 ## 4. Reminders
 
-| # | Screen | Notes |
-|---|---|---|
-| 4.1 | **Reminders list** | Compact density. Due / overdue / upcoming. The badge in the masthead already counts them. |
-| 4.2 | **Snooze / reschedule** | Currently a one-tap "tomorrow" in the store; needs a real date choice. |
-| 4.3 | **Login toast** | In-app only at launch — no email digest, no push (`docs/ARCHITECTURE.md` §6). |
+| # | Screen | Notes | TODO |
+|---|---|---|---|
+| 4.1 | **Reminders list** | Compact density. Due / overdue / upcoming. | Whole screen. Unblocks the masthead bell, the hardcoded badge, and two `aria-disabled` tabs. Rows already come back nested on the leads query. |
+| 4.2 | **Snooze / reschedule** | | Whole screen. Replaces the one-tap "tomorrow" the store writes today. |
+| 4.3 | **Login toast** | In-app only at launch — no email digest, no push (`docs/ARCHITECTURE.md` §6). | Whole screen. `NotifyService` already carries the surface it needs. |
 
 ## 5. Analytics (PRD pillar 4)
 
-| # | Screen | Notes |
-|---|---|---|
-| 5.1 | **Insights overview** | Total leads, conversion rate, pipeline value. Each metric ships with a plain-language explanation — the PRD's "educational insights". |
-| 5.2 | **Pipeline progression** | Leads through stages over time. RTL time axis. |
-| 5.3 | **Source breakdown** | Which sources actually convert. |
-| 5.4 | **Analytics empty state** | A new user has no data; this must teach rather than show zeros. |
+| # | Screen | Notes | TODO |
+|---|---|---|---|
+| 5.1 | **Insights overview** | Total leads, conversion rate, pipeline value. Each metric ships with a plain-language explanation — the PRD's "educational insights". | Whole screen. |
+| 5.2 | **Pipeline progression** | Leads through stages over time. RTL time axis. | Whole screen. Needs stage-change history, which nothing records today — an activity row is written per move, so the history is recoverable but not modelled. |
+| 5.3 | **Source breakdown** | Which sources actually convert. | Whole screen. Source is on the lead but has no entry surface until 3.1. |
+| 5.4 | **Analytics empty state** | A new user has no data; this must teach rather than show zeros. | Whole screen. |
 
 ## 6. Auth & account
 
-| # | Screen | Notes |
-|---|---|---|
-| 6.1 | ~~**Sign in**~~ | ~~Email/password. Built out of necessity: every lead policy is `to authenticated`, so without it the dashboard reads an empty pipeline. Minimal — not the finished auth surface.~~ |
-| 6.2 | **Sign up** | Trigger creates the personal tenant plus the demo lead. |
-| 6.3 | **Password reset — request** | |
-| 6.4 | **Password reset — set new** | Deep-linked from the email. |
-| 6.5 | **Email confirmation landing** | |
-| 6.6 | **Profile / account settings** | Display name, theme, delete account. |
-| 6.7 | **First-run welcome** | Optional. The demo lead plus the sheet explainer may already cover activation — decide before building. |
+Signed-out routes live under `/auth/*` and render bare; everything else renders inside
+`Shell` behind `authGuard`.
+
+| # | Screen | Notes | TODO |
+|---|---|---|---|
+| 6.1 | ~~**Sign in**~~ | ~~Email/password posted bill, red commit band, footer strip to sign-up and reset. `returnUrl` filtered through `safeReturnUrl` against open redirects.~~ | OAuth is a config-level promise, not built: no provider buttons, no callback route. |
+| 6.2 | ~~**Sign up**~~ | ~~Name/email/password; the DB trigger creates the personal tenant plus the demo lead. Lands straight on the board.~~ | The branch that surfaces `emailNotConfirmed` is unreachable while `enable_confirmations = false`, so it has never run. Revisit with 6.5. |
+| 6.3 | ~~**Password reset — request**~~ | ~~Confirmation never reveals whether an address is registered.~~ | Delivery rides Supabase's built-in sender: rate-limited and unbranded. Needs real SMTP before launch — no client code changes. |
+| 6.4 | ~~**Password reset — set new**~~ | ~~Deep-linked from the email; outside `guestGuard` because a recovery link mints a real session. Dead links land on an expired state that offers a fresh one.~~ | Never exercised end-to-end — no mail has been sent yet. Verify the real link and the real expiry once a sender exists. |
+| 6.5 | **Email confirmation landing** | | Whole screen. Not needed yet: `enable_confirmations = false` and no SMTP sender is configured. Build with 6.3's sender. |
+| 6.6 | ~~**Profile / account settings**~~ | ~~Display name, password change (reauth first), theme (light/dark/system), sign out, and the entry to account deletion.~~ | Email is read-only — changing it needs the `double_confirm_changes` flow and a sender. The tenant / business name is not editable anywhere; `updateDisplayName` deliberately leaves it alone. |
+| 6.7 | **First-run welcome** | **Dropped** (2026-08-03). The demo lead and the day-sheet explainer the trigger creates already carry activation; a welcome screen would only stand between someone and their board. | None — the decision closes it. |
+
+**Open across all of §6:** no live visual inspection round has been run (desktop + mobile),
+and `environment.ts` (production) still has an empty `supabaseUrl` / `supabasePublishableKey`.
+A production build now *crashes at bootstrap* because of it — `SupabaseService` is injected
+eagerly and refuses to construct unconfigured.
 
 ## 7. Legal & compliance
 
-| # | Screen | Notes |
-|---|---|---|
-| 7.1 | **Privacy notice** | Required by Israeli Amendment 13 (`docs/ARCHITECTURE.md` §9): what lead data is stored, why, where, and how it is deleted. |
-| 7.2 | **Terms** | |
-| 7.3 | **Delete account / tenant** | Cascade delete of all tenant data. Destructive and irreversible — confirms explicitly. |
+| # | Screen | Notes | TODO |
+|---|---|---|---|
+| 7.1 | **Privacy notice** | Required by Israeli Amendment 13 (`docs/ARCHITECTURE.md` §9): what lead data is stored, why, where, and how it is deleted. | Whole screen, plus a link to it from sign-up and from the profile. |
+| 7.2 | **Terms** | | Whole screen. |
+| 7.3 | ~~**Delete account / tenant**~~ | ~~Its own route, not a modal, so the two steps are genuinely separate. Counts the real rows before asking. The `delete-account` Edge Function removes the `auth.users` row; the FK cascades and the orphan-tenant trigger do the rest.~~ | Not deployed. Needs `supabase functions deploy delete-account` and `supabase secrets set SUPABASE_SECRET_KEY=sb_secret_…`; until then the button reaches nothing. Never run against a real account. |
 
 ## 8. Deferred (do not design as if shipped)
 
@@ -99,11 +109,15 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 
 | State | Screens |
 |-------|---------|
-| Built | 16 |
-| Remaining in scope (§1–§7) | 23 |
+| Built | 21 |
+| Built, with something still open | 20 of the 21 — only 1.5 is closed |
+| Unbuilt, in scope (§1–§7) | 18 |
+| Dropped (6.7) | 1 |
 | Deferred (§8) | 4 |
 
-Sign-in (6.1) is built because RLS made it a prerequisite, not because auth was scheduled.
-Lead detail (3.2) has a confirmed brief and is parked.
+§1–§7 holds 40 screens: 21 built + 18 unbuilt + 1 dropped. (2.9 was found while building
+2.7 and added to the list rather than fixed silently.)
 
-**Nearest useful next screen: 3.2 lead detail** — every row, card and day-sheet item already points at it, and today they point at nothing.
+**Nearest useful next screen: 3.2 lead detail** — every row, card and day-sheet item already
+points at it, and today they point at nothing. It has a confirmed brief, parked on 2026-08-03.
+3.1 add-lead is the close second, and it is what three built controls are waiting on.
