@@ -213,6 +213,35 @@ Three mechanisms, one rule each. **Severity is not a slider — it is one questi
 
 Accessibility: popup is `role="alertdialog"` + `aria-modal`, focus-trapped with auto-capture on the recovery action, Escape dismisses, focus returns to origin. Toasts are `role="alert"` for errors and `role="status"` otherwise. The banner is `role="status"` polite — assertive would re-announce on every flap.
 
+## 8c. The lead sheet
+
+One surface for all of §3 — add, detail, edit, checklist, activity, closing, deleting.
+Bottom drawer at ~92 vh under 900 px so the composer and the save sit under the thumb;
+centred 560 px dialog above. Ink scrim, 3 px border, radius 0, no shadow.
+
+**One save.** Fields, a pending note and any touched checklist answers commit together
+through the `save_lead` RPC. Nothing is written until the user asks, so the sheet can hold
+a half-typed thought without risk — and a stage change can never land while the note is lost.
+
+**The footer is one strip that changes job.** Default carries save / cancel / delete; the
+unsaved-changes question and the delete confirmation replace its contents in place. A
+confirmation never stacks a second dialog on the first.
+
+**Closing is inline.** Selecting `lost` reveals a required reason with chips writing into
+free text; `won` reveals the final amount, because otherwise the analytics report estimates
+as revenue.
+
+**The tri-state control.** Three 44 px segments per question, selected takes an ink fill.
+The label — `כן` / `לא` / `?` — carries the answer, so nothing depends on colour. An absent
+answer is not `unknown`: "not asked" and "asked, they don't know" are different signals and
+the storage keeps them apart.
+
+**The timeline reuses the register row.** Date as a margin stamp in Archivo tabular, body
+beside it, 1 px rules between, newest first, time shown on anything from today. Typed notes
+sit on paper; trigger-written `status_changed` entries take a small ink chip, so the machine
+is distinguishable from the person by treatment rather than hue. Notes are **append-only** —
+no edit, no delete, because a rewritable log is not a log.
+
 ## 9. Empty states
 
 Dashed 2px container, a geometric mark of empty rectangles hinting at the missing rows, one sentence of guidance, and at most one action. No illustration, no photography, no mascot. The day sheet's empty state is a statement of completion, not an absence — it never collapses to nothing.

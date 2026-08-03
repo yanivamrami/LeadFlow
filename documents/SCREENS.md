@@ -41,13 +41,19 @@ Every screen is Hebrew/RTL, mobile-first at 390px, and follows `docs/DESIGN-SYST
 
 | # | Screen | Notes | TODO |
 |---|---|---|---|
-| 3.1 | **Add lead** | Bottom drawer on mobile, dialog on desktop. Essential fields with per-field tooltips, source selection, inline validation. | Whole screen. Three built entry points already point at it: the mobile band, the desktop CTA, and the empty state. `lf-text-field` and `lf-form-error` are ready to reuse. |
-| 3.2 | **Lead detail** | The biggest unbuilt surface: header, fields, stage control, qualification checklist, activity timeline, reminders. | Whole screen. Every row, card and day-sheet item points here and today they point at nothing. |
-| 3.3 | **Edit lead** | Same form as 3.1 in edit mode. | Whole screen, plus the open decision: separate route or an inline mode on 3.2. |
-| 3.4 | **Qualification checklist** | Fixed 5 items, tri-state (`yes` / `no` / `unknown`), stored per lead. | Whole screen. `qualification_answers` is read for progress but never written. 2.6 currently fakes the completion it asks for. |
-| 3.5 | **Log activity** | Call · email · meeting · note. | Whole screen. The store already inserts activities, so this is the surface, not the plumbing. |
-| 3.6 | **Close lead (won / lost)** | Won confirmation; Lost requires a reason, per the PRD's Close step. | Whole screen. The stage control already reaches `won`/`lost` with no ceremony and no reason captured. |
-| 3.7 | **Delete lead confirmation** | Destructive, so it confirms. Demo leads delete without ceremony. | Whole screen. `lf-alert-dialog` is available; the delete-account page is the worked example of the two-step pattern. |
+All seven are one component — `features/lead/lead-sheet` in create or edit mode, routed at
+`/lead/new` and `/lead/:id` as children of the dashboard so the board stays behind it.
+One save commits fields, note and checklist answers together through the `save_lead` RPC.
+
+| # | Screen | Notes | TODO |
+|---|---|---|---|
+| 3.1 | ~~**Add lead**~~ | ~~Create mode: fields only, no timeline or checklist because there is nothing to show yet. **Name is the only requirement** — contact details stay optional so a lead can be captured before the number is known.~~ | Not visually verified. Per-field tooltips from the PRD are not built; the labels and one help line carry it for now. |
+| 3.2 | ~~**Lead detail**~~ | ~~Header, fields, checklist, timeline, composer, one save. Opens from the register row, board card and day-sheet item — all three by name, so the kebab is not swallowed.~~ | Not visually verified. Reminders are read but not managed here (4.2). |
+| 3.3 | ~~**Edit lead**~~ | ~~Same component, edit mode. The open question is closed: an inline mode on 3.2, not a separate route.~~ | — |
+| 3.4 | ~~**Qualification checklist**~~ | ~~5 rows in PM order, each a radiogroup of three segments (כן / לא / ?) where the selected one takes an ink fill. A per-row "why ask?" carries the teaching. Answers commit with the one save; untouched items stay absent, so "not asked" stays distinct from "unknown".~~ | Not visually verified. |
+| 3.5 | ~~**Log activity**~~ | ~~Composer with four type chips (שיחה · אימייל · פגישה · הערה) above the textarea. Part of the save, not a second action.~~ | Not visually verified. Notes are append-only by design — no edit, no delete. |
+| 3.6 | ~~**Close lead (won / lost)**~~ | ~~Inline in the fields, never a second dialog. Lost requires a reason, with chips writing into free text. Won confirms the final amount, so conversion analytics do not report estimates as revenue.~~ | Not visually verified. |
+| 3.7 | ~~**Delete lead confirmation**~~ | ~~Two-step in the footer strip, naming the blast radius including the activity count. Same in-place pattern as the unsaved-changes guard — no modal over a modal.~~ | Not visually verified. |
 
 ## 4. Reminders
 
@@ -109,14 +115,18 @@ eagerly and refuses to construct unconfigured.
 
 | State | Screens |
 |-------|---------|
-| Built | 21 |
-| Built, with something still open | 20 of the 21 — only 1.5 is closed |
-| Unbuilt, in scope (§1–§7) | 18 |
+| Built | 28 |
+| Built, with something still open | 26 of the 28 — 1.5 and 3.3 are closed |
+| Unbuilt, in scope (§1–§7) | 11 |
 | Dropped (6.7) | 1 |
 | Deferred (§8) | 4 |
 
-§1–§7 holds 40 screens: 21 built + 18 unbuilt + 1 dropped. (2.9 was found while building
+§1–§7 holds 40 screens: 28 built + 11 unbuilt + 1 dropped. (2.9 was found while building
 2.7 and added to the list rather than fixed silently.)
+
+**No visual round has been run on §3.** It renders behind `authGuard` and this session has
+no password, so every §3 row above is code-complete and type-checked but unseen. That is
+the single largest open risk on the list.
 
 **Nearest useful next screen: 3.2 lead detail** — every row, card and day-sheet item already
 points at it, and today they point at nothing. It has a confirmed brief, parked on 2026-08-03.

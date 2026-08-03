@@ -1,0 +1,413 @@
+/* The lead sheet. Bottom drawer on a phone so the composer and the save sit under the
+   thumb; centred dialog above 900px. Paper on a darkened wall — no shadow, no radius. */
+
+:host {
+  display: contents;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: color-mix(in srgb, var(--lf-fixed-ink) 82%, transparent);
+  animation: sheet-scrim var(--lf-dur-overlay) var(--lf-ease) backwards;
+}
+
+.sheet {
+  position: fixed;
+  z-index: 71;
+  inset-inline: 0;
+  inset-block-end: 0;
+  max-block-size: 92vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--lf-ground);
+  color: var(--lf-ink);
+  border-block-start: 3px solid var(--lf-ink);
+  animation: sheet-rise var(--lf-dur-settle) var(--lf-ease) backwards;
+}
+
+/* header: the lead's identity, and the one way out that is always visible */
+.hd {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--lf-space-3);
+  padding: var(--lf-space-4);
+  border-block-end: 3px solid var(--lf-ink);
+  background: var(--lf-ground);
+}
+
+.hd__name {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--lf-size-name);
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hd__value {
+  flex: 0 0 auto;
+  font-size: 17px;
+  white-space: nowrap;
+}
+
+.hd__x {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 2px solid transparent;
+  background: transparent;
+  color: var(--lf-muted);
+  cursor: pointer;
+}
+.hd__x:hover { color: var(--lf-ink); border-color: var(--lf-ink); }
+.hd__x svg { inline-size: 20px; block-size: 20px; stroke-width: 2.4; }
+
+.body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0 var(--lf-space-4) var(--lf-space-6);
+  -webkit-overflow-scrolling: touch;
+}
+
+.sub {
+  margin: var(--lf-space-4) 0 0;
+  font-size: 14px;
+  color: var(--lf-muted);
+}
+
+.gone {
+  padding: var(--lf-space-8) 0;
+  text-align: center;
+}
+.gone__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--lf-size-h2);
+}
+
+/* status + source sit together: two picks, one row */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--lf-space-3);
+  padding-block: var(--lf-space-3) var(--lf-space-4);
+}
+@media (max-width: 380px) {
+  .pair { grid-template-columns: 1fr; }
+}
+
+.pick { display: block; min-inline-size: 0; }
+.pick__label {
+  display: block;
+  margin-block-end: 6px;
+  color: var(--lf-muted);
+}
+.pick__select {
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding-inline: var(--lf-space-3);
+  border: 2px solid var(--lf-ink);
+  border-radius: 0;
+  background: var(--lf-surface);
+  color: var(--lf-ink);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+.pick__select:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
+
+/* closing block: appears inside the form when the stage says it should */
+.close-block {
+  margin-block: var(--lf-space-2) var(--lf-space-4);
+  padding: var(--lf-space-4);
+  border: 2px solid var(--lf-ink);
+  background: var(--lf-surface);
+}
+.close-block__q {
+  margin: 0 0 var(--lf-space-3);
+  font-weight: 600;
+  font-size: 17px;
+}
+.close-block__hint {
+  margin: var(--lf-space-2) 0 0;
+  font-size: 13px;
+  color: var(--lf-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lf-space-2);
+  margin-block-end: var(--lf-space-3);
+}
+
+.chip {
+  min-block-size: 40px;
+  padding-inline: var(--lf-space-3);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
+}
+.chip--on {
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+  font-weight: 500;
+}
+.chip:disabled { opacity: 0.6; cursor: default; }
+
+/* bare inputs: used where lf-text-field's label block would be redundant */
+.bare { display: block; }
+.bare input,
+.bare textarea {
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding: 12px var(--lf-space-3);
+  border: 2px solid var(--lf-ink);
+  border-radius: 0;
+  background: var(--lf-ground);
+  color: var(--lf-ink);
+  font: inherit;
+  font-size: 17px;
+}
+.bare textarea { resize: vertical; min-block-size: 92px; line-height: 1.5; }
+.bare input:focus-visible,
+.bare textarea:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
+
+/* a titled region: checklist, timeline, composer all share it */
+.block {
+  margin-block-start: var(--lf-space-6);
+  border-block-start: 3px solid var(--lf-ink);
+}
+.block__hd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lf-space-2);
+  padding-block: var(--lf-space-3);
+}
+.block__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--lf-size-h2);
+  line-height: 1.1;
+}
+.block__count {
+  font-size: 13px;
+  color: var(--lf-muted);
+}
+
+/* one checklist question */
+.q {
+  margin: 0;
+  padding: var(--lf-space-3) 0;
+  border: 0;
+  border-block-start: 1px solid var(--lf-rule-soft);
+}
+.q__text {
+  padding: 0 0 var(--lf-space-3);
+  font-size: var(--lf-size-body);
+  line-height: 1.4;
+}
+
+/* three hard segments. The label carries the answer — colour never does it alone. */
+.seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border: 2px solid var(--lf-ink);
+}
+.seg__b {
+  min-block-size: var(--lf-touch);
+  border: 0;
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
+}
+.seg__b + .seg__b { border-inline-start: 2px solid var(--lf-ink); }
+.seg__b--on {
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+}
+.seg__b:disabled { opacity: 0.6; cursor: default; }
+
+.q__why {
+  margin-block-start: var(--lf-space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lf-red-text, var(--lf-red));
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.q__whytext {
+  margin: var(--lf-space-2) 0 0;
+  padding-inline-start: var(--lf-space-3);
+  border-inline-start: 2px solid var(--lf-red);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--lf-muted);
+}
+
+/* timeline: the register's row grammar, with the date as a margin stamp */
+.tl {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ent {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: var(--lf-space-3);
+  padding-block: var(--lf-space-3);
+  border-block-start: 1px solid var(--lf-rule-soft);
+}
+.ent__stamp {
+  font-size: 12px;
+  color: var(--lf-muted);
+  line-height: 1.5;
+}
+.ent__body { min-inline-size: 0; }
+.ent__type {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--lf-muted);
+}
+.ent__text {
+  margin: 4px 0 0;
+  font-size: var(--lf-size-body);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* the machine speaking, not the user — an ink chip rather than plain paper */
+.ent--sys .ent__type {
+  background: var(--lf-ink);
+  color: var(--lf-on-ink);
+  padding: 2px 7px;
+  font-weight: 500;
+}
+.ent--sys .ent__text { color: var(--lf-muted); }
+
+.tl__empty {
+  padding: var(--lf-space-4);
+  border: 2px dashed var(--lf-rule-soft);
+  text-align: center;
+}
+.tl__emptyTitle { margin: 0; font-weight: 600; }
+.tl__emptyHint { margin: 6px 0 0; font-size: 13px; color: var(--lf-muted); }
+
+.more {
+  inline-size: 100%;
+  min-block-size: var(--lf-touch);
+  margin-block-start: var(--lf-space-2);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.more:hover { background: var(--lf-ink); color: var(--lf-on-ink); }
+
+/* footer: one strip that changes job, so a confirm never stacks a second dialog */
+.ft {
+  flex: 0 0 auto;
+  padding: var(--lf-space-3) var(--lf-space-4) var(--lf-space-4);
+  border-block-start: 3px solid var(--lf-ink);
+  background: var(--lf-ground);
+}
+.ft__ask {
+  margin: 0 0 var(--lf-space-3);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.ft__ask strong { font-weight: 600; }
+.ft__acts {
+  display: flex;
+  gap: var(--lf-space-2);
+}
+
+.b {
+  flex: 1 1 auto;
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-4);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
+}
+.b:hover:not(:disabled) { background: var(--lf-ink); color: var(--lf-on-ink); }
+.b:disabled { opacity: 0.6; cursor: default; }
+
+.b--red {
+  background: var(--lf-red);
+  border-color: var(--lf-red);
+  color: var(--lf-on-red);
+  font-weight: 600;
+}
+.b--red:hover:not(:disabled) {
+  background: var(--lf-ink);
+  border-color: var(--lf-ink);
+  color: var(--lf-on-ink);
+}
+
+.b--bare {
+  flex: 0 0 auto;
+  border-color: transparent;
+  color: var(--lf-muted);
+  font-weight: 400;
+}
+.b--bare:hover:not(:disabled) {
+  background: transparent;
+  color: var(--lf-red-text, var(--lf-red));
+  text-decoration: underline;
+}
+
+@keyframes sheet-scrim {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheet-rise {
+  from { opacity: 0; translate: 0 16px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* ---------- desktop: a centred dialog rather than a drawer ---------- */
+@media (min-width: 900px) {
+  .sheet {
+    inset: 50% auto auto 50%;
+    translate: 50% -50%;
+    inline-size: min(560px, calc(100vw - 48px));
+    max-block-size: min(88vh, 900px);
+    border: 3px solid var(--lf-ink);
+  }
+  .hd,
+  .ft { padding-inline: var(--lf-space-6); }
+  .body { padding-inline: var(--lf-space-6); }
+
+  @keyframes sheet-rise {
+    from { opacity: 0; scale: 0.98; }
+    to { opacity: 1; scale: 1; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet { animation-name: sheet-scrim; }
+}

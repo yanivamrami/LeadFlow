@@ -1,0 +1,333 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { A11yModule } from '@angular/cdk/a11y';
+
+import { LucideX } from '@lucide/angular';
+
+import {
+  ACTIVITY_LABEL,
+  ANSWER_ARIA,
+  ANSWER_LABEL,
+  CHECKLIST_QUESTION,
+  CHECKLIST_WHY,
+  COPY,
+  LOST_REASONS,
+  SOURCE_LABEL,
+  STATUS_LABEL,
+  formatValue,
+} from '../../core/copy';
+import {
+  Activity,
+  CHECKLIST_ITEMS,
+  ChecklistAnswers,
+  ChecklistItem,
+  Lead,
+  LeadDraft,
+  LeadSource,
+  LeadStatus,
+  NOTE_TYPES,
+  QualificationAnswer,
+  STAGE_ORDER,
+  ActivityType,
+} from '../../core/lead.model';
+import { hasErrors, validateLeadForm } from '../../core/lead-validation';
+import { LeadsStore } from '../../core/leads.store';
+import { FormError } from '../../shared/form-error';
+import { StageTag } from '../../shared/stage-tag';
+import { TextField } from '../../shared/text-field';
+
+/** How many history entries show before the timeline asks to be expanded. */
+const TIMELINE_PAGE = 20;
+
+const SOURCES: readonly LeadSource[] = ['website', 'referral', 'social_media', 'phone', 'other'];
+
+/** The footer is one strip that changes job, so a confirm never stacks a second modal. */
+type FooterMode = 'default' | 'dirty' | 'delete';
+
+/**
+ * The lead sheet — §3 in one surface.
+ *
+ * Add (3.1), detail (3.2), edit (3.3), the checklist (3.4), logging activity (3.5),
+ * closing (3.6) and deleting (3.7) are the same moment seen from different entry points,
+ * so they are one component in two modes rather than seven screens that drift apart.
+ *
+ * One save commits everything — fields, the note, and any checklist answers touched —
+ * through the save_lead RPC, so a stage change can never land while a typed note is
+ * lost. Nothing is written until the user asks for it.
+ */
+@Component({
+  selector: 'lf-lead-sheet',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [FormsModule, A11yModule, LucideX, TextField, FormError, StageTag],
+  templateUrl: './lead-sheet.html',
+  styleUrl: './lead-sheet.scss',
+})
+export class LeadSheet {
+  private readonly store = inject(LeadsStore);
+  private readonly router = inject(Router);
+
+  /** Bound from the route: absent on /lead/new, the lead id on /lead/:id. */
+  readonly id = input<string | undefined>(undefined);
+
+  protected readonly copy = COPY;
+  protected readonly statusLabel = STATUS_LABEL;
+  protected readonly sourceLabel = SOURCE_LABEL;
+  protected readonly activityLabel = ACTIVITY_LABEL;
+  protected readonly question = CHECKLIST_QUESTION;
+  protected readonly why = CHECKLIST_WHY;
+  protected readonly answerLabel = ANSWER_LABEL;
+  protected readonly answerAria = ANSWER_ARIA;
+  protected readonly lostReasons = LOST_REASONS;
+  protected readonly stages = STAGE_ORDER;
+  protected readonly sources = SOURCES;
+  protected readonly items = CHECKLIST_ITEMS;
+  protected readonly noteTypes = NOTE_TYPES;
+  protected readonly checklistTotal = CHECKLIST_ITEMS.length;
+  /** Typed so the template can index the label maps without casting. */
+  protected readonly answerOptions: readonly QualificationAnswer[] = ['yes', 'no', 'unknown'];
+  protected readonly formatValue = formatValue;
+
+  protected readonly create = computed(() => this.id() === undefined);
+  protected readonly lead = computed<Lead | undefined>(() =>
+    this.store.leads().find((l) => l.id === this.id()),
+  );
+  protected readonly loading = this.store.loading;
+  /** Deep-linked at an id that is gone, or that RLS hides. Says so rather than hanging. */
+  protected readonly missing = computed(
+    () => !this.create() && !this.loading() && this.store.loaded() && !this.lead(),
+  );
+
+  /* ---------- the draft ---------- */
+
+  protected readonly name = signal('');
+  protected readonly company = signal('');
+  protected readonly phone = signal('');
+  protected readonly email = signal('');
+  protected readonly source = signal<LeadSource>('other');
+  protected readonly status = signal<LeadStatus>('new');
+  /** Kept as text: an empty field is not zero, and zero is a real estimate. */
+  protected readonly value = signal('');
+  protected readonly lostReason = signal('');
+
+  protected readonly note = signal('');
+  protected readonly noteType = signal<ActivityType>('note');
+  /** Only what the user touched this session — absent stays absent. */
+  protected readonly touchedAnswers = signal<ChecklistAnswers>({});
+
+  protected readonly footerMode = signal<FooterMode>('default');
+  protected readonly saving = signal(false);
+  protected readonly submitted = signal(false);
+  protected readonly whyOpen = signal<ChecklistItem | null>(null);
+  protected readonly timelineExpanded = signal(false);
+
+  constructor() {
+    // Fill the form once the lead arrives — on a deep link the store may still be reading.
+    effect(() => {
+      const lead = this.lead();
+      if (!lead) return;
+      untracked(() => this.hydrate(lead));
+    });
+  }
+
+  private hydrate(lead: Lead): void {
+    this.name.set(lead.name);
+    this.company.set(lead.company ?? '');
+    this.phone.set(lead.phone ?? '');
+    this.email.set(lead.email ?? '');
+    this.source.set(lead.source);
+    this.status.set(lead.status);
+    this.value.set(lead.estimatedValue ? String(lead.estimatedValue) : '');
+    this.lostReason.set(lead.lostReason ?? '');
+  }
+
+  /* ---------- answers ---------- */
+
+  /** What is on screen: what the lead already had, overlaid with this session's taps. */
+  protected readonly answers = computed<ChecklistAnswers>(() => ({
+    ...(this.lead()?.answers ?? {}),
+    ...this.touchedAnswers(),
+  }));
+
+  protected readonly answeredCount = computed(() => Object.keys(this.answers()).length);
+
+  protected answerOf(item: ChecklistItem): QualificationAnswer | undefined {
+    return this.answers()[item];
+  }
+
+  protected setAnswer(item: ChecklistItem, answer: QualificationAnswer): void {
+    this.touchedAnswers.update((current) => ({ ...current, [item]: answer }));
+  }
+
+  protected toggleWhy(item: ChecklistItem): void {
+    this.whyOpen.update((open) => (open === item ? null : item));
+  }
+
+  /* ---------- timeline ---------- */
+
+  protected readonly activities = computed<Activity[]>(() => this.lead()?.activities ?? []);
+  protected readonly visibleActivities = computed(() =>
+    this.timelineExpanded() ? this.activities() : this.activities().slice(0, TIMELINE_PAGE),
+  );
+  protected readonly hasMoreActivities = computed(
+    () => this.activities().length > TIMELINE_PAGE,
+  );
+
+  /** Dated, with the time on anything from today — two entries a day must be tellable apart. */
+  protected stamp(at: Date): string {
+    const now = this.store.now();
+    const sameDay = at.toDateString() === now.toDateString();
+    const time = at.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+    if (sameDay) return `היום ${time}`;
+    const yesterday = new Date(now.getTime() - 86_400_000);
+    if (at.toDateString() === yesterday.toDateString()) return `אתמול ${time}`;
+    return at.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+  }
+
+  /* ---------- validation ---------- */
+
+  /** The rules live in core/lead-validation.ts — pure, shared, and tested there. */
+  private readonly errors = computed(() =>
+    validateLeadForm({
+      name: this.name(),
+      email: this.email(),
+      value: this.value(),
+      status: this.status(),
+      lostReason: this.lostReason(),
+    }),
+  );
+
+  /** Errors surface on submit, never while someone is still typing. */
+  private readonly shown = computed(() => (this.submitted() ? this.errors() : {}));
+
+  protected readonly nameError = computed(() => this.shown().name ?? null);
+  protected readonly emailError = computed(() => this.shown().email ?? null);
+  protected readonly valueError = computed(() => this.shown().value ?? null);
+  protected readonly lostReasonError = computed(() => this.shown().lostReason ?? null);
+
+  private readonly invalid = computed(() => hasErrors(this.errors()));
+
+  /* ---------- dirty tracking ---------- */
+
+  protected readonly dirty = computed(() => {
+    if (this.note().trim().length > 0) return true;
+    if (Object.keys(this.touchedAnswers()).length > 0) return true;
+
+    const lead = this.lead();
+    if (!lead) return this.name().trim().length > 0;
+
+    return (
+      this.name().trim() !== lead.name ||
+      this.company().trim() !== (lead.company ?? '') ||
+      this.phone().trim() !== (lead.phone ?? '') ||
+      this.email().trim() !== (lead.email ?? '') ||
+      this.source() !== lead.source ||
+      this.status() !== lead.status ||
+      this.value().trim() !== (lead.estimatedValue ? String(lead.estimatedValue) : '') ||
+      this.lostReason().trim() !== (lead.lostReason ?? '')
+    );
+  });
+
+  /* ---------- actions ---------- */
+
+  private draft(): LeadDraft {
+    const value = this.value().trim();
+    return {
+      name: this.name().trim(),
+      company: this.company().trim() || null,
+      email: this.email().trim() || null,
+      phone: this.phone().trim() || null,
+      source: this.source(),
+      status: this.status(),
+      estimatedValue: value.length ? Number(value) : null,
+      lostReason: this.status() === 'lost' ? this.lostReason().trim() || null : null,
+    };
+  }
+
+  protected async save(): Promise<void> {
+    this.submitted.set(true);
+    if (this.invalid() || this.saving()) return;
+
+    this.saving.set(true);
+    try {
+      if (this.create()) {
+        const id = await this.store.createLead(this.draft());
+        // Null means the write did not happen. Stay open so nothing typed is lost.
+        if (id) this.close();
+        return;
+      }
+
+      // The store reports its own failures. Staying open on a failed save is the point:
+      // the typed note is still in the textarea, so nothing is lost while it is retried.
+      const saved = await this.store.saveLead(this.id()!, this.draft(), {
+        note: this.note().trim() || null,
+        noteType: this.noteType(),
+        answers: this.touchedAnswers(),
+      });
+      if (saved) this.close();
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected attemptClose(): void {
+    if (this.footerMode() !== 'default') {
+      this.footerMode.set('default');
+      return;
+    }
+    if (this.dirty()) {
+      this.footerMode.set('dirty');
+      return;
+    }
+    this.close();
+  }
+
+  protected confirmDiscard(): void {
+    this.footerMode.set('default');
+    this.close();
+  }
+
+  protected askDelete(): void {
+    this.footerMode.set('delete');
+  }
+
+  protected confirmDelete(): void {
+    const id = this.id();
+    if (!id) return;
+    this.store.remove(id);
+    this.close();
+  }
+
+  protected cancelFooter(): void {
+    this.footerMode.set('default');
+  }
+
+  protected close(): void {
+    void this.router.navigate(['/']);
+  }
+
+  protected setStatus(value: string): void {
+    this.status.set(value as LeadStatus);
+  }
+
+  protected setSource(value: string): void {
+    this.source.set(value as LeadSource);
+  }
+
+  protected pickLostReason(reason: string): void {
+    this.lostReason.set(reason);
+  }
+
+  protected setNoteType(type: ActivityType): void {
+    this.noteType.set(type);
+  }
+}

@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterOutlet } from '@angular/router';
 
 import { LucideColumns3, LucideList, LucideSearch } from '@lucide/angular';
 
@@ -23,7 +24,16 @@ const BOARD_MIN_WIDTH = 768;
 @Component({
   selector: 'lf-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideSearch, LucideList, LucideColumns3, DaySheet, Register, Board],
+  imports: [
+    FormsModule,
+    RouterOutlet,
+    LucideSearch,
+    LucideList,
+    LucideColumns3,
+    DaySheet,
+    Register,
+    Board,
+  ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })

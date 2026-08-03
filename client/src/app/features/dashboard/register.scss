@@ -155,6 +155,18 @@ lf-lead-menu { grid-area: menu; justify-self: end; }
 }
 .row__sep { opacity: 0.5; }
 
+/* the name is the way in. Underline only on hover: 23 permanently underlined rows
+   would read as a link farm rather than a register. */
+.row__open {
+  color: inherit;
+  text-decoration: none;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row__open:hover { text-decoration: underline; }
+.row__open:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
+
 /* the stamp — provenance, rotated off-axis like a rubber stamp */
 .stamp {
   flex: 0 0 auto;

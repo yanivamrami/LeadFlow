@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import {
   COPY,
@@ -21,7 +22,7 @@ import { StageTag } from '../../shared/stage-tag';
 @Component({
   selector: 'lf-register',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StageTag, LeadMenu],
+  imports: [RouterLink, StageTag, LeadMenu],
   templateUrl: './register.html',
   styleUrl: './register.scss',
 })

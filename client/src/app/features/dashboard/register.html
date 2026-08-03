@@ -48,7 +48,9 @@
 
       <div class="row__id">
         <h3 class="row__name">
-          {{ lead.name }}
+          <!-- the whole name is the link; the kebab sits outside it, so it cannot be
+               swallowed by the row's navigation -->
+          <a class="row__open" [routerLink]="['/lead', lead.id]">{{ lead.name }}</a>
           @if (lead.isDemo) {
             <span class="stamp">{{ copy.register.demoFlag }}</span>
           }
@@ -107,6 +109,8 @@
         <button type="button" class="none__act" (click)="clearFilters()">
           {{ copy.register.clearFilters }}
         </button>
+      } @else {
+        <a class="none__act" routerLink="/lead/new">{{ copy.shell.addLead }}</a>
       }
     </div>
   }

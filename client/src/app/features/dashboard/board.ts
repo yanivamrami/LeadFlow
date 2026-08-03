@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import {
   CdkDrag,
   CdkDragDrop,
@@ -21,7 +22,7 @@ import { LeadMenu } from '../../shared/lead-menu';
 @Component({
   selector: 'lf-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag, CdkDragPlaceholder, LeadMenu],
+  imports: [RouterLink, CdkDropListGroup, CdkDropList, CdkDrag, CdkDragPlaceholder, LeadMenu],
   templateUrl: './board.html',
   styleUrl: './board.scss',
 })

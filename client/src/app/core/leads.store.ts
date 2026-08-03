@@ -1,15 +1,22 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
-import { COPY, STATUS_GUIDANCE, daysBetween } from './copy';
+import { COPY, STATUS_GUIDANCE, STATUS_LABEL, daysBetween } from './copy';
 import {
+  Activity,
+  ActivityType,
   Attention,
   CHECKLIST_ITEMS,
+  ChecklistAnswers,
+  ChecklistItem,
   DRIFT_DAYS,
   Lead,
+  LeadDraft,
+  LeadSaveExtras,
   LeadStatus,
   OPEN_ITEMS_CAP,
   OpenItem,
   OpenReason,
+  QualificationAnswer,
   STAGE_ORDER,
   SortKey,
 } from './lead.model';
@@ -39,17 +46,17 @@ interface LeadRow {
   assigned_to: string | null;
   created_at: string;
   updated_at: string;
-  activities: { occurred_at: string }[] | null;
+  activities: { id: string; type: ActivityType; body: string | null; occurred_at: string }[] | null;
   reminders: { id: string; title: string | null; due_at: string; done_at: string | null }[] | null;
-  qualification_answers: { item: string }[] | null;
+  qualification_answers: { item: ChecklistItem; answer: QualificationAnswer }[] | null;
 }
 
 const SELECT = `
   id, tenant_id, name, company, email, phone, source, status, estimated_value,
   lost_reason, is_demo, assigned_to, created_at, updated_at,
-  activities ( occurred_at ),
+  activities ( id, type, body, occurred_at ),
   reminders ( id, title, due_at, done_at ),
-  qualification_answers ( item )
+  qualification_answers ( item, answer )
 `;
 
 /**
@@ -232,9 +239,19 @@ export class LeadsStore {
 
   /** Folds the embedded child rows into the shape the dashboard reasons about. */
   private toLead(row: LeadRow): Lead {
-    const touches = (row.activities ?? [])
-      .map((a) => new Date(a.occurred_at))
-      .sort((a, b) => b.getTime() - a.getTime());
+    const activities: Activity[] = (row.activities ?? [])
+      .map((a) => ({
+        id: a.id,
+        type: a.type,
+        body: a.body,
+        occurredAt: new Date(a.occurred_at),
+      }))
+      .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
+
+    const answers: ChecklistAnswers = {};
+    for (const answer of row.qualification_answers ?? []) answers[answer.item] = answer.answer;
+
+    const touches = activities.map((a) => a.occurredAt);
 
     const openReminder = (row.reminders ?? [])
       .filter((r) => r.done_at === null)
@@ -261,7 +278,9 @@ export class LeadsStore {
       lastTouchAt: touches[0] ?? null,
       reminderDueAt: openReminder ? new Date(openReminder.due_at) : null,
       reminderTitle: openReminder?.title ?? null,
-      checklistAnswered: (row.qualification_answers ?? []).length,
+      checklistAnswered: Object.keys(answers).length,
+      answers,
+      activities,
       clearedToday: closedToday ? COPY.notify.stageMoved('', row.status) : null,
     };
   }
@@ -439,6 +458,76 @@ export class LeadsStore {
     );
   }
 
+  /**
+   * Creates a lead through the create_lead RPC and returns its id, or null if the
+   * write did not happen. One statement, so atomicity is trivial here — it matters
+   * on save, where three tables are involved.
+   */
+  async createLead(draft: LeadDraft): Promise<string | null> {
+    if (!this.notify.online()) {
+      this.notify.blockedOffline();
+      return null;
+    }
+
+    try {
+      const tenantId = await this.requireTenant();
+      const id = await this.rpc<string>('create_lead', {
+        p_tenant_id: tenantId,
+        p_name: draft.name,
+        p_company: draft.company,
+        p_email: draft.email,
+        p_phone: draft.phone,
+        p_source: draft.source,
+        p_status: draft.status,
+        p_estimated_value: draft.estimatedValue,
+      });
+      await this.reload();
+      this.notify.succeeded(COPY.lead.created);
+      return id;
+    } catch (error) {
+      // A create that fails leaves nothing behind, and the user still has the form
+      // in front of them — so this announces rather than interrupting.
+      this.report(error, false);
+      return null;
+    }
+  }
+
+  /**
+   * Saves the whole lead — fields, an optional note, and any checklist answers the
+   * user touched — through one RPC, so a stage change can never land while the typed
+   * note is lost. Runs inside commit(), which keeps the offline block and the
+   * severity routing that decides popup versus toast.
+   */
+  saveLead(leadId: string, draft: LeadDraft, extras: LeadSaveExtras): Promise<boolean> {
+    const answers = Object.entries(extras.answers).map(([item, answer]) => ({ item, answer }));
+
+    return this.commit(
+      draft.name,
+      () =>
+        this.rpc<null>('save_lead', {
+          p_lead_id: leadId,
+          p_name: draft.name,
+          p_company: draft.company,
+          p_email: draft.email,
+          p_phone: draft.phone,
+          p_source: draft.source,
+          p_status: draft.status,
+          p_estimated_value: draft.estimatedValue,
+          p_lost_reason: draft.lostReason,
+          p_note: extras.note,
+          p_note_type: extras.noteType,
+          p_answers: answers,
+        }),
+      () => {
+        this.notify.succeeded(COPY.lead.saved);
+        const before = this.byId(leadId);
+        if (before && before.status !== draft.status) {
+          this.announcement.set(COPY.a11y.stageChanged(draft.name, STATUS_LABEL[draft.status]));
+        }
+      },
+    );
+  }
+
   private async closeOpenReminders(leadId: string): Promise<void> {
     await this.supabase.run(
       this.supabase.client
@@ -466,10 +555,10 @@ export class LeadsStore {
     subject: string,
     write: () => Promise<unknown>,
     onSuccess?: () => void,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (!this.notify.online()) {
       this.notify.blockedOffline();
-      return;
+      return false;
     }
 
     const run = async () => {
@@ -480,8 +569,10 @@ export class LeadsStore {
     try {
       await run();
       onSuccess?.();
+      return true;
     } catch (error) {
       this.report(error, true, subject, run);
+      return false;
     }
   }
 
@@ -518,6 +609,18 @@ export class LeadsStore {
       return;
     }
     this.notify.failed(appError.message);
+  }
+
+  /**
+   * Calls a Postgres function. The generated Database types are regenerated from the
+   * schema and do not yet know these two, so the name is widened here rather than
+   * scattering casts through the call sites. Regenerating the types removes this.
+   */
+  private rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+    const client = this.supabase.client as unknown as {
+      rpc: (name: string, params: Record<string, unknown>) => unknown;
+    };
+    return this.supabase.run<T>(client.rpc(fn, args) as never);
   }
 
   private async requireTenant(): Promise<string> {

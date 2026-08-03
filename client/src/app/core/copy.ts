@@ -5,7 +5,15 @@
  * No emoji, no sales jargon.
  */
 
-import { LeadSource, LeadStatus, OpenReason, ChecklistItem, SortKey } from './lead.model';
+import {
+  ActivityType,
+  ChecklistItem,
+  LeadSource,
+  LeadStatus,
+  OpenReason,
+  QualificationAnswer,
+  SortKey,
+} from './lead.model';
 
 export const APP_NAME = 'LeadFlow';
 export const APP_SUB = 'Manager';
@@ -87,6 +95,49 @@ export const CHECKLIST_QUESTION: Record<ChecklistItem, string> = {
   authority: 'אתם מדברים עם מי שמחליט?',
   timeline: 'הם רוצים את זה בקרוב, או "מתישהו"?',
 };
+
+/**
+ * The "why ask?" line behind each question. This is where the teaching lives — the
+ * questions themselves stay plain and conversational (PM decisions §7), so the reason
+ * sits one tap away instead of cluttering the question.
+ */
+export const CHECKLIST_WHY: Record<ChecklistItem, string> = {
+  interest: 'אם הם לא הגיבו, כל השאר לא באמת משנה.',
+  need: 'לקוח שלא צריך את מה שאתם מציעים לא ייסגר, גם אם הוא נחמד.',
+  budget: 'עסקאות בלי תקציב נתקעות — עדיף לדעת מוקדם.',
+  authority: 'מי שאין לו סמכות לא יכול לאשר, גם כשהוא רוצה.',
+  timeline: '"מתישהו" זה בדרך כלל לא. שווה לברר מתי.',
+};
+
+/** Tri-state answers. The label carries the meaning — colour never does it alone. */
+export const ANSWER_LABEL: Record<QualificationAnswer, string> = {
+  yes: 'כן',
+  no: 'לא',
+  unknown: '?',
+};
+
+export const ANSWER_ARIA: Record<QualificationAnswer, string> = {
+  yes: 'כן',
+  no: 'לא',
+  unknown: 'עוד לא שאלנו',
+};
+
+export const ACTIVITY_LABEL: Record<ActivityType, string> = {
+  call: 'שיחה',
+  email: 'אימייל',
+  meeting: 'פגישה',
+  note: 'הערה',
+  status_changed: 'שינוי שלב',
+};
+
+/** Common reasons a deal dies. Chips, not a closed list — free text always wins. */
+export const LOST_REASONS: readonly string[] = [
+  'מחיר',
+  'תזמון',
+  'בחרו במתחרה',
+  'לא מתאים',
+  'נעלמו',
+];
 
 export const COPY = {
   nav: {
@@ -194,6 +245,79 @@ export const COPY = {
     activityLogged: 'הפעילות נרשמה',
     leadDeleted: 'הליד נמחק',
     checklistFilled: 'שאלות ההכשרה סומנו',
+  },
+  /** The lead sheet — §3. One surface in two modes, so one copy block. */
+  lead: {
+    createTitle: 'ליד חדש',
+    createSubtitle: 'שם זה כל מה שצריך. את השאר תמלאו כשתדעו.',
+    editAria: 'פרטי הליד',
+    save: 'שמור',
+    saving: 'שומר…',
+    cancel: 'ביטול',
+    close: 'סגירה',
+    created: 'הליד נוסף',
+    saved: 'הליד נשמר',
+
+    fields: {
+      name: 'שם',
+      namePlaceholder: 'שם הליד',
+      company: 'חברה',
+      phone: 'טלפון',
+      email: 'אימייל',
+      source: 'מקור',
+      value: 'שווי משוער',
+      status: 'שלב',
+      optional: 'לא חובה',
+    },
+
+    /** Name is the only requirement. An error names the fix, never just the rule. */
+    nameRequired: 'צריך שם — בלעדיו אין איך לזהות את הליד.',
+    emailInvalid: 'האימייל לא נראה תקין. בדקו את הכתובת.',
+    valueInvalid: 'שווי צריך להיות מספר.',
+
+    /** Closing. Lost teaches only if the reason is captured; Won must not inflate revenue. */
+    lostReason: 'למה זה לא יצא לפועל?',
+    lostReasonRequired: 'רשמו סיבה — זה מה שיעזור לכם בפעם הבאה.',
+    lostReasonPlaceholder: 'בכמה מילים',
+    wonAmount: 'הסכום הסופי',
+    wonAmountHint: 'זה המספר שיופיע בתובנות. שנו אותו אם סגרתם אחרת.',
+
+    checklist: {
+      title: 'שאלות הכשרה',
+      progress: (answered: number, total: number) => `${answered} מתוך ${total}`,
+      why: 'למה שואלים?',
+      hideWhy: 'הסתר',
+    },
+
+    timeline: {
+      title: 'מה קרה עד עכשיו',
+      empty: 'עוד לא נרשמה פעילות כאן.',
+      emptyHint: 'כל שיחה, אימייל או הערה שתרשמו יופיעו כאן עם התאריך.',
+      showAll: (total: number) => `הצג הכול (${total})`,
+      showLess: 'הצג פחות',
+      systemEntry: 'נרשם אוטומטית',
+    },
+
+    composer: {
+      label: 'הוסיפו הערה',
+      placeholder: 'מה קרה? מה הצעד הבא?',
+      type: 'סוג',
+    },
+
+    /** Destructive, so it names the blast radius before asking. */
+    delete: 'מחק ליד',
+    deleteConfirm: (name: string, activities: number) =>
+      activities > 0
+        ? `${name} וכל ${activities} הפעילויות שלו יימחקו. אין ביטול.`
+        : `${name} יימחק. אין ביטול.`,
+    deleteYes: 'מחק',
+    deleteNo: 'חזרה',
+
+    /** The unsaved guard: in-place in the footer, never a modal over a modal. */
+    dirtyTitle: 'לא שמרתם.',
+    dirtyBody: 'לצאת בלי לשמור?',
+    dirtyLeave: 'צא',
+    dirtyStay: 'חזרה',
   },
   auth: {
     emailLabel: 'אימייל',

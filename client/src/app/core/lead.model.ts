@@ -10,11 +10,35 @@ export type LeadStatus =
 
 export type LeadSource = 'website' | 'referral' | 'social_media' | 'phone' | 'other';
 
+/**
+ * Activity kinds. `status_changed` is written only by the DB trigger — the client
+ * never sends it, which is what makes the timeline's system entries trustworthy.
+ */
+export type ActivityType = 'call' | 'email' | 'meeting' | 'note' | 'status_changed';
+
+/** The four a person can choose in the composer. */
+export const NOTE_TYPES: readonly ActivityType[] = ['call', 'email', 'meeting', 'note'];
+
 /** Fixed 5-item V1 checklist, in PM order. See documents/Lead Qualification Checklist - PM Decisions.md */
 export type ChecklistItem = 'interest' | 'need' | 'budget' | 'authority' | 'timeline';
 
 /** Tri-state: "no" and "haven't asked" are different signals. */
 export type QualificationAnswer = 'yes' | 'no' | 'unknown';
+
+/** One entry in a lead's history. `status_changed` rows are written by a DB trigger. */
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  body: string | null;
+  occurredAt: Date;
+}
+
+/**
+ * Answers the user has actually given. An absent key means "not asked", which is a
+ * different signal from `unknown` ("asked, they don't know") — the distinction the
+ * whole tri-state exists to preserve.
+ */
+export type ChecklistAnswers = Partial<Record<ChecklistItem, QualificationAnswer>>;
 
 export interface Lead {
   id: string;
@@ -33,8 +57,11 @@ export interface Lead {
   /** Follow-up reminder; drives the day sheet. */
   reminderDueAt: Date | null;
   reminderTitle: string | null;
-  /** Answered items out of CHECKLIST_ITEMS.length. */
+  /** Answered items out of CHECKLIST_ITEMS.length. Derived from `answers`. */
   checklistAnswered: number;
+  answers: ChecklistAnswers;
+  /** Newest first. Drives the lead sheet's timeline. */
+  activities: Activity[];
   /** Set when the lead was closed or its reminder completed today — shown struck through. */
   clearedToday: string | null;
 }
@@ -84,6 +111,26 @@ export const SORT_KEYS: readonly SortKey[] = ['urgency', 'value', 'quiet', 'crea
 
 /** Why a lead is on the day sheet. Drives the sheet's one-line reason. */
 export type OpenReason = 'reminder_due' | 'proposal_silent' | 'unqualified' | 'drifting';
+
+/** What the lead sheet sends on save. One shape for both create and edit. */
+export interface LeadDraft {
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  source: LeadSource;
+  status: LeadStatus;
+  estimatedValue: number | null;
+  lostReason: string | null;
+}
+
+/** The optional extras a save may carry alongside the fields. */
+export interface LeadSaveExtras {
+  note: string | null;
+  noteType: ActivityType;
+  /** Only the items the user touched in this session. */
+  answers: ChecklistAnswers;
+}
 
 export interface OpenItem {
   lead: Lead;

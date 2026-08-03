@@ -21,10 +21,23 @@ export const routes: Routes = [
     loadComponent: () => import('./features/shell/shell').then((m) => m.Shell),
     children: [
       {
+        // Not pathMatch:'full' — the lead sheet is a child so the board stays mounted
+        // behind it. A dialog that unmounts what it covers is a page, not a dialog.
         path: '',
-        pathMatch: 'full',
         title: 'לוח לידים · LeadFlow Manager',
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+        children: [
+          {
+            path: 'lead/new',
+            title: 'ליד חדש · LeadFlow Manager',
+            loadComponent: () => import('./features/lead/lead-sheet').then((m) => m.LeadSheet),
+          },
+          {
+            path: 'lead/:id',
+            title: 'ליד · LeadFlow Manager',
+            loadComponent: () => import('./features/lead/lead-sheet').then((m) => m.LeadSheet),
+          },
+        ],
       },
       {
         path: 'profile',

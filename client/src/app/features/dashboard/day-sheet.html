@@ -23,7 +23,9 @@
   @for (item of items(); track item.lead.id) {
     <article class="item">
       <div class="item__l1">
-        <h3 class="item__name">{{ item.lead.name }}</h3>
+        <h3 class="item__name">
+          <a class="item__open" [routerLink]="['/lead', item.lead.id]">{{ item.lead.name }}</a>
+        </h3>
         <span class="item__value lf-num">{{ formatValue(item.lead.estimatedValue) }}</span>
       </div>
 

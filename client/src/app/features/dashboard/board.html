@@ -24,7 +24,9 @@
             <div class="card__ph" *cdkDragPlaceholder>{{ copy.board.dropHere }}</div>
 
             <div class="card__l1">
-              <h4 class="card__name">{{ lead.name }}</h4>
+              <h4 class="card__name">
+                <a class="card__open" [routerLink]="['/lead', lead.id]">{{ lead.name }}</a>
+              </h4>
               <lf-lead-menu
                 [lead]="lead"
                 (moveTo)="move(lead, $event)"

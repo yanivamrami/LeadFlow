@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { LucidePhone, LucideX } from '@lucide/angular';
 
@@ -15,7 +16,7 @@ import { LeadsStore } from '../../core/leads.store';
 @Component({
   selector: 'lf-day-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucidePhone, LucideX],
+  imports: [RouterLink, LucidePhone, LucideX],
   templateUrl: './day-sheet.html',
   styleUrl: './day-sheet.scss',
 })

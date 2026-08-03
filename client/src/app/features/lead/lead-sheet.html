@@ -1,0 +1,318 @@
+<div class="scrim" (click)="attemptClose()"></div>
+
+<section
+  class="sheet"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="create() ? copy.lead.createTitle : copy.lead.editAria"
+  cdkTrapFocus
+  [cdkTrapFocusAutoCapture]="true"
+  (keydown.escape)="attemptClose()"
+>
+  <header class="hd">
+    <h2 class="hd__name">{{ create() ? copy.lead.createTitle : (lead()?.name ?? '') }}</h2>
+
+    @if (!create() && lead(); as current) {
+      <lf-stage-tag [status]="current.status" />
+      <span class="hd__value lf-num">{{ formatValue(current.estimatedValue) }}</span>
+    }
+
+    <button type="button" class="hd__x lf-hit" [attr.aria-label]="copy.lead.close" (click)="attemptClose()">
+      <svg lucideX aria-hidden="true"></svg>
+    </button>
+  </header>
+
+  <div class="body">
+    @if (missing()) {
+      <div class="gone">
+        <p class="gone__title">{{ copy.errors.notFound }}</p>
+      </div>
+    } @else {
+      @if (create()) {
+        <p class="sub">{{ copy.lead.createSubtitle }}</p>
+      }
+
+      <!-- fields -->
+      <lf-text-field
+        [label]="copy.lead.fields.name"
+        name="name"
+        [(value)]="name"
+        [error]="nameError()"
+        [disabled]="saving()"
+        enterkeyhint="next"
+      />
+      <lf-text-field
+        [label]="copy.lead.fields.company"
+        name="company"
+        [(value)]="company"
+        [help]="copy.lead.fields.optional"
+        [disabled]="saving()"
+      />
+      <lf-text-field
+        [label]="copy.lead.fields.phone"
+        name="phone"
+        [(value)]="phone"
+        autocomplete="tel"
+        inputmode="tel"
+        [help]="copy.lead.fields.optional"
+        [disabled]="saving()"
+      />
+      <lf-text-field
+        [label]="copy.lead.fields.email"
+        name="email"
+        type="email"
+        [(value)]="email"
+        autocomplete="email"
+        [error]="emailError()"
+        [help]="copy.lead.fields.optional"
+        [disabled]="saving()"
+      />
+
+      <div class="pair">
+        <label class="pick">
+          <span class="pick__label lf-label">{{ copy.lead.fields.status }}</span>
+          <select
+            class="pick__select"
+            [value]="status()"
+            [disabled]="saving()"
+            (change)="setStatus($any($event.target).value)"
+          >
+            @for (stage of stages; track stage) {
+              <option [value]="stage">{{ statusLabel[stage] }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="pick">
+          <span class="pick__label lf-label">{{ copy.lead.fields.source }}</span>
+          <select
+            class="pick__select"
+            [value]="source()"
+            [disabled]="saving()"
+            (change)="setSource($any($event.target).value)"
+          >
+            @for (option of sources; track option) {
+              <option [value]="option">{{ sourceLabel[option] }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <lf-text-field
+        [label]="copy.lead.fields.value"
+        name="value"
+        [(value)]="value"
+        inputmode="decimal"
+        [error]="valueError()"
+        [disabled]="saving()"
+      />
+
+      <!-- closing: inline, never a second dialog -->
+      @if (status() === 'lost') {
+        <div class="close-block">
+          <p class="close-block__q">{{ copy.lead.lostReason }}</p>
+          <div class="chips">
+            @for (reason of lostReasons; track reason) {
+              <button
+                type="button"
+                class="chip"
+                [class.chip--on]="lostReason() === reason"
+                [attr.aria-pressed]="lostReason() === reason"
+                (click)="pickLostReason(reason)"
+              >
+                {{ reason }}
+              </button>
+            }
+          </div>
+          <label class="bare">
+            <span class="lf-sr">{{ copy.lead.lostReason }}</span>
+            <input
+              type="text"
+              [placeholder]="copy.lead.lostReasonPlaceholder"
+              [value]="lostReason()"
+              [disabled]="saving()"
+              (input)="lostReason.set($any($event.target).value)"
+            />
+          </label>
+          @if (lostReasonError(); as text) {
+            <lf-form-error [message]="text" />
+          }
+        </div>
+      }
+
+      @if (status() === 'won') {
+        <div class="close-block">
+          <p class="close-block__q">{{ copy.lead.wonAmount }}</p>
+          <label class="bare">
+            <span class="lf-sr">{{ copy.lead.wonAmount }}</span>
+            <input
+              type="text"
+              inputmode="decimal"
+              [value]="value()"
+              [disabled]="saving()"
+              (input)="value.set($any($event.target).value)"
+            />
+          </label>
+          <p class="close-block__hint">{{ copy.lead.wonAmountHint }}</p>
+        </div>
+      }
+
+      @if (!create()) {
+        <!-- checklist -->
+        <section class="block" aria-labelledby="cl-title">
+          <header class="block__hd">
+            <h3 class="block__title" id="cl-title">{{ copy.lead.checklist.title }}</h3>
+            <span class="block__count lf-num">
+              {{ copy.lead.checklist.progress(answeredCount(), checklistTotal) }}
+            </span>
+          </header>
+
+          @for (item of items; track item) {
+            <fieldset class="q">
+              <legend class="q__text">{{ question[item] }}</legend>
+
+              <div class="seg" role="radiogroup" [attr.aria-label]="question[item]">
+                @for (option of answerOptions; track option) {
+                  <button
+                    type="button"
+                    role="radio"
+                    class="seg__b"
+                    [class.seg__b--on]="answerOf(item) === option"
+                    [attr.aria-checked]="answerOf(item) === option"
+                    [attr.aria-label]="answerAria[option]"
+                    [disabled]="saving()"
+                    (click)="setAnswer(item, option)"
+                  >
+                    {{ answerLabel[option] }}
+                  </button>
+                }
+              </div>
+
+              <button
+                type="button"
+                class="q__why"
+                [attr.aria-expanded]="whyOpen() === item"
+                (click)="toggleWhy(item)"
+              >
+                {{ whyOpen() === item ? copy.lead.checklist.hideWhy : copy.lead.checklist.why }}
+              </button>
+              @if (whyOpen() === item) {
+                <p class="q__whytext">{{ why[item] }}</p>
+              }
+            </fieldset>
+          }
+        </section>
+
+        <!-- timeline -->
+        <section class="block" aria-labelledby="tl-title">
+          <header class="block__hd">
+            <h3 class="block__title" id="tl-title">{{ copy.lead.timeline.title }}</h3>
+            <span class="block__count lf-num">{{ activities().length }}</span>
+          </header>
+
+          <ol class="tl">
+            @for (entry of visibleActivities(); track entry.id) {
+              <li class="ent" [class.ent--sys]="entry.type === 'status_changed'">
+                <span class="ent__stamp lf-num">{{ stamp(entry.occurredAt) }}</span>
+                <div class="ent__body">
+                  <span class="ent__type">{{ activityLabel[entry.type] }}</span>
+                  @if (entry.body) {
+                    <p class="ent__text">{{ entry.body }}</p>
+                  }
+                </div>
+              </li>
+            } @empty {
+              <li class="tl__empty">
+                <p class="tl__emptyTitle">{{ copy.lead.timeline.empty }}</p>
+                <p class="tl__emptyHint">{{ copy.lead.timeline.emptyHint }}</p>
+              </li>
+            }
+          </ol>
+
+          @if (hasMoreActivities()) {
+            <button type="button" class="more" (click)="timelineExpanded.set(!timelineExpanded())">
+              {{
+                timelineExpanded()
+                  ? copy.lead.timeline.showLess
+                  : copy.lead.timeline.showAll(activities().length)
+              }}
+            </button>
+          }
+        </section>
+
+        <!-- composer: part of the one save, not a second action -->
+        <section class="block" aria-labelledby="cmp-title">
+          <header class="block__hd">
+            <h3 class="block__title" id="cmp-title">{{ copy.lead.composer.label }}</h3>
+          </header>
+
+          <div class="chips" role="group" [attr.aria-label]="copy.lead.composer.type">
+            @for (type of noteTypes; track type) {
+              <button
+                type="button"
+                class="chip"
+                [class.chip--on]="noteType() === type"
+                [attr.aria-pressed]="noteType() === type"
+                [disabled]="saving()"
+                (click)="setNoteType(type)"
+              >
+                {{ activityLabel[type] }}
+              </button>
+            }
+          </div>
+
+          <label class="bare bare--area">
+            <span class="lf-sr">{{ copy.lead.composer.label }}</span>
+            <textarea
+              rows="3"
+              [placeholder]="copy.lead.composer.placeholder"
+              [value]="note()"
+              [disabled]="saving()"
+              (input)="note.set($any($event.target).value)"
+            ></textarea>
+          </label>
+        </section>
+      }
+    }
+  </div>
+
+  <footer class="ft">
+    @switch (footerMode()) {
+      @case ('dirty') {
+        <p class="ft__ask">
+          <strong>{{ copy.lead.dirtyTitle }}</strong> {{ copy.lead.dirtyBody }}
+        </p>
+        <div class="ft__acts">
+          <button type="button" class="b b--red" (click)="confirmDiscard()">
+            {{ copy.lead.dirtyLeave }}
+          </button>
+          <button type="button" class="b" (click)="cancelFooter()">{{ copy.lead.dirtyStay }}</button>
+        </div>
+      }
+      @case ('delete') {
+        <p class="ft__ask">{{ copy.lead.deleteConfirm(lead()?.name ?? '', activities().length) }}</p>
+        <div class="ft__acts">
+          <button type="button" class="b b--red" (click)="confirmDelete()">
+            {{ copy.lead.deleteYes }}
+          </button>
+          <button type="button" class="b" (click)="cancelFooter()">{{ copy.lead.deleteNo }}</button>
+        </div>
+      }
+      @default {
+        <div class="ft__acts">
+          <button type="button" class="b b--red" [disabled]="saving() || missing()" (click)="save()">
+            {{ saving() ? copy.lead.saving : copy.lead.save }}
+          </button>
+          <button type="button" class="b" [disabled]="saving()" (click)="attemptClose()">
+            {{ copy.lead.cancel }}
+          </button>
+          @if (!create() && !missing()) {
+            <button type="button" class="b b--bare" [disabled]="saving()" (click)="askDelete()">
+              {{ copy.lead.delete }}
+            </button>
+          }
+        </div>
+      }
+    }
+  </footer>
+</section>

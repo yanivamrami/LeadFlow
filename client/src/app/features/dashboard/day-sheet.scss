@@ -71,6 +71,14 @@
   white-space: nowrap;
 }
 
+/* the name opens the lead. Inherits the fixed ink, since the ground is fixed yellow. */
+.item__open {
+  color: inherit;
+  text-decoration: none;
+}
+.item__open:hover { text-decoration: underline; }
+.item__open:focus-visible { outline: 3px solid var(--lf-fixed-red); outline-offset: 2px; }
+
 .item__value {
   flex: 0 0 auto;
   margin-inline-start: auto;
