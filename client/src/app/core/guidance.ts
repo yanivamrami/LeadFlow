@@ -1,47 +1,21 @@
-import { OPEN_ACTION, OPEN_REASON, STATUS_GUIDANCE, daysBetween } from './copy';
-import { DRIFT_DAYS, Lead, OpenReason } from './lead.model';
+import { OPEN_ACTION, OPEN_REASON } from './copy';
+import { ageInDays, openReasonFor } from './attention';
+import { Lead } from './lead.model';
 
 /**
- * The rules behind "what should I do with this lead".
+ * "What should I do with this lead" — the advice layer.
  *
- * Pure functions rather than store methods, for the reason `reminder-digest.ts` gives: every
- * branch here is a product decision somebody could quietly regress, and all of them are
- * testable without a Supabase client or a component in the room.
+ * Two workstreams independently pulled the attention rules out of `LeadsStore`, and this file
+ * is the merge of them. The *reason* engine lives in `attention.ts` and is deliberately not
+ * duplicated here: this file had its own `openReasonOf` and `ageInDays` keyed on stage names,
+ * which the stages refactor made both wrong and redundant. Two engines answering "is this lead
+ * owed something" is how two screens end up disagreeing in front of the user.
  *
- * They also had to leave the store to be usable at all. `openReason` was private on
- * `LeadsStore`, so the one screen where a beginner asks "what now?" — the lead sheet — could
- * not reach the answer the day sheet was already computing.
+ * What survived is the part that was genuinely new: `nextStepOf`, the single line the lead sheet
+ * shows a beginner. It exists because the guidance the product always had lived in a
+ * five-second toast that only fired when the checklist was already complete — which is never
+ * true for the person who needs it most.
  */
-
-/** Days since anyone touched this lead. Creation counts as a touch; nothing else does. */
-export function ageInDays(lead: Lead, now: Date): number {
-  return daysBetween(lead.lastTouchAt ?? lead.createdAt, now);
-}
-
-/**
- * Why this lead is owed something right now, or null if it is fine.
- *
- * Order is precedence, not taste: an explicit reminder the user set themselves outranks
- * every rule the app inferred, and a silent proposal outranks generic drift because it is
- * the most expensive thing to forget.
- */
-export function openReasonOf(lead: Lead, now: Date): OpenReason | null {
-  if (lead.status === 'won' || lead.status === 'lost') return null;
-
-  if (lead.reminderDueAt && daysBetween(lead.reminderDueAt, now) >= 0) {
-    return 'reminder_due';
-  }
-  if (lead.status === 'proposal_sent' && ageInDays(lead, now) >= DRIFT_DAYS.proposal_sent) {
-    return 'proposal_silent';
-  }
-  if (lead.status === 'new' && lead.checklistAnswered === 0 && ageInDays(lead, now) >= 1) {
-    return 'unqualified';
-  }
-  if (ageInDays(lead, now) >= DRIFT_DAYS[lead.status]) {
-    return 'drifting';
-  }
-  return null;
-}
 
 /**
  * The one next thing to do with this lead, and whether it is already late.
@@ -57,20 +31,35 @@ export interface NextStep {
 }
 
 /**
- * Null for a closed lead: won and lost have nothing owed, and inventing a next step for them
- * would be noise on the one screen that is supposed to be quiet. Create mode has no lead at
- * all, so callers simply do not render this.
+ * Null for a closed lead: a won or lost lead has nothing owed, and inventing a next step for it
+ * would be noise on the one screen that is supposed to be quiet. Create mode has no lead at all,
+ * so callers simply do not render this.
+ *
+ * `firstOpenStageId` is threaded through to `openReasonFor` rather than resolved here, so this
+ * file stays free of a store — the same reason that function takes it as an argument.
+ *
+ * The non-urgent line now comes off the stage row (`stage.guidance`) rather than a hardcoded
+ * `STATUS_GUIDANCE` map, which is the point of moving the teaching copy into the database: a
+ * stage the user invented can carry its own advice. A stage with no guidance returns null and
+ * the caller shows nothing, rather than something generic that would be wrong for a stage
+ * nobody at this company has ever explained.
  */
-export function nextStepOf(lead: Lead, now: Date): NextStep | null {
-  if (lead.status === 'won' || lead.status === 'lost') return null;
+export function nextStepOf(
+  lead: Lead,
+  now: Date,
+  firstOpenStageId: string | null,
+): NextStep | null {
+  if (lead.stage.kind !== 'open') return null;
 
-  const reason = openReasonOf(lead, now);
+  const reason = openReasonFor(lead, now, firstOpenStageId);
   if (reason) {
     return { text: OPEN_REASON[reason], action: OPEN_ACTION[reason], urgent: true };
   }
 
-  // Nothing is overdue, so the honest advice is what this stage is for. This is the line the
-  // product always had and never showed: it lived in a five-second toast that only fired when
-  // the checklist was already complete, which is never true for the beginner who needs it.
-  return { text: STATUS_GUIDANCE[lead.status], action: null, urgent: false };
+  const guidance = lead.stage.guidance?.trim();
+  if (!guidance) return null;
+
+  return { text: guidance, action: null, urgent: false };
 }
+
+export { ageInDays };

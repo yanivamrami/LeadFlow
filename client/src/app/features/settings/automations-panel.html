@@ -1,0 +1,70 @@
+<section class="panel" [attr.aria-labelledby]="'automations-' + stage().id">
+  <header class="panel__hd">
+    <h2 class="panel__title" [id]="'automations-' + stage().id">{{ copy.sectionTitle }}</h2>
+    @if (!readOnly()) {
+      <p class="panel__lead">{{ copy.sectionLead }}</p>
+    }
+  </header>
+
+  @if (loadFailed()) {
+    <div class="failed" role="alert">
+      <p>{{ copy.loadFailedTitle }}</p>
+      <p class="failed__body">{{ copy.loadFailedBody }}</p>
+      <button type="button" class="b b--bare" (click)="retry()">{{ copy.retry }}</button>
+    </div>
+  } @else if (loading() && !loaded()) {
+    <p class="lf-sr" role="status" aria-live="polite">{{ copy.loading }}</p>
+    <div class="sk-row lf-sk" aria-hidden="true"></div>
+  } @else {
+    @if (rules().length === 0) {
+      <p class="empty">{{ copy.empty }}</p>
+    } @else {
+      <div class="list">
+        @for (rule of rules(); track rule.id) {
+          <lf-automation-row
+            [automation]="rule"
+            [stage]="stage()"
+            [allStages]="allStages()"
+            [members]="members()"
+            [membersFailed]="membersFailed()"
+            [busy]="busyId() === rule.id"
+            [readOnly]="readOnly()"
+            (toggled)="onToggle(rule, $event)"
+            (saved)="onSave(rule, $event)"
+            (deleted)="onDelete(rule)"
+          />
+        }
+      </div>
+    }
+
+    @if (!readOnly()) {
+      @if (revealSecret(); as secret) {
+        <div class="secret" role="alert">
+          <p class="secret__title">{{ copy.webhookSecretTitle }}</p>
+          <p class="secret__warning">{{ copy.webhookSecretWarning }}</p>
+          <code class="secret__value">{{ secret }}</code>
+          <div class="secret__acts">
+            <button type="button" class="b b--bare" (click)="copySecret()">{{ copy.webhookSecretCopy }}</button>
+            <button type="button" class="b" (click)="dismissSecret()">{{ copy.webhookSecretDone }}</button>
+          </div>
+        </div>
+      }
+
+      @if (!addOpen()) {
+        <button type="button" class="add-toggle" (click)="toggleAdd()">{{ copy.addToggle }}</button>
+      } @else {
+        <div class="add-panel">
+          <lf-automation-editor
+            [stageId]="stage().id"
+            [allStages]="allStages()"
+            [members]="members()"
+            [membersFailed]="membersFailed()"
+            [busy]="busyId() === 'create'"
+            (save)="onCreate($event)"
+            (cancel)="toggleAdd()"
+          />
+        </div>
+      }
+    }
+  }
+</section>

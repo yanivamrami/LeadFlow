@@ -4,7 +4,7 @@ const form = (patch: Partial<LeadFormValues> = {}): LeadFormValues => ({
   name: 'מיכל ברנר',
   email: '',
   value: '',
-  status: 'new',
+  stageKind: 'open',
   lostReason: '',
   ...patch,
 });
@@ -39,8 +39,10 @@ describe('validateLeadForm', () => {
   });
 
   it('demands a reason on a lost lead and nowhere else', () => {
-    expect(validateLeadForm(form({ status: 'lost' })).lostReason).toBeTruthy();
-    expect(validateLeadForm(form({ status: 'lost', lostReason: 'מחיר' })).lostReason).toBeUndefined();
-    expect(validateLeadForm(form({ status: 'won' })).lostReason).toBeUndefined();
+    expect(validateLeadForm(form({ stageKind: 'lost' })).lostReason).toBeTruthy();
+    expect(
+      validateLeadForm(form({ stageKind: 'lost', lostReason: 'מחיר' })).lostReason,
+    ).toBeUndefined();
+    expect(validateLeadForm(form({ stageKind: 'won' })).lostReason).toBeUndefined();
   });
 });

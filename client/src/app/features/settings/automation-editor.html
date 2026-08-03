@@ -1,0 +1,158 @@
+<div class="editor">
+  <div class="field-group">
+    <span class="lf-label">{{ copy.triggerLabel }}</span>
+    <div class="picker" role="group" [attr.aria-label]="copy.triggerLabel">
+      @for (t of triggers; track t) {
+        <button
+          type="button"
+          class="opt"
+          [class.on]="trigger() === t"
+          [attr.aria-pressed]="trigger() === t"
+          [disabled]="busy()"
+          (click)="pickTrigger(t)"
+        >
+          {{ t === 'lead_enters_stage' ? copy.triggerEnters : copy.triggerIdle }}
+        </button>
+      }
+    </div>
+
+    @if (trigger() === 'lead_idle_in_stage') {
+      <div class="idle-days">
+        <lf-text-field
+          name="idleDays"
+          inputmode="numeric"
+          [label]="copy.idleDaysLabel"
+          [help]="copy.idleDaysHelp"
+          [value]="idleDaysText()"
+          (valueChange)="idleDaysText.set($event)"
+          [disabled]="busy()"
+        />
+      </div>
+    }
+  </div>
+
+  <div class="field-group">
+    <span class="lf-label">{{ copy.actionLabel }}</span>
+    <div class="picker" role="group" [attr.aria-label]="copy.actionLabel">
+      @for (a of actions; track a) {
+        <button
+          type="button"
+          class="opt"
+          [class.on]="action() === a"
+          [attr.aria-pressed]="action() === a"
+          [disabled]="busy()"
+          (click)="pickAction(a)"
+        >
+          {{ copy.actionName[a] }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="field-group action-fields">
+    @switch (action()) {
+      @case ('set_reminder') {
+        <lf-text-field
+          name="reminderDays"
+          inputmode="numeric"
+          [label]="copy.reminderDaysLabel"
+          [value]="reminderDays()"
+          (valueChange)="reminderDays.set($event)"
+          [disabled]="busy()"
+        />
+        <lf-text-field
+          name="reminderTitle"
+          [label]="copy.reminderTitleLabel"
+          [value]="reminderTitle()"
+          (valueChange)="reminderTitle.set($event)"
+          [disabled]="busy()"
+        />
+      }
+
+      @case ('assign_member') {
+        @if (membersFailed()) {
+          <p class="note note--warn">{{ copy.membersLoadFailed }}</p>
+        } @else if (members() === null) {
+          <p class="note">{{ copy.working }}</p>
+        } @else if (members()!.length === 0) {
+          <p class="note note--warn">{{ copy.assignMemberEmptyWarning }}</p>
+        } @else {
+          @if (members()!.length === 1) {
+            <p class="note">{{ copy.assignMemberSingleWarning }}</p>
+          }
+          <label class="select-field">
+            <span class="lf-label">{{ copy.assignMemberLabel }}</span>
+            <select
+              [value]="assignUserId()"
+              [disabled]="busy()"
+              (change)="assignUserId.set($any($event.target).value)"
+            >
+              <option value="" disabled>{{ copy.assignMemberChoose }}</option>
+              @for (m of members(); track m.id) {
+                <option [value]="m.id">{{ m.displayName }}</option>
+              }
+            </select>
+          </label>
+        }
+      }
+
+      @case ('add_note') {
+        <label class="textarea-field">
+          <span class="lf-label">{{ copy.noteBodyLabel }}</span>
+          <textarea
+            rows="3"
+            [value]="noteBody()"
+            [placeholder]="copy.noteBodyPlaceholder"
+            [disabled]="busy()"
+            (input)="noteBody.set($any($event.target).value)"
+          ></textarea>
+        </label>
+      }
+
+      @case ('suggest_advance') {
+        <label class="select-field">
+          <span class="lf-label">{{ copy.advanceStageLabel }}</span>
+          <select
+            [value]="advanceStageId()"
+            [disabled]="busy()"
+            (change)="advanceStageId.set($any($event.target).value)"
+          >
+            <option value="" disabled>{{ copy.advanceStageChoose }}</option>
+            @for (s of otherStages(); track s.id) {
+              <option [value]="s.id">{{ s.name }}</option>
+            }
+          </select>
+        </label>
+        <p class="note">{{ copy.advanceStageNote }}</p>
+      }
+
+      @case ('webhook') {
+        <lf-text-field
+          name="webhookUrl"
+          inputmode="url"
+          [label]="copy.webhookUrlLabel"
+          [help]="copy.webhookUrlHelp"
+          [value]="webhookUrl()"
+          (valueChange)="webhookUrl.set($event)"
+          [disabled]="busy()"
+        />
+        <lf-form-error [message]="webhookUrl().trim() ? webhookError() : null" />
+        <p class="note">{{ copy.webhookPendingNote }}</p>
+      }
+    }
+  </div>
+
+  <div class="restatement">
+    <span class="lf-label">{{ copy.restatementLabel }}</span>
+    <p class="restatement__sentence">{{ sentence() }}</p>
+  </div>
+
+  <div class="editor__acts">
+    <button type="button" class="b" [disabled]="busy() || !canSave()" (click)="submit()">
+      {{ busy() ? copy.working : copy.save }}
+    </button>
+    <button type="button" class="b b--bare" [disabled]="busy()" (click)="cancel.emit()">
+      {{ copy.cancel }}
+    </button>
+  </div>
+</div>

@@ -1,9 +1,10 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 
 import { COPY, OPEN_REASON, daysBetween } from './copy';
-import { Lead, LeadStatus, OpenItem, OpenReason } from './lead.model';
+import { Lead, OpenItem, OpenReason, Stage } from './lead.model';
 import { LeadsStore } from './leads.store';
 import { NotifyService } from './notify.service';
+import { StagesStore } from './stages.store';
 import { AppError, SupabaseService, costsData, isAppError } from './supabase.service';
 
 /** One open reminder, with the lead it belongs to. */
@@ -11,7 +12,7 @@ export interface Reminder {
   id: string;
   leadId: string;
   leadName: string;
-  leadStatus: LeadStatus;
+  leadStage: Stage;
   title: string | null;
   dueAt: Date;
 }
@@ -63,12 +64,22 @@ export function deriveSuggestions(openItems: OpenItem[], rows: Reminder[]): Sugg
     .sort((a, b) => b.age - a.age);
 }
 
+/** What the fetch actually returns — the lead's `stage_id`, not yet a resolved `Stage`. */
+interface RawReminder {
+  id: string;
+  leadId: string;
+  leadName: string;
+  stageId: string;
+  title: string | null;
+  dueAt: Date;
+}
+
 interface ReminderRow {
   id: string;
   title: string | null;
   due_at: string;
   lead_id: string;
-  leads: { id: string; name: string; status: LeadStatus } | null;
+  leads: { id: string; name: string; stage_id: string } | null;
 }
 
 /**
@@ -83,8 +94,9 @@ export class RemindersStore {
   private readonly supabase = inject(SupabaseService);
   private readonly notify = inject(NotifyService);
   private readonly leads = inject(LeadsStore);
+  private readonly stages = inject(StagesStore);
 
-  private readonly _rows = signal<Reminder[]>([]);
+  private readonly _rawRows = signal<RawReminder[]>([]);
   private readonly _now = signal(new Date());
   private readonly _loading = signal(false);
   private readonly _loaded = signal(false);
@@ -101,14 +113,38 @@ export class RemindersStore {
   }
 
   reset(): void {
-    this._rows.set([]);
+    this._rawRows.set([]);
     this._loaded.set(false);
     this._failed.set(false);
     this._loading.set(false);
     this._busyId.set(null);
   }
 
-  readonly rows = this._rows.asReadonly();
+  /**
+   * Resolved against whatever StagesStore currently holds — a computed, not a plain
+   * signal, for the same reason LeadsStore.leads is one: it must not matter which of this
+   * store's or LeadsStore's own `load()` happens to win the race to actually fetch the
+   * pipeline, because this recomputes the moment StagesStore's rows arrive regardless of
+   * who triggered the fetch. A row whose stage has not resolved yet is left out rather
+   * than shown with no tag; it reappears once StagesStore is loaded.
+   */
+  readonly rows = computed<Reminder[]>(() =>
+    this._rawRows()
+      .map((row): Reminder | null => {
+        const leadStage = this.stages.byId(row.stageId);
+        if (!leadStage) return null;
+        return {
+          id: row.id,
+          leadId: row.leadId,
+          leadName: row.leadName,
+          leadStage,
+          title: row.title,
+          dueAt: row.dueAt,
+        };
+      })
+      .filter((r): r is Reminder => r !== null),
+  );
+
   readonly now = this._now.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly loaded = this._loaded.asReadonly();
@@ -116,19 +152,19 @@ export class RemindersStore {
   readonly busyId = this._busyId.asReadonly();
 
   readonly overdue = computed(() =>
-    this._rows()
+    this.rows()
       .filter((r) => bandOf(r.dueAt, this._now()) === 'overdue')
       // most overdue first, matching every other urgency surface
       .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime()),
   );
 
   readonly today = computed(() =>
-    this._rows().filter((r) => bandOf(r.dueAt, this._now()) === 'today'),
+    this.rows().filter((r) => bandOf(r.dueAt, this._now()) === 'today'),
   );
 
   /** The only forward-looking list in the product, and the reason to open this screen. */
   readonly upcoming = computed(() =>
-    this._rows()
+    this.rows()
       .filter((r) => bandOf(r.dueAt, this._now()) === 'upcoming')
       .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime()),
   );
@@ -142,7 +178,7 @@ export class RemindersStore {
 
   /** Leads the pipeline flags that have no reminder row. Never counted in the badge. */
   readonly allSuggestions = computed<Suggestion[]>(() =>
-    deriveSuggestions(this.leads.openItems(), this._rows()),
+    deriveSuggestions(this.leads.openItems(), this.rows()),
   );
 
   readonly suggestions = computed(() => this.allSuggestions().slice(0, SUGGESTION_CAP));
@@ -151,7 +187,7 @@ export class RemindersStore {
   );
 
   readonly isEmpty = computed(
-    () => this._rows().length === 0 && this.allSuggestions().length === 0,
+    () => this.rows().length === 0 && this.allSuggestions().length === 0,
   );
 
   /* ---------- read ---------- */
@@ -164,10 +200,16 @@ export class RemindersStore {
 
     try {
       const tenantId = await this.tenantId();
+      // Reachable from every route via the shell, often before the dashboard has ever
+      // loaded the pipeline — so this ensures the stage list is at least requested once.
+      // See LeadsStore.load() for why a no-op here (another caller already in flight) is
+      // still safe: `rows` above is a computed and picks stages up whenever they land.
+      await this.stages.load();
+
       const rows = await this.supabase.run<ReminderRow[]>(
         this.supabase.client
           .from('reminders')
-          .select('id, title, due_at, lead_id, leads ( id, name, status )')
+          .select('id, title, due_at, lead_id, leads ( id, name, stage_id )')
           .eq('tenant_id', tenantId)
           .is('done_at', null)
           // ascending on purpose, and the only list here that sorts that way: the answer
@@ -175,18 +217,7 @@ export class RemindersStore {
           .order('due_at', { ascending: true }) as never,
       );
 
-      this._rows.set(
-        (rows ?? [])
-          .filter((row) => row.leads !== null)
-          .map((row) => ({
-            id: row.id,
-            leadId: row.lead_id,
-            leadName: row.leads!.name,
-            leadStatus: row.leads!.status,
-            title: row.title,
-            dueAt: new Date(row.due_at),
-          })),
-      );
+      this._rawRows.set(this.toRaw(rows ?? []));
       this._loaded.set(true);
     } catch (error) {
       this._failed.set(true);
@@ -251,7 +282,7 @@ export class RemindersStore {
       return false;
     }
 
-    const existing = this._rows().find((r) => r.leadId === leadId);
+    const existing = this._rawRows().find((r) => r.leadId === leadId);
     if (existing) return this.reschedule(existing.id, due);
 
     const lead = this.leads.leads().find((l) => l.id === leadId);
@@ -336,24 +367,26 @@ export class RemindersStore {
     const rows = await this.supabase.run<ReminderRow[]>(
       this.supabase.client
         .from('reminders')
-        .select('id, title, due_at, lead_id, leads ( id, name, status )')
+        .select('id, title, due_at, lead_id, leads ( id, name, stage_id )')
         .eq('tenant_id', tenantId)
         .is('done_at', null)
         .order('due_at', { ascending: true }) as never,
     );
     this._now.set(new Date());
-    this._rows.set(
-      (rows ?? [])
-        .filter((row) => row.leads !== null)
-        .map((row) => ({
-          id: row.id,
-          leadId: row.lead_id,
-          leadName: row.leads!.name,
-          leadStatus: row.leads!.status,
-          title: row.title,
-          dueAt: new Date(row.due_at),
-        })),
-    );
+    this._rawRows.set(this.toRaw(rows ?? []));
+  }
+
+  private toRaw(rows: ReminderRow[]): RawReminder[] {
+    return rows
+      .filter((row) => row.leads !== null)
+      .map((row) => ({
+        id: row.id,
+        leadId: row.lead_id,
+        leadName: row.leads!.name,
+        stageId: row.leads!.stage_id,
+        title: row.title,
+        dueAt: new Date(row.due_at),
+      }));
   }
 
   private report(
@@ -374,7 +407,7 @@ export class RemindersStore {
   }
 
   private byId(id: string): Reminder | undefined {
-    return this._rows().find((r) => r.id === id);
+    return this.rows().find((r) => r.id === id);
   }
 
   /** A date earlier than today's calendar day. Same day-granularity as everything else. */

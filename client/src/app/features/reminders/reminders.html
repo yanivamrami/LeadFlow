@@ -47,7 +47,7 @@
               </h3>
               <p class="row__meta">
                 <span class="row__note">{{ title(item) }}</span>
-                <lf-stage-tag [status]="item.leadStatus" [short]="true" />
+                <lf-stage-tag [stage]="item.leadStage" [short]="true" />
               </p>
             </div>
 
@@ -97,7 +97,7 @@
               </h3>
               <p class="row__meta">
                 <span class="row__note">{{ title(item) }}</span>
-                <lf-stage-tag [status]="item.leadStatus" [short]="true" />
+                <lf-stage-tag [stage]="item.leadStage" [short]="true" />
               </p>
             </div>
 
@@ -146,7 +146,7 @@
               </h3>
               <p class="row__meta">
                 <span class="row__note">{{ title(item) }}</span>
-                <lf-stage-tag [status]="item.leadStatus" [short]="true" />
+                <lf-stage-tag [stage]="item.leadStage" [short]="true" />
               </p>
             </div>
 
@@ -201,7 +201,7 @@
               </h3>
               <p class="row__meta">
                 <span class="row__note">{{ reasonLabel[item.reason] }}</span>
-                <lf-stage-tag [status]="item.lead.status" [short]="true" />
+                <lf-stage-tag [stage]="item.lead.stage" [short]="true" />
               </p>
             </div>
 

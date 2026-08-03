@@ -76,12 +76,12 @@
           <p class="block__lead">{{ copy.insights.flowLead }}</p>
 
           <ul class="bars">
-            @for (row of flow(); track row.status) {
+            @for (row of flow(); track row.stage.id) {
               <li class="bar">
-                <span class="bar__label">{{ statusLabel[row.status] }}</span>
+                <span class="bar__label">{{ row.stage.shortName ?? row.stage.name }}</span>
                 <span class="bar__track">
                   <span
-                    [class]="barClass(row.status)"
+                    [class]="barClass(row.stage)"
                     [style.inline-size.%]="row.share"
                     aria-hidden="true"
                   ></span>

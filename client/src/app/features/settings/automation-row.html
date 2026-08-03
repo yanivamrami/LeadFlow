@@ -1,0 +1,81 @@
+<article class="rule">
+  <div class="rule__hd">
+    <p class="rule__sentence">{{ sentence() }}</p>
+
+    @if (isSuspended()) {
+      <span class="badge badge--suspended">{{ copy.suspendedBadge }}</span>
+    } @else if (!readOnly()) {
+      <label class="enable">
+        <input
+          type="checkbox"
+          [checked]="automation().enabled"
+          [disabled]="busy()"
+          (change)="onToggle($any($event.target).checked)"
+        />
+        <span class="enable__label">{{ copy.enabledLabel }}</span>
+      </label>
+    }
+  </div>
+
+  @if (isSuspended()) {
+    <p class="suspended-reason">{{ copy.suspendedReason }}</p>
+  }
+
+  @if (!readOnly()) {
+    @if (editing()) {
+      <div class="editor-slot">
+        <lf-automation-editor
+          [stageId]="stage().id"
+          [allStages]="allStages()"
+          [members]="members()"
+          [membersFailed]="membersFailed()"
+          [initial]="automation()"
+          [busy]="busy()"
+          (save)="onSave($event)"
+          (cancel)="cancelEdit()"
+        />
+      </div>
+    }
+
+    <div class="rule__acts">
+      @if (!editing() && !deleteConfirm()) {
+        <button type="button" class="b b--bare" [disabled]="busy()" (click)="openEdit()">
+          {{ copy.editToggle }}
+        </button>
+        <button type="button" class="b b--bare b--danger-text" [disabled]="busy()" (click)="openDeleteConfirm()">
+          {{ copy.deleteAct }}
+        </button>
+      }
+
+      @if (deleteConfirm()) {
+        <p class="delete-confirm">{{ copy.deleteConfirm(sentence()) }}</p>
+        <button type="button" class="b b--danger" [disabled]="busy()" (click)="confirmDelete()">
+          {{ busy() ? copy.working : copy.deleteConfirmAct }}
+        </button>
+        <button type="button" class="b b--bare" [disabled]="busy()" (click)="cancelDelete()">
+          {{ copy.deleteCancelAct }}
+        </button>
+      }
+    </div>
+
+    @if (!editing()) {
+      <lf-automation-run-log [automation]="automation()" [ruleSentence]="sentence()" [stage]="stage()" />
+    }
+  } @else {
+    <div class="rule__acts">
+      @if (!deleteConfirm()) {
+        <button type="button" class="b b--bare b--danger-text" [disabled]="busy()" (click)="openDeleteConfirm()">
+          {{ copy.deleteAct }}
+        </button>
+      } @else {
+        <p class="delete-confirm">{{ copy.deleteConfirm(sentence()) }}</p>
+        <button type="button" class="b b--danger" [disabled]="busy()" (click)="confirmDelete()">
+          {{ busy() ? copy.working : copy.deleteConfirmAct }}
+        </button>
+        <button type="button" class="b b--bare" [disabled]="busy()" (click)="cancelDelete()">
+          {{ copy.deleteCancelAct }}
+        </button>
+      }
+    </div>
+  }
+</article>

@@ -29,9 +29,6 @@ import {
   LeadFieldKey,
   LOST_REASONS,
   SOURCE_LABEL,
-  STATUS_GUIDANCE,
-  STATUS_LABEL,
-  STATUS_MEANING,
   formatValue,
   formatDue,
 } from '../../core/copy';
@@ -45,15 +42,14 @@ import {
   Lead,
   LeadDraft,
   LeadSource,
-  LeadStatus,
   NOTE_TYPES,
   QualificationAnswer,
-  STAGE_ORDER,
   ActivityType,
   ReminderAction,
 } from '../../core/lead.model';
 import { hasErrors, validateLeadForm } from '../../core/lead-validation';
 import { LeadsStore } from '../../core/leads.store';
+import { StagesStore } from '../../core/stages.store';
 import { FormError } from '../../shared/form-error';
 import { StageTag } from '../../shared/stage-tag';
 import { DuePicker } from '../../shared/due-picker';
@@ -97,6 +93,7 @@ type FooterMode = 'default' | 'dirty' | 'delete';
 })
 export class LeadSheet {
   private readonly store = inject(LeadsStore);
+  private readonly stagesStore = inject(StagesStore);
   private readonly router = inject(Router);
   /** Read by the template: how much of the teaching layer is expanded by default. */
   protected readonly guidance = inject(GuidanceService);
@@ -111,7 +108,6 @@ export class LeadSheet {
   readonly at = input<string | undefined>(undefined);
 
   protected readonly copy = COPY;
-  protected readonly statusLabel = STATUS_LABEL;
   protected readonly sourceLabel = SOURCE_LABEL;
   protected readonly activityLabel = ACTIVITY_LABEL;
   protected readonly question = CHECKLIST_QUESTION;
@@ -119,10 +115,12 @@ export class LeadSheet {
   protected readonly answerLabel = ANSWER_LABEL;
   protected readonly answerAria = ANSWER_ARIA;
   protected readonly fieldHelp = LEAD_FIELD_HELP;
-  protected readonly stageMeaning = STATUS_MEANING;
-  protected readonly stageGuidance = STATUS_GUIDANCE;
+  // Was STATUS_MEANING / STATUS_GUIDANCE keyed by enum value. Both now live on the stage row,
+  // so the template reads them off `selectedStage()` and a stage nobody described shows
+  // nothing rather than a generic line.
   protected readonly lostReasons = LOST_REASONS;
-  protected readonly stages = STAGE_ORDER;
+  /** Live stages, in position order — the "שלב" select reads straight off the pipeline. */
+  protected readonly stages = this.stagesStore.active;
   protected readonly sources = SOURCES;
   protected readonly items = CHECKLIST_ITEMS;
   protected readonly noteTypes = NOTE_TYPES;
@@ -148,7 +146,9 @@ export class LeadSheet {
   protected readonly phone = signal('');
   protected readonly email = signal('');
   protected readonly source = signal<LeadSource>('other');
-  protected readonly status = signal<LeadStatus>('new');
+  /** Empty until either the lead hydrates or the pipeline's first-open stage arrives —
+   *  see the constructor's default-picking effect below. */
+  protected readonly stageId = signal<string>('');
   /** Kept as text: an empty field is not zero, and zero is a real estimate. */
   protected readonly value = signal('');
   protected readonly lostReason = signal('');
@@ -195,6 +195,16 @@ export class LeadSheet {
   private landedNote = false;
 
   constructor() {
+    // A fresh lead defaults to the first-open stage once the pipeline has loaded — which
+    // may still be in flight when this component mounts on a direct /lead/new visit. Runs
+    // only in create mode and only until something sets stageId (the user, or this), so it
+    // never overwrites a deliberate choice.
+    effect(() => {
+      if (!this.create() || this.stageId()) return;
+      const first = this.stagesStore.firstOpen();
+      if (first) untracked(() => this.stageId.set(first.id));
+    });
+
     if (typeof matchMedia === 'function') {
       const wide = matchMedia('(min-width: 900px)');
       this.canDrag.set(wide.matches);
@@ -262,16 +272,21 @@ export class LeadSheet {
     this.phone.set(lead.phone ?? '');
     this.email.set(lead.email ?? '');
     this.source.set(lead.source);
-    this.status.set(lead.status);
+    this.stageId.set(lead.stage.id);
     this.value.set(lead.estimatedValue ? String(lead.estimatedValue) : '');
     this.lostReason.set(lead.lostReason ?? '');
   }
 
-  /**
-   * The one next thing to do with this lead. Derived, never stored: it is a function of the
-   * stage, the follow-up and how long the lead has been silent, all of which the store
-   * already knows. Absent in create mode (no lead yet) and for closed leads (nothing owed).
-   */
+  /** The kind of whatever stage is currently selected — resolved through StagesStore
+   *  rather than carried on the draft, since only `kind` (never the stage's name) decides
+   *  the lost-reason requirement and the won-amount block (documents/PLAN-stages.md §1). */
+  protected readonly selectedKind = computed(() => this.stagesStore.byId(this.stageId())?.kind);
+
+  /** The meaning and guidance of the selected stage, for the field help below the picker.
+   *  Was `STATUS_MEANING[status]` / `STATUS_GUIDANCE[status]`; both now live on the row, so a
+   *  stage the user invented explains itself in their own words or not at all. */
+  protected readonly selectedStage = computed(() => this.stagesStore.byId(this.stageId()) ?? null);
+
   /**
    * The two hand-rolled select blocks ask this instead of comparing signals inline three
    * times each: the `@if`, the `aria-expanded` and the `aria-describedby` must agree, and
@@ -284,9 +299,15 @@ export class LeadSheet {
     () => this.guidance.verbose() || this.fieldHelpOpen() === 'source',
   );
 
+  /**
+   * The one next thing to do with this lead. Derived, never stored: it is a function of the
+   * stage, the follow-up and how long the lead has been silent, all of which the store
+   * already knows. Absent in create mode (no lead yet) and for closed leads (nothing owed).
+   */
   protected readonly nextStep = computed(() => {
     const lead = this.lead();
-    return lead ? nextStepOf(lead, this.store.now()) : null;
+    if (!lead) return null;
+    return nextStepOf(lead, this.store.now(), this.stagesStore.firstOpen()?.id ?? null);
   });
 
   /* ---------- answers ---------- */
@@ -339,13 +360,15 @@ export class LeadSheet {
 
   /* ---------- validation ---------- */
 
-  /** The rules live in core/lead-validation.ts — pure, shared, and tested there. */
+  /** The rules live in core/lead-validation.ts — pure, shared, and tested there. `open` is
+   *  a safe default while the selected stage has not resolved yet: it never requires a
+   *  lost reason, so it cannot block a save the user did not actually ask to close. */
   private readonly errors = computed(() =>
     validateLeadForm({
       name: this.name(),
       email: this.email(),
       value: this.value(),
-      status: this.status(),
+      stageKind: this.selectedKind() ?? 'open',
       lostReason: this.lostReason(),
     }),
   );
@@ -375,7 +398,7 @@ export class LeadSheet {
       this.phone().trim() !== (lead.phone ?? '') ||
       this.email().trim() !== (lead.email ?? '') ||
       this.source() !== lead.source ||
-      this.status() !== lead.status ||
+      this.stageId() !== lead.stage.id ||
       this.value().trim() !== (lead.estimatedValue ? String(lead.estimatedValue) : '') ||
       this.lostReason().trim() !== (lead.lostReason ?? '')
     );
@@ -391,9 +414,9 @@ export class LeadSheet {
       email: this.email().trim() || null,
       phone: this.phone().trim() || null,
       source: this.source(),
-      status: this.status(),
+      stageId: this.stageId(),
       estimatedValue: value.length ? Number(value) : null,
-      lostReason: this.status() === 'lost' ? this.lostReason().trim() || null : null,
+      lostReason: this.selectedKind() === 'lost' ? this.lostReason().trim() || null : null,
     };
   }
 
@@ -462,8 +485,8 @@ export class LeadSheet {
     void this.router.navigate(['/']);
   }
 
-  protected setStatus(value: string): void {
-    this.status.set(value as LeadStatus);
+  protected setStageId(value: string): void {
+    this.stageId.set(value);
   }
 
   protected setSource(value: string): void {

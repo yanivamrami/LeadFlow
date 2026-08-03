@@ -56,7 +56,10 @@
     135deg, transparent 0 5px, rgba(107, 99, 88, 0.5) 5px 6px);
   --lf-flag-none: transparent;
 
-  /* pipeline stages — fill / ink, in stage order. Label always ships with the colour. */
+  /* pipeline stages — fill / ink, in stage order. Label always ships with the colour.
+     Kept in place even though stage-tag.ts now reads the eight --lf-sw-* swatches below:
+     won/lost still drive their reserved look off these, and other agents may still
+     reference the six-status names mid-wave (documents/CONTRACT-stages.md §5). */
   --lf-stage-new-bg: transparent;             --lf-stage-new-fg: var(--lf-ink);
   --lf-stage-contacted-bg: var(--lf-tan);     --lf-stage-contacted-fg: var(--lf-ink);
   --lf-stage-qualified-bg: var(--lf-tan-deep);--lf-stage-qualified-fg: var(--lf-ink);
@@ -66,6 +69,24 @@
     135deg, transparent 0 5px, rgba(107, 99, 88, 0.35) 5px 6px);
   --lf-stage-lost-fg: var(--lf-muted);
   --lf-stage-lost-border: var(--lf-muted);
+
+  /* Eight named swatches a custom stage can pick (documents/PLAN-stages.md §4.3) — a
+     fixed, pre-contrast-checked set, never a free colour picker. chalk/sky/moss/amber
+     are aliases onto the four open-stage pairs above, so their contrast is the contrast
+     already checked for `new`/`contacted`/`qualified`/`proposal`. plum/clay/slate/sand
+     are new; every fg/bg pair here reads >= 4.5:1 in both themes (measured, not eyeballed
+     — see the W1-A hand-off report for the arithmetic). Won/lost ignore `swatch` entirely
+     and render their reserved fill/outline instead (stage-tag.ts), so clay and slate —
+     used by the seeded won and lost stages — only ever show through this table when a
+     *custom* stage picks them. */
+  --lf-sw-chalk-bg: var(--lf-stage-new-bg);        --lf-sw-chalk-fg: var(--lf-stage-new-fg);
+  --lf-sw-sky-bg: var(--lf-stage-contacted-bg);    --lf-sw-sky-fg: var(--lf-stage-contacted-fg);
+  --lf-sw-moss-bg: var(--lf-stage-qualified-bg);   --lf-sw-moss-fg: var(--lf-stage-qualified-fg);
+  --lf-sw-amber-bg: var(--lf-stage-proposal-bg);   --lf-sw-amber-fg: var(--lf-stage-proposal-fg);
+  --lf-sw-plum-bg: #d9b9cf;                        --lf-sw-plum-fg: var(--lf-ink);
+  --lf-sw-clay-bg: #d9a877;                        --lf-sw-clay-fg: var(--lf-ink);
+  --lf-sw-slate-bg: #b8c4cf;                        --lf-sw-slate-fg: var(--lf-ink);
+  --lf-sw-sand-bg: #e8c46a;                        --lf-sw-sand-fg: var(--lf-ink);
 
   /* type — Fredoka carries every Hebrew glyph in the product, at every size.
      Rubik covers Hebrew too, which is the point: strings mix. "היום 14:32" and "5 ימים"
@@ -134,6 +155,23 @@
   --lf-stage-proposal-fg: var(--lf-on-ink);
   --lf-stage-lost-bg: repeating-linear-gradient(
     135deg, transparent 0 5px, rgba(247, 241, 228, 0.28) 5px 6px);
+
+  /* Restated explicitly rather than left to inherit, matching the pairs above: a reader
+     scanning this block should see the whole swatch table, not have to guess which
+     names were intentionally left out. chalk/sky/moss/amber are still aliases — their
+     bg/fg both resolve through --lf-stage-*, which already flip above — but plum, clay,
+     slate and sand get their own dark fill: the light-theme pastel would sit almost flush
+     against this ground, so each gets a deeper, saturated version instead, re-checked
+     for contrast against this theme's (light) --lf-ink rather than assumed from the
+     light theme's numbers. */
+  --lf-sw-chalk-bg: var(--lf-stage-new-bg);        --lf-sw-chalk-fg: var(--lf-stage-new-fg);
+  --lf-sw-sky-bg: var(--lf-stage-contacted-bg);    --lf-sw-sky-fg: var(--lf-stage-contacted-fg);
+  --lf-sw-moss-bg: var(--lf-stage-qualified-bg);   --lf-sw-moss-fg: var(--lf-stage-qualified-fg);
+  --lf-sw-amber-bg: var(--lf-stage-proposal-bg);   --lf-sw-amber-fg: var(--lf-stage-proposal-fg);
+  --lf-sw-plum-bg: #4a2f44;                        --lf-sw-plum-fg: var(--lf-ink);
+  --lf-sw-clay-bg: #7a3b1d;                        --lf-sw-clay-fg: var(--lf-ink);
+  --lf-sw-slate-bg: #2e3d4d;                        --lf-sw-slate-fg: var(--lf-ink);
+  --lf-sw-sand-bg: #5c4318;                        --lf-sw-sand-fg: var(--lf-ink);
 }
 
 html {

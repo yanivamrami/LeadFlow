@@ -3,9 +3,9 @@ import { A11yModule } from '@angular/cdk/a11y';
 
 import { LucideX } from '@lucide/angular';
 
-import { COPY, STATUS_GUIDANCE, STATUS_MEANING, STATUS_LABEL } from '../core/copy';
-import { STAGE_ORDER } from '../core/lead.model';
+import { COPY } from '../core/copy';
 import { HelpService } from '../core/help.service';
+import { StagesStore } from '../core/stages.store';
 import { StageTag } from './stage-tag';
 
 /**
@@ -94,16 +94,21 @@ import { StageTag } from './stage-tag';
             </ul>
           </section>
 
-          <!-- the six stages: what it is, then what to do -->
+          <!-- the stages: what it is, then what to do. Live, not a fixed six — a
+               tenant's own pipeline may have renamed, added or archived any of them. -->
           <section class="sec">
             <h3 class="sec__title">{{ copy.help.stagesTitle }}</h3>
             <p class="sec__body">{{ copy.help.stagesLead }}</p>
             <ul class="stages">
-              @for (stage of stages; track stage) {
+              @for (stage of stages(); track stage.id) {
                 <li class="stage">
-                  <lf-stage-tag [status]="stage" />
-                  <p class="stage__what">{{ meaning[stage] }}</p>
-                  <p class="stage__next">{{ guidance[stage] }}</p>
+                  <lf-stage-tag [stage]="stage" />
+                  @if (stage.meaning) {
+                    <p class="stage__what">{{ stage.meaning }}</p>
+                  }
+                  @if (stage.guidance) {
+                    <p class="stage__next">{{ stage.guidance }}</p>
+                  }
                 </li>
               }
             </ul>
@@ -369,13 +374,13 @@ import { StageTag } from './stage-tag';
 })
 export class LegendDialog {
   private readonly help = inject(HelpService);
+  private readonly stagesStore = inject(StagesStore);
 
   protected readonly copy = COPY;
   protected readonly open = this.help.open;
-  protected readonly stages = STAGE_ORDER;
-  protected readonly meaning = STATUS_MEANING;
-  protected readonly guidance = STATUS_GUIDANCE;
-  protected readonly statusLabel = STATUS_LABEL;
+  /** Live stages, in position order — the legend teaches the pipeline the tenant actually
+   *  has, not a fixed six. */
+  protected readonly stages = this.stagesStore.active;
 
   protected close(): void {
     this.help.hide();

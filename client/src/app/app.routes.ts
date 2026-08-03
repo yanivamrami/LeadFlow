@@ -60,6 +60,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profile/profile').then((m) => m.Profile),
       },
       {
+        // 9.1 — the stage manager. Owner-only for writes, enforced by RLS, not this
+        // route: a member can still open the screen and read the pipeline.
+        path: 'settings/stages',
+        pathMatch: 'full',
+        title: 'שלבי הפייפליין · LeadFlow Manager',
+        loadComponent: () => import('./features/settings/stages').then((m) => m.Stages),
+      },
+      {
         path: 'profile/delete',
         title: 'מחיקת החשבון · LeadFlow Manager',
         loadComponent: () =>

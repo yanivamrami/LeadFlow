@@ -1,0 +1,218 @@
+/* The stage manager — SCREENS 9.1. A settings screen, so unlike the register or
+   reminders it is read closely rather than scanned: rows are cards, not compact lines. */
+
+:host {
+  display: block;
+  padding-block-end: var(--lf-space-12);
+}
+
+.stages {
+  max-inline-size: 720px;
+  margin-inline: auto;
+  padding-inline: var(--lf-space-4);
+}
+
+.stages__hd {
+  padding-block: var(--lf-space-6) var(--lf-space-4);
+  border-block-end: var(--lf-rule-w) solid var(--lf-ink);
+}
+.stages__title {
+  margin: 0;
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: var(--lf-size-name);
+  line-height: 1.05;
+}
+.stages__sub {
+  margin: var(--lf-space-2) 0 0;
+  font-size: 14px;
+  color: var(--lf-muted);
+}
+
+/* ---------- failed / empty / skeleton ---------- */
+
+.failed,
+.none {
+  margin: var(--lf-space-6) 0;
+  border: 2px dashed var(--lf-rule-soft);
+  padding: var(--lf-space-8) var(--lf-space-4);
+  text-align: center;
+}
+.none__mark {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-inline-size: 180px;
+  margin: 0 auto var(--lf-space-4);
+}
+.none__mark i {
+  display: block;
+  block-size: 10px;
+  border: 1px solid var(--lf-muted);
+}
+.none__mark i:last-child { inline-size: 55%; margin-inline: auto; }
+.failed__title,
+.none__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--lf-size-h2);
+}
+.failed__body,
+.none__body {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--lf-muted);
+}
+
+.act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--lf-touch);
+  margin-block-start: var(--lf-space-4);
+  padding-inline: var(--lf-space-6);
+  border: 2px solid var(--lf-ink);
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.act:hover { background: var(--lf-ink); color: var(--lf-on-ink); }
+
+.sk-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--lf-space-4);
+  border: 2px solid var(--lf-rule-soft);
+  margin-block-start: var(--lf-space-4);
+}
+.sk-row:first-child { margin-block-start: var(--lf-space-4); }
+.sk-a { block-size: 24px; inline-size: 45%; }
+.sk-b { block-size: 14px; inline-size: 80%; }
+.sk-c { block-size: 14px; inline-size: 60%; }
+
+/* ---------- counts warning, reorder hint ---------- */
+
+.counts-warn {
+  margin: var(--lf-space-4) 0 0;
+  font-size: 13px;
+  color: var(--lf-muted);
+}
+.link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin-inline-start: 4px;
+  color: var(--lf-red-text);
+  font: inherit;
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.reorder-hint {
+  margin: var(--lf-space-4) 0 0;
+  font-size: 13px;
+  color: var(--lf-muted);
+  line-height: 1.5;
+}
+
+/* ---------- the list ---------- */
+
+.list {
+  margin-block-start: 0;
+}
+.list__item {
+  display: block;
+  margin-block-start: var(--lf-space-4);
+}
+
+/* Paper peeled off the wall, not a card lifted off a surface — no shadow, same grammar
+   the board's drag preview uses (board.scss). */
+.drag-ghost {
+  display: inline-block;
+  border: 3px solid var(--lf-ink);
+  background: var(--lf-ground);
+  padding: 8px 14px;
+  transform: rotate(-2deg);
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.drop-ph {
+  display: grid;
+  place-items: center;
+  min-block-size: 76px;
+  border: 3px dashed var(--lf-red);
+  background: color-mix(in srgb, var(--lf-red) 6%, transparent);
+  color: var(--lf-red);
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.cdk-drag-animating {
+  transition: transform var(--lf-dur-settle) var(--lf-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drag-ghost { transform: none; }
+}
+
+/* ---------- archived section ---------- */
+
+.archived {
+  margin-block-start: var(--lf-space-8);
+  padding-block-start: var(--lf-space-3);
+  border-block-start: var(--lf-rule-w) solid var(--lf-ink);
+}
+.archived__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-2);
+  border: 0;
+  background: transparent;
+  color: var(--lf-muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--lf-size-h2);
+  cursor: pointer;
+}
+.archived__toggle:hover { color: var(--lf-ink); }
+.archived__chevron {
+  inline-size: 19px;
+  block-size: 19px;
+  stroke-width: 2.4;
+  transition: rotate var(--lf-dur-state) linear;
+}
+.archived__chevron.flip { rotate: 180deg; }
+
+.archived__note {
+  margin: var(--lf-space-2) 0 var(--lf-space-3);
+  font-size: 13px;
+  color: var(--lf-muted);
+  line-height: 1.5;
+  max-inline-size: 56ch;
+}
+.archived__row {
+  display: flex;
+  /* Column, not row: a suspended-automations panel (SCREENS 9.2) can render below the tag
+     now, and stacking is the only sane layout once that panel has any content at all. */
+  flex-direction: column;
+  align-items: flex-start;
+  padding-block: var(--lf-space-2);
+  border-block-start: 1px solid var(--lf-rule-soft);
+}
+.archived__row > lf-automations-panel {
+  inline-size: 100%;
+}
+.archived__row:first-of-type { border-block-start: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .archived__chevron { transition: none; }
+}

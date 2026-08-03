@@ -30,7 +30,7 @@
     <h2 class="hd__name">{{ create() ? copy.lead.createTitle : (lead()?.name ?? '') }}</h2>
 
     @if (!create() && lead(); as current) {
-      <lf-stage-tag [status]="current.status" />
+      <lf-stage-tag [stage]="current.stage" />
       <span class="hd__value lf-num">{{ formatValue(current.estimatedValue) }}</span>
     }
 
@@ -136,13 +136,13 @@
           <select
             id="status-select"
             class="pick__select"
-            [value]="status()"
+            [value]="stageId()"
             [disabled]="saving()"
             [attr.aria-describedby]="statusHelpOpen() ? 'status-why status-next' : 'status-next'"
-            (change)="setStatus($any($event.target).value)"
+            (change)="setStageId($any($event.target).value)"
           >
-            @for (stage of stages; track stage) {
-              <option [value]="stage">{{ statusLabel[stage] }}</option>
+            @for (stage of stages(); track stage.id) {
+              <option [value]="stage.id">{{ stage.name }}</option>
             }
           </select>
 
@@ -150,13 +150,15 @@
                before the save, which is when the question is actually being asked. The
                meaning follows the guidance setting; the next step is always shown, because
                it is the actionable half and it is short. -->
-          @if (statusHelpOpen()) {
-            <p class="why-text" id="status-why">{{ stageMeaning[status()] }}</p>
+          @if (statusHelpOpen() && selectedStage()?.meaning; as meaning) {
+            <p class="why-text" id="status-why">{{ meaning }}</p>
           }
-          <p class="why-text" id="status-next">
-            <span class="lf-label">{{ copy.lead.stageNext }}</span>
-            {{ stageGuidance[status()] }}
-          </p>
+          @if (selectedStage()?.guidance; as guidanceText) {
+            <p class="why-text" id="status-next">
+              <span class="lf-label">{{ copy.lead.stageNext }}</span>
+              {{ guidanceText }}
+            </p>
+          }
         </div>
 
         <div class="pick">
@@ -208,7 +210,7 @@
       />
 
       <!-- closing: inline, never a second dialog -->
-      @if (status() === 'lost') {
+      @if (selectedKind() === 'lost') {
         <div class="close-block">
           <p class="close-block__q">{{ copy.lead.lostReason }}</p>
           <div class="chips">
@@ -240,7 +242,7 @@
         </div>
       }
 
-      @if (status() === 'won') {
+      @if (selectedKind() === 'won') {
         <div class="close-block">
           <p class="close-block__q">{{ copy.lead.wonAmount }}</p>
           <label class="bare">

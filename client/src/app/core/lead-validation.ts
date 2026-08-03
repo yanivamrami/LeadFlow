@@ -1,5 +1,5 @@
 import { COPY } from './copy';
-import { LeadStatus } from './lead.model';
+import { StageKind } from './lead.model';
 
 /**
  * What the lead sheet checks before it will save. Pure on purpose: the same rules apply
@@ -10,13 +10,18 @@ import { LeadStatus } from './lead.model';
  * recognise the lead by, and a reason on a lost lead, because that is the whole point of
  * recording the loss. Contact details are deliberately optional: a lead captured as
  * "the guy from the hardware store, number tomorrow" must still be enterable.
+ *
+ * `stageKind` rather than a stage id: the only thing this rule ever cared about is
+ * whether the selected stage is the lost one, and that is a property of `kind`, never of
+ * which stage the tenant happens to have renamed into that role
+ * (documents/PLAN-stages.md §1).
  */
 export interface LeadFormValues {
   name: string;
   email: string;
   /** Raw text, not a number — an empty field is not zero, and zero is a real estimate. */
   value: string;
-  status: LeadStatus;
+  stageKind: StageKind;
   lostReason: string;
 }
 
@@ -46,7 +51,7 @@ export function validateLeadForm(values: LeadFormValues): LeadFormErrors {
     errors.value = COPY.lead.valueInvalid;
   }
 
-  if (values.status === 'lost' && values.lostReason.trim().length === 0) {
+  if (values.stageKind === 'lost' && values.lostReason.trim().length === 0) {
     errors.lostReason = COPY.lead.lostReasonRequired;
   }
 

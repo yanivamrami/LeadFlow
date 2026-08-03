@@ -1,13 +1,5 @@
 /** Domain model. Mirrors the `leads` table in docs/ARCHITECTURE.md §5. */
 
-export type LeadStatus =
-  | 'new'
-  | 'contacted'
-  | 'qualified'
-  | 'proposal_sent'
-  | 'won'
-  | 'lost';
-
 export type LeadSource = 'website' | 'referral' | 'social_media' | 'phone' | 'other';
 
 /** Every value the union permits, for validating untrusted input (e.g. `?source=`). */
@@ -49,6 +41,58 @@ export interface Activity {
  */
 export type ChecklistAnswers = Partial<Record<ChecklistItem, QualificationAnswer>>;
 
+/**
+ * What a stage row *is*, underneath whatever the user has named it. Every product rule
+ * that used to key off the six-status enum now keys off `kind` instead — conversion,
+ * the lost-reason requirement, the won-amount confirmation, the attention engine — so a
+ * tenant can rename `נסגר בהצלחה` to `לקוח` and change no arithmetic at all. See
+ * documents/PLAN-stages.md §1. A tenant always has exactly one `won` and one `lost`
+ * stage, and at least one `open` stage.
+ */
+export type StageKind = 'open' | 'won' | 'lost';
+
+/**
+ * One of a fixed set of eight pre-contrast-checked colour pairs (theme/tokens.css). Not
+ * a free colour picker: the שלט־שוק palette is deliberately tight, and an arbitrary
+ * choice would both clash with it and risk reintroducing a contrast failure the design
+ * system already paid for once.
+ */
+export type SwatchName =
+  | 'chalk'
+  | 'sky'
+  | 'moss'
+  | 'amber'
+  | 'plum'
+  | 'clay'
+  | 'slate'
+  | 'sand';
+
+/**
+ * A pipeline stage — a per-tenant row a user can rename, reorder, add and archive, not a
+ * hardcoded union anymore. See core/stages.store.ts, which owns loading and writing these.
+ */
+export interface Stage {
+  id: string;
+  name: string;
+  /** Board headers and filter chips, where the column is already context. Falls back to `name`. */
+  shortName: string | null;
+  position: number;
+  kind: StageKind;
+  swatch: SwatchName;
+  /** Where you are. The teaching layer that used to live in STATUS_MEANING. */
+  meaning: string | null;
+  /** What to do next. The teaching layer that used to live in STATUS_GUIDANCE. */
+  guidance: string | null;
+  /** Days of silence before the lead counts as drifting. Null = never drifts. */
+  driftDays: number | null;
+  /** "The ball is in their court." Generalises what used to be `status === 'proposal_sent'`. */
+  expectsReply: boolean;
+  /** Seeded by signup. Blocks nothing except deleting the won/lost pair — the words are the user's. */
+  isSystem: boolean;
+  /** Archived, never deleted: a lead's history still resolves through an archived stage. */
+  archivedAt: Date | null;
+}
+
 export interface Lead {
   id: string;
   name: string;
@@ -56,7 +100,7 @@ export interface Lead {
   email: string | null;
   phone: string | null;
   source: LeadSource;
-  status: LeadStatus;
+  stage: Stage;
   estimatedValue: number;
   lostReason: string | null;
   isDemo: boolean;
@@ -75,15 +119,6 @@ export interface Lead {
   clearedToday: string | null;
 }
 
-export const STAGE_ORDER: readonly LeadStatus[] = [
-  'new',
-  'contacted',
-  'qualified',
-  'proposal_sent',
-  'won',
-  'lost',
-];
-
 export const CHECKLIST_ITEMS: readonly ChecklistItem[] = [
   'interest',
   'need',
@@ -91,19 +126,6 @@ export const CHECKLIST_ITEMS: readonly ChecklistItem[] = [
   'authority',
   'timeline',
 ];
-
-/**
- * How many silent days earn the drift flag. Product decision, not a visual one:
- * a proposal with no reply goes stale fastest, so it gets the shortest fuse.
- */
-export const DRIFT_DAYS: Record<LeadStatus, number> = {
-  new: 3,
-  contacted: 7,
-  qualified: 7,
-  proposal_sent: 3,
-  won: Number.POSITIVE_INFINITY,
-  lost: Number.POSITIVE_INFINITY,
-};
 
 /** Rows the day sheet shows before collapsing the rest behind "show all". */
 export const OPEN_ITEMS_CAP = 3;
@@ -128,7 +150,7 @@ export interface LeadDraft {
   email: string | null;
   phone: string | null;
   source: LeadSource;
-  status: LeadStatus;
+  stageId: string;
   estimatedValue: number | null;
   lostReason: string | null;
 }

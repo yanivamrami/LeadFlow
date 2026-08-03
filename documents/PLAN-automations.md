@@ -101,7 +101,7 @@ create type public.automation_trigger as enum (
 );
 
 create type public.automation_action as enum (
-  'set_reminder', 'assign_member', 'add_note', 'advance_stage', 'webhook'
+  'set_reminder', 'assign_member', 'add_note', 'suggest_advance', 'webhook'
   -- 'send_email', 'send_whatsapp' — added when §9 is built, not now
 );
 
@@ -234,7 +234,7 @@ right way round.
 
 ### Loop guard
 
-`advance_stage` moves a lead, which fires the trigger again. Cap the chain at **depth 1**: a run
+`suggest_advance` writes only a note, so nothing in this phase moves a lead. The guard exists for the future: an action that DID move one would fire the trigger again. Cap the chain at **depth 1**: a run
 created by an automation is marked as such, and automations do not fire for a move that an
 automation performed. Without this, two stages that advance into each other are an infinite loop
 that writes activity rows until something breaks.
@@ -253,7 +253,7 @@ firing a real webhook on the user's first run would be indefensible.
 | `set_reminder` | `{ days: int, title?: string }` | `insert into public.reminders`, 09:00 local on the target day, `assigned_to` = the lead's assignee or the mover. Honours the one-open-reminder-per-lead rule that `save_lead` already enforces — reschedules rather than duplicating. |
 | `assign_member` | `{ user_id: uuid }` | Validate membership in the tenant at save time **and** at fire time. Effectively inert until invites (8.3), and worth building anyway because it is three lines on the spine. |
 | `add_note` | `{ body: string }` | `insert into public.activities (type='note')`. Author is the automation, which the timeline must say plainly — an automated note that looks hand-typed is a lie about the record. |
-| `advance_stage` | `{ stage_id: uuid }` | Usually paired with `lead_idle_in_stage` ("nothing happened in 14 days → move to לא בזמן הנכון"). Depth-capped per §2. |
+| `suggest_advance` | `{ stage_id: uuid }` | **Offers** the move, never performs it — the user decided this on 2026-08-03. Implemented as a Hebrew note proposing the change; `leads.stage_id` is deliberately not written. Usually paired with `lead_idle_in_stage`. |
 | `webhook` | `{ url, secret_ref }` | Payload: event, tenant, lead (id, name, company, stage before/after, source, value), timestamp. No checklist answers and no activity bodies — those are the most sensitive fields in the product and no integration needs them by default. |
 
 ---
@@ -315,7 +315,7 @@ automation you cannot test before pointing it at real clients is a liability.
 | 1 | `automations` + `automation_runs`, RLS, indexes, idempotency key | half day | The shape. |
 | 2 | Tier-A trigger: `set_reminder`, `add_note`, `assign_member` on `lead_enters_stage` | 1 day | A real feature, no new infrastructure, and it proves the trigger path. |
 | 3 | Editor + list inside the stage manager (9.2, 9.3), for tier A only | 1.5 days | Users can build rules. Shippable here. |
-| 4 | `pg_cron` sweep + `lead_idle_in_stage` + `advance_stage` + loop guard | 1 day | Adds the delayed trigger. First extension enabled. |
+| 4 | `pg_cron` sweep + `lead_idle_in_stage` + `suggest_advance` + loop guard | 1 day | Adds the delayed trigger. First extension enabled. |
 | 5 | Run log (9.4) + dry run | 1 day | Before webhooks, not after — the first time something fails, this is what the user needs. |
 | 6 | Outbox sender: `pg_net`, claim / reconcile / retry / dead-letter | 1 day | No deploy, no second runtime. Verify `pg_net` and redirect behaviour on dev first. |
 | 7 | `webhook` action: URL guard, HMAC, Vault secret, payload contract | 1.5 days | Riding the spine from step 6. |
@@ -416,7 +416,7 @@ calendar as the rest of this plan.
 
 ## 10. Open questions (PM, not engineering)
 
-1. **Does `advance_stage` belong in v1 at all?** It is the only action that changes the pipeline
+1. ~~**Does `advance_stage` belong in v1 at all?**~~ **DECIDED 2026-08-03: offer, never perform** — shipped as `suggest_advance`. Original argument kept: It is the only action that changes the pipeline
    on the user's behalf, and this product's stated principle is advisory-never-blocking. A rule
    that silently moves leads is the closest thing here to a gate. Alternative: it *offers* the
    move on the day sheet instead of performing it — which is also the answer to

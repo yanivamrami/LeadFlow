@@ -1,17 +1,17 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { STATUS_LABEL, STATUS_SHORT } from '../core/copy';
-import { LeadStatus } from '../core/lead.model';
+import { Stage } from '../core/lead.model';
 
 /**
- * Pipeline stage as a posted block. Colour never carries the meaning alone — the Hebrew
- * label always ships with it, and the ramp (paper → tan → deep tan → ink → red, hatched
- * at Lost) stays legible in greyscale.
+ * Pipeline stage as a posted block. `kind` carries the two reserved looks — Won's red
+ * fill, Lost's dashed outline — so a stage the user renamed still reads as closed; every
+ * other stage renders by its own swatch (theme/tokens.css). Colour never carries the
+ * meaning alone — the Hebrew label always ships with it.
  */
 @Component({
   selector: 'lf-stage-tag',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<span class="tag" [class]="'tag--' + status()">{{ label() }}</span>`,
+  template: `<span class="tag" [class]="tagClass()">{{ label() }}</span>`,
   styles: `
     :host { display: inline-flex; min-inline-size: 0; }
 
@@ -27,10 +27,17 @@ import { LeadStatus } from '../core/lead.model';
       text-overflow: ellipsis;
     }
 
-    .tag--new { background: var(--lf-stage-new-bg); color: var(--lf-stage-new-fg); }
-    .tag--contacted { background: var(--lf-stage-contacted-bg); color: var(--lf-stage-contacted-fg); }
-    .tag--qualified { background: var(--lf-stage-qualified-bg); color: var(--lf-stage-qualified-fg); }
-    .tag--proposal_sent { background: var(--lf-stage-proposal-bg); color: var(--lf-stage-proposal-fg); }
+    .tag--sw-chalk { background: var(--lf-sw-chalk-bg); color: var(--lf-sw-chalk-fg); }
+    .tag--sw-sky { background: var(--lf-sw-sky-bg); color: var(--lf-sw-sky-fg); }
+    .tag--sw-moss { background: var(--lf-sw-moss-bg); color: var(--lf-sw-moss-fg); }
+    .tag--sw-amber { background: var(--lf-sw-amber-bg); color: var(--lf-sw-amber-fg); }
+    .tag--sw-plum { background: var(--lf-sw-plum-bg); color: var(--lf-sw-plum-fg); }
+    .tag--sw-clay { background: var(--lf-sw-clay-bg); color: var(--lf-sw-clay-fg); }
+    .tag--sw-slate { background: var(--lf-sw-slate-bg); color: var(--lf-sw-slate-fg); }
+    .tag--sw-sand { background: var(--lf-sw-sand-bg); color: var(--lf-sw-sand-fg); }
+
+    /* Reserved treatments, driven by kind rather than swatch — a renamed won or lost
+       stage must still look closed. Same visual language the six-status version used. */
     .tag--won {
       background: var(--lf-stage-won-bg);
       color: var(--lf-stage-won-fg);
@@ -44,11 +51,19 @@ import { LeadStatus } from '../core/lead.model';
   `,
 })
 export class StageTag {
-  readonly status = input.required<LeadStatus>();
+  readonly stage = input.required<Stage>();
   /** Short form where the column or filter already supplies the context. */
   readonly short = input(false);
 
+  protected tagClass(): string {
+    const stage = this.stage();
+    if (stage.kind === 'won') return 'tag tag--won';
+    if (stage.kind === 'lost') return 'tag tag--lost';
+    return `tag tag--sw-${stage.swatch}`;
+  }
+
   protected label(): string {
-    return this.short() ? STATUS_SHORT[this.status()] : STATUS_LABEL[this.status()];
+    const stage = this.stage();
+    return this.short() ? (stage.shortName ?? stage.name) : stage.name;
   }
 }

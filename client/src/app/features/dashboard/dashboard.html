@@ -58,24 +58,24 @@
       <button
         type="button"
         class="filters__chip"
-        [class.filters__chip--on]="statusFilter() === 'all'"
-        [attr.aria-pressed]="statusFilter() === 'all'"
+        [class.filters__chip--on]="stageFilter() === 'all'"
+        [attr.aria-pressed]="stageFilter() === 'all'"
         (click)="setFilter('all')"
       >
         {{ copy.register.all }}
         <span class="lf-num">{{ total() }}</span>
       </button>
 
-      @for (stage of stages; track stage) {
+      @for (stage of stages(); track stage.id) {
         <button
           type="button"
           class="filters__chip"
-          [class.filters__chip--on]="statusFilter() === stage"
-          [attr.aria-pressed]="statusFilter() === stage"
-          (click)="setFilter(stage)"
+          [class.filters__chip--on]="stageFilter() === stage.id"
+          [attr.aria-pressed]="stageFilter() === stage.id"
+          (click)="setFilter(stage.id)"
         >
-          {{ statusLabel[stage] }}
-          <span class="lf-num">{{ counts()[stage] }}</span>
+          {{ stage.name }}
+          <span class="lf-num">{{ counts()[stage.id] }}</span>
         </button>
       }
     </div>

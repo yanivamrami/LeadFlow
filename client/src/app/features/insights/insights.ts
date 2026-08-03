@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { COPY, SOURCE_LABEL, STATUS_LABEL, formatValue } from '../../core/copy';
+import { COPY, SOURCE_LABEL, formatValue } from '../../core/copy';
 import { InsightsStore } from '../../core/insights.store';
-import { LeadStatus } from '../../core/lead.model';
+import { Stage } from '../../core/lead.model';
 
 /**
  * Insights — the PRD's fourth pillar. Read mode: the visitor came to understand, so
@@ -17,8 +17,8 @@ import { LeadStatus } from '../../core/lead.model';
  *    The figure names its own denominator on screen so it cannot be misread.
  *
  * 2. The charts are semantic HTML, not canvas, where ARCHITECTURE.md maps analytics to
- *    PrimeNG Chart. Six labelled bars are a list: readable by a screen reader,
- *    selectable, printable, and styleable by the same tokens as everything else.
+ *    PrimeNG Chart. A labelled bar per pipeline stage is a list: readable by a screen
+ *    reader, selectable, printable, and styleable by the same tokens as everything else.
  *    Chart.js earns its place when a real time-series arrives.
  */
 @Component({
@@ -32,7 +32,6 @@ export class Insights {
   private readonly store = inject(InsightsStore);
 
   protected readonly copy = COPY;
-  protected readonly statusLabel = STATUS_LABEL;
   protected readonly sourceLabel = SOURCE_LABEL;
   protected readonly formatValue = formatValue;
 
@@ -55,8 +54,15 @@ export class Insights {
     void this.store.load();
   }
 
-  /** The pipeline ramp, so a bar means the same thing here as a tag does elsewhere. */
-  protected barClass(status: LeadStatus): string {
-    return `bar__fill bar__fill--${status}`;
+  /**
+   * The pipeline ramp, so a bar means the same thing here as a tag does elsewhere. `kind`
+   * overrides the stage's own swatch for won/lost, same rule as `lf-stage-tag`: won always
+   * takes the red fill, lost always takes the dashed outline, regardless of what colour the
+   * stage itself was given — colour follows what the stage *means*, not its label.
+   */
+  protected barClass(stage: Stage): string {
+    if (stage.kind === 'won') return 'bar__fill bar__fill--won';
+    if (stage.kind === 'lost') return 'bar__fill bar__fill--lost';
+    return `bar__fill bar__fill--sw-${stage.swatch}`;
   }
 }

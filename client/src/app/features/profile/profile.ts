@@ -39,6 +39,15 @@ export class Profile {
   protected readonly guidance = inject(GuidanceService);
   protected readonly copy = COPY;
 
+  /**
+   * The one link to the stage manager (SCREENS 9.1, documents/CONTRACT-stages.md §4 —
+   * this agent owns `features/settings/*` and may add exactly this link here, nothing
+   * else in this file). Kept local rather than in `COPY.profile` because this agent does
+   * not own `core/copy.ts`; report as a follow-up to fold both strings in there.
+   */
+  protected readonly pipelineLabel = 'הפייפליין שלכם';
+  protected readonly pipelineLinkLabel = 'שלבי הפייפליין';
+
   protected readonly email = this.supabase.email;
 
   constructor() {

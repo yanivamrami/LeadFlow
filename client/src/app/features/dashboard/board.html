@@ -1,29 +1,32 @@
 <div class="board" cdkDropListGroup>
-  @for (column of columns(); track column.status) {
-    <section class="col" [class]="'col--' + column.status" [attr.aria-label]="statusLabel[column.status]">
+  @for (column of columns(); track column.stage.id) {
+    <section class="col" [class]="'col--' + column.stage.kind" [attr.aria-label]="column.stage.name">
       <header class="col__hd">
-        <h3 class="col__name">{{ statusLabel[column.status] }}</h3>
+        <h3 class="col__name">{{ column.stage.name }}</h3>
         <span class="col__count lf-num">{{ column.leads.length }}</span>
       </header>
 
-      <!-- What the stage IS, never what to do about it: six columns of "what to do next"
-           side by side would read as six simultaneous nudges. -->
-      @if (guidance.verbose()) {
-        <p class="col__meaning">{{ stageMeaning[column.status] }}</p>
+      <!-- What the stage IS, never what to do about it: a column of "what to do next" beside
+           every other column would read as several simultaneous nudges.
+           Read off the stage row rather than a copy map, so a stage the user created shows
+           their own words — and a stage they never described shows nothing at all, which is
+           honest where a generic line would not be. -->
+      @if (guidance.verbose() && column.stage.meaning) {
+        <p class="col__meaning">{{ column.stage.meaning }}</p>
       }
 
       <div
         class="col__drop"
         cdkDropList
-        [cdkDropListData]="column.status"
-        (cdkDropListDropped)="drop($event, column.status)"
+        [cdkDropListData]="column.stage"
+        (cdkDropListDropped)="drop($event, column.stage)"
       >
         @for (lead of column.leads; track lead.id) {
           <article
             class="card"
             [class]="'card--' + attention(lead)"
-            [class.card--won]="lead.status === 'won'"
-            [class.card--lost]="lead.status === 'lost'"
+            [class.card--won]="lead.stage.kind === 'won'"
+            [class.card--lost]="lead.stage.kind === 'lost'"
             cdkDrag
             [cdkDragData]="lead"
           >
@@ -50,7 +53,7 @@
             </div>
 
             <p class="card__when">
-              @if (lead.checklistAnswered < checklistTotal && lead.status !== 'won' && lead.status !== 'lost') {
+              @if (lead.checklistAnswered < checklistTotal && lead.stage.kind === 'open') {
                 {{ copy.board.checklistProgress(lead.checklistAnswered, checklistTotal) }}
               } @else {
                 {{ when(lead) }}

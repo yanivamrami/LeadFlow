@@ -139,7 +139,7 @@ erDiagram
         text phone
         text company
         lead_source source
-        lead_status status
+        uuid stage_id FK "pipeline_stages - replaced the lead_status enum, 2026-08-04"
         numeric estimated_value
         text lost_reason
         boolean is_demo "sample lead from onboarding"
@@ -176,9 +176,11 @@ erDiagram
     }
 ```
 
-- `lead_status` enum: `new`, `contacted`, `qualified`, `proposal_sent`, `won`, `lost` — the Kanban columns. Status-guidance copy lives in the client (Hebrew strings keyed by status), not the DB.
+- ~~`lead_status` enum~~ **dropped 2026-08-04.** The Kanban columns are `pipeline_stages` rows per tenant, carrying a `stage_kind` of `open`/`won`/`lost`; see §6.2. The guidance copy that used to live in the client as Hebrew strings keyed by status now lives on the row (`meaning`, `guidance`), because a stage the user invented needs copy the client cannot have been written with.
+- `stage_kind` enum: `open`, `won`, `lost` — what a stage *means*, as opposed to what the user calls it. Every figure on `/insights` and every closing rule keys off this.
 - `lead_source` enum: `website`, `referral`, `social_media`, `phone`, `other` — powers the source-breakdown analytics.
-- `updated_at` maintained by trigger; `status_changed` activity rows appended by trigger on status transitions.
+- `automation_trigger` / `automation_action` enums: see §6.2.
+- `updated_at` maintained by trigger; `status_changed` activity rows appended by trigger on `stage_id` transitions, recording `from_stage_id` / `to_stage_id` plus a text snapshot of the names as they read at the time.
 - **Qualification checklist (per PM decisions, `documents/Lead Qualification Checklist - PM Decisions.md`):** fixed 5-item V1 checklist — `checklist_item` enum `interest`, `need`, `budget`, `authority`, `timeline` (this order; not classic BANT order). Answers are **tri-state** (`yes` / `no` / `unknown` — "no" and "haven't asked" are different signals) stored per lead in `qualification_answers` with timestamp + who answered, keyed `(lead_id, item)`. Stored (not ephemeral) to power future analytics insights ("leads with confirmed budget close more often"). Uniform across lead sources; item copy lives in the client strings module, not the DB. V2 backlog: user-added custom items (core items never deletable).
 
 ### Multi-tenancy
@@ -226,6 +228,52 @@ No custom REST API. Data access via Supabase auto-generated PostgREST endpoints 
   - ~~`reminders-due` — scheduled (pg_cron → function or Supabase Cron) computation of due follow-up reminders based on status + last activity. Likely Edge Function.~~ **Withdrawn 2026-08-03 — see §6.1.** The notification-channel decision stands: **in-app only at launch** — reminders list + badge + toast on login; email digest is a later add, push/PWA out of scope for v1.
   - `capture-form` (future) — public endpoint for embeddable web forms; rate-limited, validates + inserts lead for the form's owner.
 - **Idempotency / rate limiting:** relevant only to `capture-form`; design it with a per-form token + basic rate limit when built.
+
+### 6.2 Stages are rows, and automations run in the database (2026-08-04)
+
+Two changes this section has to record, because both contradict what it said before.
+
+**The six stages are no longer an enum.** `public.lead_status` has been dropped. Stages are
+per-tenant `pipeline_stages` rows the owner can rename, reorder, add and archive. Every product
+semantic hangs off a reserved `kind` (`open` / `won` / `lost`), never off a name or a position —
+that is what lets someone rename נסגר בהצלחה without moving a single figure on `/insights`.
+Rationale in full: `documents/PLAN-stages.md`. Invariants the database enforces rather than
+trusting a client with: exactly one live won and one live lost stage, at least one live open
+stage (a deferrable constraint trigger), and `on delete restrict` on every stage foreign key so
+an accidental delete fails loudly instead of taking leads with it.
+
+Three rules that used to be hardcoded on stage names are now properties of a stage row:
+`expects_reply` replaces `status = 'proposal_sent'`, the lowest-position open stage replaces
+`'new'`, and a per-stage `drift_days` replaces the `DRIFT_DAYS` map. A user's own
+"waiting for signature" stage therefore behaves like the built-in proposal stage with nobody
+writing code.
+
+**Automations execute in Postgres, and §6's "no server logic exists at launch" still holds.**
+Nothing was deployed. Reminders, notes, assignments and move *suggestions* are single statements,
+so they run inside the stage-change transaction — a rolled-back move sends nothing, which is the
+property an outbox exists to buy, obtained for free. The one action that leaves the database, a
+webhook, uses `pg_net`: Postgres queues the request and a background worker sends it, so no user's
+stage move ever waits on a remote host. `pg_cron` sweeps delayed rules and reconciles webhook
+responses. `pgcrypto` signs them.
+
+New extensions, all enabled by migration: `pg_cron`, `pg_net`, `pgcrypto`. Supabase Vault holds
+webhook signing secrets; the rule row stores only the secret's name.
+
+**Nothing here moves a lead on the user's behalf.** The `suggest_advance` action writes a note
+proposing a stage change and deliberately does not touch `leads.stage_id`. That was a product
+decision (2026-08-03) and it is the one place this subsystem could have contradicted the
+advisory-never-blocking principle.
+
+**What will eventually force an Edge Function is receiving, not sending.** Postgres can make an
+outbound request; it cannot be a public HTTP endpoint. Email bounce handling, WhatsApp delivery
+receipts and the `capture-form` endpoint all need one — see GAPS G-39.
+
+**One release condition, recorded here so it is not lost in a migration header.** `pg_net` cannot
+resolve a hostname before sending, so the webhook URL guard is a string check: a host whose DNS
+answers with a private address would still be reached. Only a tenant owner can create an
+automation today, aiming at their own endpoint. **Before the first external tenant**, move that
+sender into an Edge Function that resolves and validates first, or restrict webhook hosts to an
+owner-confirmed allowlist. GAPS G-41.
 
 ### 6.1 Reminders: derived urgency, not a generated row (decision, 2026-08-03)
 

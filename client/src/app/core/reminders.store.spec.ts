@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 
-import { Lead, OpenItem } from './lead.model';
+import { Lead, OpenItem, Stage } from './lead.model';
 import { LeadsStore } from './leads.store';
 import { NotifyService } from './notify.service';
 import { RemindersStore, Reminder, bandOf, deriveSuggestions } from './reminders.store';
+import { StagesStore } from './stages.store';
 import { SupabaseService } from './supabase.service';
 
 /** 09:00 local on the given day — the hour due-picker writes. */
@@ -12,8 +13,32 @@ function at(y: number, m: number, d: number, h = 9, min = 0): Date {
   return new Date(y, m - 1, d, h, min);
 }
 
+/** The one stage every seeded row and lead points at — none of these specs assert on its
+ *  content, so a single fixed open stage stands in for the whole pipeline. */
+const STAGE: Stage = {
+  id: 'stage-1',
+  name: 'שלב',
+  shortName: null,
+  position: 0,
+  kind: 'open',
+  swatch: 'slate',
+  meaning: null,
+  guidance: null,
+  driftDays: null,
+  expectsReply: false,
+  isSystem: false,
+  archivedAt: null,
+};
+
+/** A fully-resolved Reminder, for deriveSuggestions — a pure function over this exact shape. */
 function reminder(id: string, leadId: string, dueAt: Date): Reminder {
-  return { id, leadId, leadName: 'ליד', leadStatus: 'new', title: null, dueAt };
+  return { id, leadId, leadName: 'ליד', leadStage: STAGE, title: null, dueAt };
+}
+
+/** The raw shape the store keeps before resolving `stageId` into `leadStage` — what `seed`
+ *  below writes into the private `_rawRows` signal. */
+function rawRow(id: string, leadId: string, dueAt: Date) {
+  return { id, leadId, leadName: 'ליד', stageId: STAGE.id, title: null, dueAt };
 }
 
 /** Fully typed rather than cast: a cast would hide the next model change from this spec. */
@@ -25,7 +50,7 @@ function lead(id: string, reminderDueAt: Date | null = null): Lead {
     email: null,
     phone: null,
     source: 'other',
-    status: 'new',
+    stage: STAGE,
     estimatedValue: 0,
     lostReason: null,
     isDemo: false,
@@ -105,12 +130,12 @@ describe('RemindersStore', () => {
   let openItems: ReturnType<typeof signal<OpenItem[]>>;
 
   /**
-   * Seeds the store's state directly. `_rows` and `_now` are private because nothing in the
-   * app may set them — only a read may — but the banding and guard rules are worth asserting
-   * without a Supabase round trip, so the spec reaches them by bracket access.
+   * Seeds the store's state directly. `_rawRows` and `_now` are private because nothing in
+   * the app may set them — only a read may — but the banding and guard rules are worth
+   * asserting without a Supabase round trip, so the spec reaches them by bracket access.
    */
-  function seed(rows: Reminder[], now: Date): void {
-    store['_rows'].set(rows);
+  function seed(rows: ReturnType<typeof rawRow>[], now: Date): void {
+    store['_rawRows'].set(rows);
     store['_now'].set(now);
   }
 
@@ -128,6 +153,7 @@ describe('RemindersStore', () => {
         { provide: SupabaseService, useValue: {} },
         { provide: NotifyService, useValue: notify },
         { provide: LeadsStore, useValue: { openItems, leads: signal([]), tenantId: signal('t') } },
+        { provide: StagesStore, useValue: { byId: (id: string) => (id === STAGE.id ? STAGE : undefined) } },
       ],
     });
     store = TestBed.inject(RemindersStore);
@@ -136,10 +162,10 @@ describe('RemindersStore', () => {
   it('counts only overdue and today in the badge', () => {
     seed(
       [
-        reminder('r1', 'a', at(2026, 8, 1)), // overdue
-        reminder('r2', 'b', at(2026, 8, 3)), // today
-        reminder('r3', 'c', at(2026, 8, 4)), // upcoming — not the badge's business
-        reminder('r4', 'd', at(2026, 8, 30)),
+        rawRow('r1', 'a', at(2026, 8, 1)), // overdue
+        rawRow('r2', 'b', at(2026, 8, 3)), // today
+        rawRow('r3', 'c', at(2026, 8, 4)), // upcoming — not the badge's business
+        rawRow('r4', 'd', at(2026, 8, 30)),
       ],
       at(2026, 8, 3, 10, 0),
     );
@@ -160,10 +186,10 @@ describe('RemindersStore', () => {
   it('sorts overdue most-overdue-first and upcoming soonest-first', () => {
     seed(
       [
-        reminder('r1', 'a', at(2026, 8, 1)),
-        reminder('r2', 'b', at(2026, 7, 20)),
-        reminder('r3', 'c', at(2026, 8, 10)),
-        reminder('r4', 'd', at(2026, 8, 4)),
+        rawRow('r1', 'a', at(2026, 8, 1)),
+        rawRow('r2', 'b', at(2026, 7, 20)),
+        rawRow('r3', 'c', at(2026, 8, 10)),
+        rawRow('r4', 'd', at(2026, 8, 4)),
       ],
       at(2026, 8, 3),
     );
@@ -174,14 +200,14 @@ describe('RemindersStore', () => {
 
   it('refuses a past date on reschedule and says so', async () => {
     // `min` on the native input is a hint, not a validator — this is the actual guard.
-    seed([reminder('r1', 'a', at(2026, 8, 3))], at(2026, 8, 3, 10, 0));
+    seed([rawRow('r1', 'a', at(2026, 8, 3))], at(2026, 8, 3, 10, 0));
 
     await expectAsync(store.reschedule('r1', at(2026, 8, 2))).toBeResolvedTo(false);
     expect(notify.failed).toHaveBeenCalled();
   });
 
   it('accepts today on reschedule — today is not the past', () => {
-    seed([reminder('r1', 'a', at(2026, 8, 5))], at(2026, 8, 3, 10, 0));
+    seed([rawRow('r1', 'a', at(2026, 8, 5))], at(2026, 8, 3, 10, 0));
 
     expect(store['isPast'](at(2026, 8, 3, 8, 0))).toBeFalse();
   });
@@ -192,5 +218,11 @@ describe('RemindersStore', () => {
 
     openItems.set([openItem('a', 12)]);
     expect(store.isEmpty()).toBeFalse();
+  });
+
+  it('drops a row whose stage has not resolved yet, rather than showing it blank', () => {
+    seed([rawRow('r1', 'a', at(2026, 8, 1)), { ...rawRow('r2', 'b', at(2026, 8, 1)), stageId: 'ghost' }], at(2026, 8, 3));
+
+    expect(store.rows().map((r) => r.id)).toEqual(['r1']);
   });
 });

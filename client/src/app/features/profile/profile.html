@@ -135,6 +135,11 @@
   </section>
 
   <section class="sec">
+    <h2 class="sec__h lf-label">{{ pipelineLabel }}</h2>
+    <a class="b" routerLink="/settings/stages">{{ pipelineLinkLabel }}</a>
+  </section>
+
+  <section class="sec">
     <h2 class="sec__h lf-label">{{ copy.profile.session }}</h2>
 
     <button type="button" class="b" [disabled]="signingOut()" (click)="signOut()">
