@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   CdkDrag,
@@ -8,11 +8,20 @@ import {
   CdkDropListGroup,
 } from '@angular/cdk/drag-drop';
 
-import { COPY, formatValue, formatWhen } from '../../core/copy';
+import { COPY, formatWhen } from '../../core/copy';
 import { GuidanceService } from '../../core/guidance.service';
-import { CHECKLIST_ITEMS, Lead, Stage } from '../../core/lead.model';
+import { Attention, CHECKLIST_ITEMS, Lead, Stage } from '../../core/lead.model';
 import { LeadsStore } from '../../core/leads.store';
 import { LeadMenu } from '../../shared/lead-menu';
+import { ValuePipe } from '../../shared/format.pipes';
+
+/** A card's lead with its urgency flag and note line already resolved — see `columns`. */
+export interface BoardRow {
+  lead: Lead;
+  attention: Attention;
+  /** Either the checklist nudge or the last-touch stamp, never both — see `noteFor`. */
+  note: string;
+}
 
 /**
  * The board — six posted bills, running right-to-left with stage 1 at the inline-start edge.
@@ -23,7 +32,15 @@ import { LeadMenu } from '../../shared/lead-menu';
 @Component({
   selector: 'lf-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, CdkDropListGroup, CdkDropList, CdkDrag, CdkDragPlaceholder, LeadMenu],
+  imports: [
+    RouterLink,
+    CdkDropListGroup,
+    CdkDropList,
+    CdkDrag,
+    CdkDragPlaceholder,
+    LeadMenu,
+    ValuePipe,
+  ],
   templateUrl: './board.html',
   styleUrl: './board.scss',
 })
@@ -33,17 +50,40 @@ export class Board {
   private readonly router = inject(Router);
 
   protected readonly copy = COPY;
-  protected readonly formatValue = formatValue;
   protected readonly checklistTotal = CHECKLIST_ITEMS.length;
 
-  protected readonly columns = this.store.columns;
+  /**
+   * Columns whose cards already carry their urgency flag and note line. `attention(lead)`
+   * and the checklist/when decision both read the store's clock, so calling them from the
+   * template ran per card, per binding, on every change-detection pass; this derives both
+   * once per change and keeps `cdkDragData` pointed at the real lead underneath.
+   */
+  protected readonly columns = computed(() => {
+    const now = this.store.now();
+    return this.store.columns().map((column) => ({
+      stage: column.stage,
+      leads: column.leads.map((lead) => this.toRow(lead, now)),
+    }));
+  });
 
-  protected attention(lead: Lead): 'now' | 'drift' | 'none' {
-    return this.store.attentionOf(lead);
+  private toRow(lead: Lead, now: Date): BoardRow {
+    return {
+      lead,
+      attention: this.store.attentionOf(lead, now),
+      note: this.noteFor(lead, now),
+    };
   }
 
-  protected when(lead: Lead): string {
-    return formatWhen(lead.lastTouchAt, this.store.now());
+  /**
+   * The checklist nudge while a lead is open and unqualified; the last-touch stamp once it
+   * has moved on. `checklistProgress` was a copy-map call and `when` read the store's clock
+   * — both used to run from the template, per card, per change-detection pass.
+   */
+  private noteFor(lead: Lead, now: Date): string {
+    if (lead.checklistAnswered < this.checklistTotal && lead.stage.kind === 'open') {
+      return COPY.board.checklistProgress(lead.checklistAnswered, this.checklistTotal);
+    }
+    return formatWhen(lead.lastTouchAt, now);
   }
 
   protected drop(event: CdkDragDrop<Stage>, stage: Stage): void {

@@ -39,45 +39,15 @@
           <span class="band__count lf-num">{{ overdue().length }}</span>
         </h2>
 
-        @for (item of overdue(); track item.id) {
-          <article class="row" [class.row--busy]="busy(item.id)" [class.lf-sweep]="busy(item.id)">
-            <div class="row__main">
-              <h3 class="row__name">
-                <a [routerLink]="['/lead', item.leadId]">{{ item.leadName }}</a>
-              </h3>
-              <p class="row__meta">
-                <span class="row__note">{{ title(item) }}</span>
-                <lf-stage-tag [stage]="item.leadStage" [short]="true" />
-              </p>
-            </div>
-
-            <!-- overdue is carried by the band and a red stamp, never a red row -->
-            <span class="row__due row__due--late lf-num">{{ due(item) }}</span>
-
-            <div class="row__acts">
-              <button type="button" class="b" [disabled]="busy(item.id)" (click)="complete(item)">
-                {{ busy(item.id) ? copy.reminders.working : copy.reminders.complete }}
-              </button>
-              <button
-                type="button"
-                class="b b--bare"
-                [attr.aria-expanded]="openPicker() === item.id"
-                [disabled]="busy(item.id)"
-                (click)="togglePicker(item.id)"
-              >
-                {{ copy.reminders.reschedule }}
-              </button>
-            </div>
-
-            @if (openPicker() === item.id) {
-              <lf-due-picker
-                class="row__picker"
-                [busy]="busy(item.id)"
-                (picked)="move(item, $event)"
-                (cancel)="togglePicker(item.id)"
-              />
-            }
-          </article>
+        @for (row of overdue(); track row.reminder.id) {
+          <lf-reminder-row
+            [row]="row"
+            [now]="now()"
+            [late]="true"
+            (completed)="complete(row.reminder)"
+            (toggled)="togglePicker(row.reminder.id)"
+            (moved)="move(row.reminder, $event)"
+          />
         }
       </section>
     }
@@ -89,44 +59,14 @@
           <span class="band__count lf-num">{{ today().length }}</span>
         </h2>
 
-        @for (item of today(); track item.id) {
-          <article class="row" [class.row--busy]="busy(item.id)" [class.lf-sweep]="busy(item.id)">
-            <div class="row__main">
-              <h3 class="row__name">
-                <a [routerLink]="['/lead', item.leadId]">{{ item.leadName }}</a>
-              </h3>
-              <p class="row__meta">
-                <span class="row__note">{{ title(item) }}</span>
-                <lf-stage-tag [stage]="item.leadStage" [short]="true" />
-              </p>
-            </div>
-
-            <span class="row__due lf-num">{{ due(item) }}</span>
-
-            <div class="row__acts">
-              <button type="button" class="b" [disabled]="busy(item.id)" (click)="complete(item)">
-                {{ busy(item.id) ? copy.reminders.working : copy.reminders.complete }}
-              </button>
-              <button
-                type="button"
-                class="b b--bare"
-                [attr.aria-expanded]="openPicker() === item.id"
-                [disabled]="busy(item.id)"
-                (click)="togglePicker(item.id)"
-              >
-                {{ copy.reminders.reschedule }}
-              </button>
-            </div>
-
-            @if (openPicker() === item.id) {
-              <lf-due-picker
-                class="row__picker"
-                [busy]="busy(item.id)"
-                (picked)="move(item, $event)"
-                (cancel)="togglePicker(item.id)"
-              />
-            }
-          </article>
+        @for (row of today(); track row.reminder.id) {
+          <lf-reminder-row
+            [row]="row"
+            [now]="now()"
+            (completed)="complete(row.reminder)"
+            (toggled)="togglePicker(row.reminder.id)"
+            (moved)="move(row.reminder, $event)"
+          />
         }
       </section>
     }
@@ -138,44 +78,14 @@
           <span class="band__count lf-num">{{ upcoming().length }}</span>
         </h2>
 
-        @for (item of upcoming(); track item.id) {
-          <article class="row" [class.row--busy]="busy(item.id)" [class.lf-sweep]="busy(item.id)">
-            <div class="row__main">
-              <h3 class="row__name">
-                <a [routerLink]="['/lead', item.leadId]">{{ item.leadName }}</a>
-              </h3>
-              <p class="row__meta">
-                <span class="row__note">{{ title(item) }}</span>
-                <lf-stage-tag [stage]="item.leadStage" [short]="true" />
-              </p>
-            </div>
-
-            <span class="row__due lf-num">{{ due(item) }}</span>
-
-            <div class="row__acts">
-              <button type="button" class="b" [disabled]="busy(item.id)" (click)="complete(item)">
-                {{ busy(item.id) ? copy.reminders.working : copy.reminders.complete }}
-              </button>
-              <button
-                type="button"
-                class="b b--bare"
-                [attr.aria-expanded]="openPicker() === item.id"
-                [disabled]="busy(item.id)"
-                (click)="togglePicker(item.id)"
-              >
-                {{ copy.reminders.reschedule }}
-              </button>
-            </div>
-
-            @if (openPicker() === item.id) {
-              <lf-due-picker
-                class="row__picker"
-                [busy]="busy(item.id)"
-                (picked)="move(item, $event)"
-                (cancel)="togglePicker(item.id)"
-              />
-            }
-          </article>
+        @for (row of upcoming(); track row.reminder.id) {
+          <lf-reminder-row
+            [row]="row"
+            [now]="now()"
+            (completed)="complete(row.reminder)"
+            (toggled)="togglePicker(row.reminder.id)"
+            (moved)="move(row.reminder, $event)"
+          />
         }
       </section>
     }
@@ -189,19 +99,19 @@
         </h2>
         <p class="band__lead">{{ copy.reminders.suggestionsLead }}</p>
 
-        @for (item of suggestions(); track item.lead.id) {
+        @for (row of suggestionRows(); track row.suggestion.lead.id) {
           <article
             class="row row--suggest"
-            [class.row--busy]="busy(item.lead.id)"
-            [class.lf-sweep]="busy(item.lead.id)"
+            [class.row--busy]="row.busy"
+            [class.lf-sweep]="row.busy"
           >
             <div class="row__main">
               <h3 class="row__name">
-                <a [routerLink]="['/lead', item.lead.id]">{{ item.lead.name }}</a>
+                <a [routerLink]="['/lead', row.suggestion.lead.id]">{{ row.suggestion.lead.name }}</a>
               </h3>
               <p class="row__meta">
-                <span class="row__note">{{ reasonLabel[item.reason] }}</span>
-                <lf-stage-tag [stage]="item.lead.stage" [short]="true" />
+                <span class="row__note">{{ reasonLabel[row.suggestion.reason] }}</span>
+                <lf-stage-tag [stage]="row.suggestion.lead.stage" [short]="true" />
               </p>
             </div>
 
@@ -209,20 +119,20 @@
               <button
                 type="button"
                 class="b"
-                [attr.aria-expanded]="openPicker() === item.lead.id"
-                [disabled]="busy(item.lead.id)"
-                (click)="togglePicker(item.lead.id)"
+                [attr.aria-expanded]="row.pickerOpen"
+                [disabled]="row.busy"
+                (click)="togglePicker(row.suggestion.lead.id)"
               >
-                {{ busy(item.lead.id) ? copy.reminders.working : copy.reminders.setReminder }}
+                {{ row.busy ? copy.reminders.working : copy.reminders.setReminder }}
               </button>
             </div>
 
-            @if (openPicker() === item.lead.id) {
+            @if (row.pickerOpen) {
               <lf-due-picker
                 class="row__picker"
-                [busy]="busy(item.lead.id)"
-                (picked)="schedule(item, $event)"
-                (cancel)="togglePicker(item.lead.id)"
+                [busy]="row.busy"
+                (picked)="schedule(row.suggestion, $event)"
+                (cancel)="togglePicker(row.suggestion.lead.id)"
               />
             }
           </article>
@@ -230,7 +140,7 @@
 
         @if (truncated()) {
           <p class="band__cap">
-            {{ copy.reminders.suggestionsCapped(suggestions().length, allSuggestions().length) }}
+            {{ suggestionsCappedNote() }}
           </p>
         }
       </section>

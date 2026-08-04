@@ -31,7 +31,7 @@
 
     @if (!create() && lead(); as current) {
       <lf-stage-tag [stage]="current.stage" />
-      <span class="hd__value lf-num">{{ formatValue(current.estimatedValue) }}</span>
+      <span class="hd__value lf-num">{{ current.estimatedValue | lfValue }}</span>
     }
 
     <button type="button" class="hd__x lf-hit" [attr.aria-label]="copy.lead.close" (click)="attemptClose()">
@@ -71,7 +71,7 @@
         [fieldHelp]="fieldHelp.name"
         [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'name'"
         [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.name)"
+        [fieldHelpAria]="fieldHelpAria.name"
         (fieldHelpToggled)="toggleFieldHelp('name')"
       />
       <lf-text-field
@@ -83,7 +83,7 @@
         [fieldHelp]="fieldHelp.company"
         [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'company'"
         [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.company)"
+        [fieldHelpAria]="fieldHelpAria.company"
         (fieldHelpToggled)="toggleFieldHelp('company')"
       />
       <lf-text-field
@@ -97,7 +97,7 @@
         [fieldHelp]="fieldHelp.phone"
         [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'phone'"
         [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.phone)"
+        [fieldHelpAria]="fieldHelpAria.phone"
         (fieldHelpToggled)="toggleFieldHelp('phone')"
       />
       <lf-text-field
@@ -112,7 +112,7 @@
         [fieldHelp]="fieldHelp.email"
         [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'email'"
         [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.email)"
+        [fieldHelpAria]="fieldHelpAria.email"
         (fieldHelpToggled)="toggleFieldHelp('email')"
       />
 
@@ -126,7 +126,7 @@
                 class="why"
                 [attr.aria-expanded]="statusHelpOpen()"
                 aria-controls="status-why"
-                [attr.aria-label]="copy.lead.fieldHelpAria(copy.lead.fields.status)"
+                [attr.aria-label]="fieldHelpAria.status"
                 (click)="toggleFieldHelp('status')"
               >
                 {{ statusHelpOpen() ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
@@ -170,7 +170,7 @@
                 class="why"
                 [attr.aria-expanded]="sourceHelpOpen()"
                 aria-controls="source-why"
-                [attr.aria-label]="copy.lead.fieldHelpAria(copy.lead.fields.source)"
+                [attr.aria-label]="fieldHelpAria.source"
                 (click)="toggleFieldHelp('source')"
               >
                 {{ sourceHelpOpen() ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
@@ -205,7 +205,7 @@
         [fieldHelp]="fieldHelp.value"
         [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'value'"
         [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="copy.lead.fieldHelpAria(copy.lead.fields.value)"
+        [fieldHelpAria]="fieldHelpAria.value"
         (fieldHelpToggled)="toggleFieldHelp('value')"
       />
 
@@ -313,7 +313,7 @@
           <header class="block__hd">
             <h3 class="block__title" id="cl-title">{{ copy.lead.checklist.title }}</h3>
             <span class="block__count lf-num">
-              {{ copy.lead.checklist.progress(answeredCount(), checklistTotal) }}
+              {{ checklistProgress() }}
             </span>
           </header>
 
@@ -329,8 +329,8 @@
                     type="button"
                     role="radio"
                     class="seg__b"
-                    [class.seg__b--on]="answerOf(item) === option"
-                    [attr.aria-checked]="answerOf(item) === option"
+                    [class.seg__b--on]="answers()[item] === option"
+                    [attr.aria-checked]="answers()[item] === option"
                     [attr.aria-label]="answerAria[option]"
                     [disabled]="saving()"
                     (click)="setAnswer(item, option)"
@@ -365,7 +365,7 @@
           <ol class="tl">
             @for (entry of visibleActivities(); track entry.id) {
               <li class="ent" [class.ent--sys]="entry.type === 'status_changed'">
-                <span class="ent__stamp lf-num">{{ stamp(entry.occurredAt) }}</span>
+                <span class="ent__stamp lf-num">{{ entry.occurredAt | lfStamp: now() }}</span>
                 <div class="ent__body">
                   <span class="ent__type">{{ activityLabel[entry.type] }}</span>
                   @if (entry.body) {
@@ -386,7 +386,7 @@
               {{
                 timelineExpanded()
                   ? copy.lead.timeline.showLess
-                  : copy.lead.timeline.showAll(activities().length)
+                  : showAllLabel()
               }}
             </button>
           }
@@ -443,7 +443,7 @@
         </div>
       }
       @case ('delete') {
-        <p class="ft__ask">{{ copy.lead.deleteConfirm(lead()?.name ?? '', activities().length) }}</p>
+        <p class="ft__ask">{{ deleteConfirmText() }}</p>
         <div class="ft__acts">
           <button type="button" class="b b--red" (click)="confirmDelete()">
             {{ copy.lead.deleteYes }}

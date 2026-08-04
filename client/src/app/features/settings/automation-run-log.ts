@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
 import { Automation, AutomationsStore, AutomationRun } from '../../core/automations.store';
 import { Stage } from '../../core/lead.model';
@@ -8,6 +8,14 @@ import { COPY_AUTOMATIONS } from './automations.copy';
 interface DryRunLead {
   id: string;
   name: string;
+}
+
+/** A run with its display strings resolved — see `displayRuns` below. */
+interface RunRow {
+  run: AutomationRun;
+  statusLabel: string;
+  leadLabel: string;
+  when: string;
 }
 
 /**
@@ -83,17 +91,29 @@ export class AutomationRunLog {
     this.dryResult.set(this.copy.dryRunResult(lead.name, this.ruleSentence()));
   }
 
-  protected statusLabel(status: AutomationRun['status']): string {
-    return this.copy.runStatus[status];
-  }
-
-  protected leadLabel(run: AutomationRun): string {
-    return run.leadName ?? this.copy.runLeadFallback;
-  }
-
-  protected formatWhen(date: Date): string {
-    return date.toLocaleString('he-IL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-  }
+  /**
+   * One row's status label, lead name and timestamp, resolved once per change instead of
+   * three method calls per row per change-detection pass — the list renders up to 50 runs,
+   * so a per-row lookup here is the one that actually costs something.
+   *
+   * `when` stays a plain field on this view model rather than a pipe: unlike `lfWhen` it
+   * does not read a clock (it always prints the absolute date/time, never "today"), so it
+   * is a pure function of `createdAt` alone and has exactly one call site — introducing a
+   * pipe for a single consumer would be indirection with no reuse to justify it.
+   */
+  protected readonly displayRuns = computed<RunRow[]>(() =>
+    this.runs().map((run) => ({
+      run,
+      statusLabel: this.copy.runStatus[run.status],
+      leadLabel: run.leadName ?? this.copy.runLeadFallback,
+      when: run.createdAt.toLocaleString('he-IL', {
+        day: 'numeric',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    })),
+  );
 
   private async loadRuns(): Promise<void> {
     this.runsLoading.set(true);

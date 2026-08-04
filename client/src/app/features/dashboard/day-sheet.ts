@@ -1,14 +1,21 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { LucideCircleQuestionMark, LucidePhone, LucideX } from '@lucide/angular';
 
-import { COPY, OPEN_ACTION, OPEN_REASON, formatAge, formatValue } from '../../core/copy';
+import { COPY, OPEN_ACTION, OPEN_REASON } from '../../core/copy';
 import { Lead, OpenItem } from '../../core/lead.model';
 import { HelpService } from '../../core/help.service';
 import { LeadsStore } from '../../core/leads.store';
 import { DuePicker } from '../../shared/due-picker';
+import { AgePipe, ValuePipe } from '../../shared/format.pipes';
 import { DaySheetHelp } from './day-sheet-help';
+
+/** An open item with its busy state already decided — see `rows`. */
+export interface DaySheetRow {
+  item: OpenItem;
+  busy: boolean;
+}
 
 /**
  * The day sheet — the surface's thesis. What is owed today is posted at display scale on
@@ -26,6 +33,8 @@ import { DaySheetHelp } from './day-sheet-help';
     LucideX,
     DuePicker,
     DaySheetHelp,
+    ValuePipe,
+    AgePipe,
   ],
   templateUrl: './day-sheet.html',
   styleUrl: './day-sheet.scss',
@@ -38,14 +47,11 @@ export class DaySheet {
   protected readonly copy = COPY;
   protected readonly reasonLabel = OPEN_REASON;
   protected readonly actionLabel = OPEN_ACTION;
-  protected readonly formatValue = formatValue;
-  protected readonly formatAge = formatAge;
 
   /** Local, not in HelpService: that one owns the product-wide legend reached from the
    *  masthead, and this popup answers one question about one screen. */
   protected readonly helpOpen = signal(false);
 
-  protected readonly items = this.store.visibleOpenItems;
   protected readonly allItems = this.store.openItems;
   protected readonly hasHidden = this.store.hasHiddenOpenItems;
   protected readonly expanded = this.store.sheetExpanded;
@@ -63,9 +69,18 @@ export class DaySheet {
   /** Which item's day picker is open. One at a time, same rule as the reminders list. */
   protected readonly openPicker = signal<string | null>(null);
 
-  protected busy(lead: Lead): boolean {
-    return this.busyId() === lead.id;
-  }
+  /**
+   * Visible items paired with their busy state. `busy(item.lead)` was a component method
+   * called six times per row from the template — once per class/attr binding — so it ran
+   * six lookups per row on every change-detection pass. This derives it once per change.
+   */
+  protected readonly rows = computed<DaySheetRow[]>(() => {
+    const busyId = this.busyId();
+    return this.store.visibleOpenItems().map((item) => ({
+      item,
+      busy: busyId === item.lead.id,
+    }));
+  });
 
   /**
    * The one tap stays only where the verb names a concrete act (`חייג`): those reasons

@@ -73,18 +73,18 @@
         </div>
       } @else {
         <ul class="run-list">
-          @for (run of runs(); track run.id) {
+          @for (row of displayRuns(); track row.run.id) {
             <li class="run">
               <div class="run__hd">
-                <span class="run__status run__status--{{ run.status }}">{{ statusLabel(run.status) }}</span>
-                <span class="run__when">{{ formatWhen(run.createdAt) }}</span>
+                <span class="run__status run__status--{{ row.run.status }}">{{ row.statusLabel }}</span>
+                <span class="run__when">{{ row.when }}</span>
               </div>
-              <p class="run__lead">{{ leadLabel(run) }}</p>
-              @if (run.skipReason) {
-                <p class="run__reason">{{ run.skipReason }}</p>
+              <p class="run__lead">{{ row.leadLabel }}</p>
+              @if (row.run.skipReason) {
+                <p class="run__reason">{{ row.run.skipReason }}</p>
               }
-              @if (run.error) {
-                <p class="run__reason run__reason--error">{{ run.error }}</p>
+              @if (row.run.error) {
+                <p class="run__reason run__reason--error">{{ row.run.error }}</p>
               }
             </li>
           }

@@ -51,6 +51,11 @@ export class AutomationRow {
 
   protected readonly isSuspended = computed(() => this.automation().suspendedAt !== null);
 
+  /** The delete-confirm sentence, built from `sentence()` — resolved once per change
+   *  instead of on every pass the confirm panel is open for. Named apart from the
+   *  `deleteConfirm` signal above (that one is "is the panel open"; this is its text). */
+  protected readonly deleteConfirmMessage = computed(() => this.copy.deleteConfirm(this.sentence()));
+
   protected openEdit(): void {
     this.editing.set(true);
   }

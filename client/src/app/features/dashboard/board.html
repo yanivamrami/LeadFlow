@@ -21,44 +21,38 @@
         [cdkDropListData]="column.stage"
         (cdkDropListDropped)="drop($event, column.stage)"
       >
-        @for (lead of column.leads; track lead.id) {
+        @for (row of column.leads; track row.lead.id) {
           <article
             class="card"
-            [class]="'card--' + attention(lead)"
-            [class.card--won]="lead.stage.kind === 'won'"
-            [class.card--lost]="lead.stage.kind === 'lost'"
+            [class]="'card--' + row.attention"
+            [class.card--won]="row.lead.stage.kind === 'won'"
+            [class.card--lost]="row.lead.stage.kind === 'lost'"
             cdkDrag
-            [cdkDragData]="lead"
+            [cdkDragData]="row.lead"
           >
             <div class="card__ph" *cdkDragPlaceholder>{{ copy.board.dropHere }}</div>
 
             <div class="card__l1">
               <h4 class="card__name">
-                <a class="card__open" [routerLink]="['/lead', lead.id]">{{ lead.name }}</a>
+                <a class="card__open" [routerLink]="['/lead', row.lead.id]">{{ row.lead.name }}</a>
               </h4>
               <lf-lead-menu
-                [lead]="lead"
-                (moveTo)="move(lead, $event)"
-                (logActivity)="log(lead)"
-                (snooze)="snooze(lead, $event)"
-                (deleteLead)="remove(lead)"
+                [lead]="row.lead"
+                (moveTo)="move(row.lead, $event)"
+                (logActivity)="log(row.lead)"
+                (snooze)="snooze(row.lead, $event)"
+                (deleteLead)="remove(row.lead)"
               />
             </div>
 
             <div class="card__l2">
-              @if (lead.company) {
-                <span class="card__co">{{ lead.company }}</span>
+              @if (row.lead.company) {
+                <span class="card__co">{{ row.lead.company }}</span>
               }
-              <span class="card__value lf-num">{{ formatValue(lead.estimatedValue) }}</span>
+              <span class="card__value lf-num">{{ row.lead.estimatedValue | lfValue }}</span>
             </div>
 
-            <p class="card__when">
-              @if (lead.checklistAnswered < checklistTotal && lead.stage.kind === 'open') {
-                {{ copy.board.checklistProgress(lead.checklistAnswered, checklistTotal) }}
-              } @else {
-                {{ when(lead) }}
-              }
-            </p>
+            <p class="card__when">{{ row.note }}</p>
           </article>
         } @empty {
           <p class="col__empty">{{ copy.board.emptyColumn }}</p>

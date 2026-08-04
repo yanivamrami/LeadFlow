@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { COPY, OPEN_REASON, formatDue } from '../../core/copy';
+import { COPY, OPEN_REASON } from '../../core/copy';
 import { Reminder, RemindersStore, Suggestion } from '../../core/reminders.store';
 import { DuePicker } from '../../shared/due-picker';
 import { StageTag } from '../../shared/stage-tag';
+import { ReminderRow, ReminderRowComponent } from './reminder-row';
 
 /**
  * Reminders — §4.1. The *explicit* ones: rows a person scheduled, which can be completed
@@ -20,7 +21,7 @@ import { StageTag } from '../../shared/stage-tag';
 @Component({
   selector: 'lf-reminders',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StageTag, DuePicker],
+  imports: [RouterLink, StageTag, DuePicker, ReminderRowComponent],
   templateUrl: './reminders.html',
   styleUrl: './reminders.scss',
 })
@@ -30,12 +31,14 @@ export class Reminders {
   protected readonly copy = COPY;
   protected readonly reasonLabel = OPEN_REASON;
 
-  protected readonly overdue = this.store.overdue;
-  protected readonly today = this.store.today;
-  protected readonly upcoming = this.store.upcoming;
   protected readonly suggestions = this.store.suggestions;
   protected readonly allSuggestions = this.store.allSuggestions;
   protected readonly truncated = this.store.suggestionsTruncated;
+
+  /** "showing N of M" for the suggestions band, resolved once per change. */
+  protected readonly suggestionsCappedNote = computed(() =>
+    COPY.reminders.suggestionsCapped(this.suggestions().length, this.allSuggestions().length),
+  );
   protected readonly loading = this.store.loading;
   protected readonly loaded = this.store.loaded;
   protected readonly failed = this.store.failed;
@@ -45,22 +48,44 @@ export class Reminders {
   /** Which row has its date control open. One at a time. */
   protected readonly openPicker = signal<string | null>(null);
 
+  /** The clock the due stamps are measured against; the pipe takes it as an argument. */
+  protected readonly now = this.store.now;
+
   protected readonly skeletonRows = [0, 1, 2];
+
+  /**
+   * The three bands, each mapped to rows that already know their title, their busy state and
+   * whether their picker is open. One derivation per change instead of six lookups per row
+   * per change-detection pass.
+   */
+  protected readonly overdue = computed(() => this.toRows(this.store.overdue()));
+  protected readonly today = computed(() => this.toRows(this.store.today()));
+  protected readonly upcoming = computed(() => this.toRows(this.store.upcoming()));
+
+  /** Suggestion rows key their busy state on the lead, since no reminder row exists yet. */
+  protected readonly suggestionRows = computed(() => {
+    const busyId = this.busyId();
+    const open = this.openPicker();
+    return this.store.suggestions().map((suggestion) => ({
+      suggestion,
+      busy: busyId === suggestion.lead.id,
+      pickerOpen: open === suggestion.lead.id,
+    }));
+  });
 
   constructor() {
     void this.store.load();
   }
 
-  protected due(reminder: Reminder): string {
-    return formatDue(reminder.dueAt, this.store.now());
-  }
-
-  protected title(reminder: Reminder): string {
-    return this.store.titleFor(reminder);
-  }
-
-  protected busy(key: string): boolean {
-    return this.busyId() === key;
+  private toRows(reminders: readonly Reminder[]): ReminderRow[] {
+    const busyId = this.busyId();
+    const open = this.openPicker();
+    return reminders.map((reminder) => ({
+      reminder,
+      title: this.store.titleFor(reminder),
+      busy: busyId === reminder.id,
+      pickerOpen: open === reminder.id,
+    }));
   }
 
   protected togglePicker(key: string): void {

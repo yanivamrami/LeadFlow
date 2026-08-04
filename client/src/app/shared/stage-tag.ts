@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { Stage } from '../core/lead.model';
 
@@ -55,15 +55,24 @@ export class StageTag {
   /** Short form where the column or filter already supplies the context. */
   readonly short = input(false);
 
-  protected tagClass(): string {
+  /**
+   * These were plain methods, called from the template as `tagClass()` / `label()` — read
+   * as zero-arg signal reads at a glance, but they were not: each call re-derived the
+   * string from `stage()`/`short()` on every change-detection pass. This component is
+   * mounted many times at once (board, register, day sheet, reminders, the legend), so the
+   * per-instance cost repeats everywhere it appears. `computed()` derives it once per
+   * actual change instead, with no template change needed since a computed signal is
+   * still called with `()`.
+   */
+  protected readonly tagClass = computed(() => {
     const stage = this.stage();
     if (stage.kind === 'won') return 'tag tag--won';
     if (stage.kind === 'lost') return 'tag tag--lost';
     return `tag tag--sw-${stage.swatch}`;
-  }
+  });
 
-  protected label(): string {
+  protected readonly label = computed(() => {
     const stage = this.stage();
     return this.short() ? (stage.shortName ?? stage.name) : stage.name;
-  }
+  });
 }

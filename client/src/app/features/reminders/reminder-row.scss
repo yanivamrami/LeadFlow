@@ -1,0 +1,63 @@
+/* Row styles, moved with the row component. Component styles are scoped, so they had to
+   travel with the markup they describe. */
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--lf-space-3);
+  row-gap: var(--lf-space-2);
+  padding-block: var(--lf-space-3);
+  border-block-start: 1px solid var(--lf-rule-soft);
+}
+.row:first-of-type { border-block-start: 0; }
+.row--busy { opacity: 0.72; }
+.row__main { min-inline-size: 0; }
+.row__name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row__name a {
+  color: inherit;
+  text-decoration: none;
+}
+.row__name a:hover { color: var(--lf-red-text); }
+.row__name a:focus-visible { outline: 3px solid var(--lf-red); outline-offset: 2px; }
+.row__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px var(--lf-space-2);
+  margin: 5px 0 0;
+  min-inline-size: 0;
+}
+.row__note {
+  font-size: 13px;
+  color: var(--lf-muted);
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row__due {
+  grid-column: 2;
+  font-size: 13px;
+  color: var(--lf-muted);
+  white-space: nowrap;
+  padding-block-start: 3px;
+}
+.row__due--late {
+  color: var(--lf-red-text);
+  font-weight: 800;
+}
+.row__acts {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lf-space-2);
+}
+.row__picker { grid-column: 1 / -1; }

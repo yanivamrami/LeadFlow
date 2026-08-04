@@ -82,12 +82,25 @@ export class Stages {
   private readonly _leadCountsFailed = signal(false);
   protected readonly leadCountsFailed = this._leadCountsFailed.asReadonly();
 
+  /** Each row paired with its own count, resolved once per change instead of a `Map.get`
+   *  per row per change-detection pass — `leadCountFor` stays below for `onArchive`'s own
+   *  one-off read, which is plain TS code on a click, not a per-pass template binding. */
+  protected readonly stageRows = computed<{ stage: Stage; leadCount: number | null }[]>(() => {
+    const counts = this.leadCounts();
+    return this.rows().map((stage) => ({
+      stage,
+      leadCount: counts ? (counts.get(stage.id) ?? 0) : null,
+    }));
+  });
+
   constructor() {
     void this.stagesStore.load();
     void this.loadLeadCounts();
   }
 
-  protected leadCountFor(stageId: string): number | null {
+  /** Used only from `onArchive`'s own click handler now — the template reads counts off
+   *  `stageRows()` instead. */
+  private leadCountFor(stageId: string): number | null {
     const counts = this.leadCounts();
     if (!counts) return null;
     return counts.get(stageId) ?? 0;

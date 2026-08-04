@@ -5,7 +5,7 @@
       class="handle lf-hit"
       cdkDragHandle
       [disabled]="busy()"
-      [attr.aria-label]="copyStages.dragHandleLabel(stage().name)"
+      [attr.aria-label]="dragHandleLabel()"
     >
       <svg lucideGripVertical aria-hidden="true"></svg>
     </button>
@@ -114,7 +114,7 @@
 
   <div class="row__ft">
     <p class="row__count">
-      {{ leadCount() === null ? copyStages.leadCountUnknown : copyStages.leadCount(leadCount()!) }}
+      {{ leadCountLabel() }}
     </p>
 
     <div class="archive">
@@ -128,7 +128,7 @@
         </button>
       } @else {
         @if (verdict() === 'needs-destination') {
-          <p class="archive__note">{{ copy.stages.archiveNeedsDestination(leadCount()!) }}</p>
+          <p class="archive__note">{{ archiveNeedsDestinationNote() }}</p>
           <label class="dest">
             <span class="lf-label">{{ copy.stages.archiveDestination }}</span>
             <select
@@ -141,11 +141,11 @@
               }
             </select>
           </label>
-          @if (destinationId(); as dest) {
-            <p class="archive__note">{{ copyStages.willMove(leadCount()!, destinationName(dest)) }}</p>
+          @if (destinationId()) {
+            <p class="archive__note">{{ willMoveNote() }}</p>
           }
         } @else {
-          <p class="archive__note">{{ copyStages.archiveConfirm(stage().name) }}</p>
+          <p class="archive__note">{{ archiveConfirmNote() }}</p>
         }
 
         <div class="archive__acts">

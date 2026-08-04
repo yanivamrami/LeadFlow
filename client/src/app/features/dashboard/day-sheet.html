@@ -36,58 +36,58 @@
       </div>
     }
   } @else {
-  @for (item of items(); track item.lead.id) {
+  @for (row of rows(); track row.item.lead.id) {
     <article
       class="item"
-      [class.item--busy]="busy(item.lead)"
-      [class.lf-sweep]="busy(item.lead)"
-      [attr.aria-busy]="busy(item.lead)"
+      [class.item--busy]="row.busy"
+      [class.lf-sweep]="row.busy"
+      [attr.aria-busy]="row.busy"
     >
       <div class="item__l1">
         <h3 class="item__name">
-          <a class="item__open" [routerLink]="['/lead', item.lead.id]">{{ item.lead.name }}</a>
+          <a class="item__open" [routerLink]="['/lead', row.item.lead.id]">{{ row.item.lead.name }}</a>
         </h3>
-        <span class="item__value lf-num">{{ formatValue(item.lead.estimatedValue) }}</span>
+        <span class="item__value lf-num">{{ row.item.lead.estimatedValue | lfValue }}</span>
       </div>
 
       <p class="item__why">
-        <span class="item__age lf-label">{{ formatAge(item.age) }}</span>
-        <span>{{ reasonLabel[item.reason] }}</span>
+        <span class="item__age lf-label">{{ row.item.age | lfAge }}</span>
+        <span>{{ reasonLabel[row.item.reason] }}</span>
       </p>
 
       <div class="item__actions">
         <button
           type="button"
           class="b b--solid"
-          [disabled]="busy(item.lead)"
-          (click)="act(item)"
+          [disabled]="row.busy"
+          (click)="act(row.item)"
         >
-          @if (busy(item.lead)) {
+          @if (row.busy) {
             {{ copy.sheet.working }}
           } @else {
-            @if (actionLabel[item.reason] === 'חייג') {
+            @if (actionLabel[row.item.reason] === 'חייג') {
               <svg lucidePhone aria-hidden="true"></svg>
             }
-            {{ actionLabel[item.reason] }}
+            {{ actionLabel[row.item.reason] }}
           }
         </button>
         <button
           type="button"
           class="b b--bare"
-          [attr.aria-expanded]="openPicker() === item.lead.id"
-          [disabled]="busy(item.lead)"
-          (click)="togglePicker(item.lead.id)"
+          [attr.aria-expanded]="openPicker() === row.item.lead.id"
+          [disabled]="row.busy"
+          (click)="togglePicker(row.item.lead.id)"
         >
           {{ copy.sheet.snooze }}
         </button>
       </div>
 
-      @if (openPicker() === item.lead.id) {
+      @if (openPicker() === row.item.lead.id) {
         <lf-due-picker
           class="item__picker"
-          [busy]="busy(item.lead)"
-          (picked)="pickSnooze(item.lead, $event)"
-          (cancel)="togglePicker(item.lead.id)"
+          [busy]="row.busy"
+          (picked)="pickSnooze(row.item.lead, $event)"
+          (cancel)="togglePicker(row.item.lead.id)"
         />
       }
     </article>
@@ -115,7 +115,7 @@
         <div class="done__row">
           <span class="done__name">{{ lead.name }}</span>
           <span class="done__note">{{ lead.clearedToday }}</span>
-          <span class="done__value lf-num">{{ formatValue(lead.estimatedValue) }}</span>
+          <span class="done__value lf-num">{{ lead.estimatedValue | lfValue }}</span>
         </div>
       }
     </div>

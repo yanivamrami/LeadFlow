@@ -18,9 +18,9 @@
     </label>
   </header>
 
-  @if (sourceFilterLabel(); as label) {
+  @if (sourceFilterText(); as text) {
     <div class="reg__source">
-      <span class="reg__source-label">{{ copy.register.sourceFilter(label) }}</span>
+      <span class="reg__source-label">{{ text }}</span>
       <button type="button" class="reg__source-clear" (click)="clearSource()">
         {{ copy.register.clearSourceFilter }}
       </button>
@@ -51,56 +51,56 @@
       </div>
     }
   } @else {
-  @for (lead of leads(); track lead.id) {
-    <article class="row" [class]="'row--' + attention(lead)" [class.row--demo]="lead.isDemo">
+  @for (row of rows(); track row.lead.id) {
+    <article class="row" [class]="'row--' + row.attention" [class.row--demo]="row.lead.isDemo">
       <span class="row__flag" aria-hidden="true"></span>
 
       <div class="row__id">
         <h3 class="row__name">
           <!-- the whole name is the link; the kebab sits outside it, so it cannot be
                swallowed by the row's navigation -->
-          <a class="row__open" [routerLink]="['/lead', lead.id]">{{ lead.name }}</a>
-          @if (lead.isDemo) {
+          <a class="row__open" [routerLink]="['/lead', row.lead.id]">{{ row.lead.name }}</a>
+          @if (row.lead.isDemo) {
             <span class="stamp">{{ copy.register.demoFlag }}</span>
           }
         </h3>
         <p class="row__meta">
-          @if (lead.isDemo) {
+          @if (row.lead.isDemo) {
             {{ copy.register.demoNote }}
           } @else {
-            @if (lead.company) {
-              <span>{{ lead.company }}</span>
+            @if (row.lead.company) {
+              <span>{{ row.lead.company }}</span>
             }
-            @if (attention(lead) === 'drift') {
+            @if (row.attention === 'drift') {
               <span class="row__sep">·</span>
-              <span>{{ silentDays(lead) }} ימים {{ copy.register.noContact }}</span>
-            } @else if (lead.lostReason) {
+              <span>{{ row.silentDays }} ימים {{ copy.register.noContact }}</span>
+            } @else if (row.lead.lostReason) {
               <span class="row__sep">·</span>
-              <span>סיבה: {{ lead.lostReason }}</span>
+              <span>סיבה: {{ row.lead.lostReason }}</span>
             }
           }
         </p>
       </div>
 
       <div class="row__stage">
-        <lf-stage-tag [stage]="lead.stage" />
-        @if (attention(lead) !== 'none') {
+        <lf-stage-tag [stage]="row.lead.stage" />
+        @if (row.attention !== 'none') {
           <span class="lf-sr">
-            {{ attention(lead) === 'now' ? copy.a11y.attentionNow : copy.a11y.attentionDrift }}
+            {{ row.attention === 'now' ? copy.a11y.attentionNow : copy.a11y.attentionDrift }}
           </span>
         }
       </div>
 
-      <div class="row__source">{{ sourceLabel[lead.source] }}</div>
-      <div class="row__value lf-num">{{ formatValue(lead.estimatedValue) }}</div>
-      <div class="row__when">{{ when(lead) }}</div>
+      <div class="row__source">{{ sourceLabel[row.lead.source] }}</div>
+      <div class="row__value lf-num">{{ row.lead.estimatedValue | lfValue }}</div>
+      <div class="row__when">{{ row.lead.lastTouchAt | lfWhen: now() }}</div>
 
       <lf-lead-menu
-        [lead]="lead"
-        (moveTo)="move(lead, $event)"
-        (logActivity)="log(lead)"
-        (snooze)="snooze(lead, $event)"
-        (deleteLead)="remove(lead)"
+        [lead]="row.lead"
+        (moveTo)="move(row.lead, $event)"
+        (logActivity)="log(row.lead)"
+        (snooze)="snooze(row.lead, $event)"
+        (deleteLead)="remove(row.lead)"
       />
     </article>
   } @empty {
@@ -128,7 +128,7 @@
 
   @if (leads().length && !loading()) {
     <p class="reg__foot">
-      {{ copy.register.showing(leads().length, total()) }} · {{ copy.register.end }}
+      {{ showingNote() }} · {{ copy.register.end }}
     </p>
   }
 </section>

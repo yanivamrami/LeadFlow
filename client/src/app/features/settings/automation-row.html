@@ -48,7 +48,7 @@
       }
 
       @if (deleteConfirm()) {
-        <p class="delete-confirm">{{ copy.deleteConfirm(sentence()) }}</p>
+        <p class="delete-confirm">{{ deleteConfirmMessage() }}</p>
         <button type="button" class="b b--danger" [disabled]="busy()" (click)="confirmDelete()">
           {{ busy() ? copy.working : copy.deleteConfirmAct }}
         </button>
@@ -68,7 +68,7 @@
           {{ copy.deleteAct }}
         </button>
       } @else {
-        <p class="delete-confirm">{{ copy.deleteConfirm(sentence()) }}</p>
+        <p class="delete-confirm">{{ deleteConfirmMessage() }}</p>
         <button type="button" class="b b--danger" [disabled]="busy()" (click)="confirmDelete()">
           {{ busy() ? copy.working : copy.deleteConfirmAct }}
         </button>

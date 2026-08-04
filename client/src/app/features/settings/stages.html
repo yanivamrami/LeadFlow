@@ -43,21 +43,21 @@
       [cdkDropListDisabled]="stagesStore.busyId() === 'reorder'"
       (cdkDropListDropped)="onDrop($event)"
     >
-      @for (stage of rows(); track stage.id) {
+      @for (row of stageRows(); track row.stage.id) {
         <lf-stage-row
           cdkDrag
           class="list__item"
-          [stage]="stage"
-          [leadCount]="leadCountFor(stage.id)"
+          [stage]="row.stage"
+          [leadCount]="row.leadCount"
           [allStages]="all()"
-          [busy]="stagesStore.busyId() === stage.id"
-          (renamed)="onRenamed(stage, $event)"
-          (patched)="onPatched(stage, $event)"
-          (archiveRequested)="onArchive(stage, $event)"
+          [busy]="stagesStore.busyId() === row.stage.id"
+          (renamed)="onRenamed(row.stage, $event)"
+          (patched)="onPatched(row.stage, $event)"
+          (archiveRequested)="onArchive(row.stage, $event)"
         >
           <div class="drop-ph" *cdkDragPlaceholder>{{ copyStages.dropHere }}</div>
           <div class="drag-ghost" *cdkDragPreview>
-            <span class="drag-ghost__name">{{ stage.name }}</span>
+            <span class="drag-ghost__name">{{ row.stage.name }}</span>
           </div>
         </lf-stage-row>
       }

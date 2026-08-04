@@ -39,14 +39,14 @@
         <div class="card">
           <span class="card__tab">{{ copy.insights.totalLabel }}</span>
           <p class="card__figure lf-num">{{ s.total }}</p>
-          <p class="card__meaning">{{ copy.insights.totalMeaning(s.open) }}</p>
+          <p class="card__meaning">{{ totalMeaning() }}</p>
         </div>
 
         <div class="card card--hero">
           <span class="card__tab">{{ copy.insights.conversionLabel }}</span>
           @if (conversion() !== null) {
             <p class="card__figure lf-num">{{ conversion() }}%</p>
-            <p class="card__meaning">{{ copy.insights.conversionMeaning(s.won, s.decided) }}</p>
+            <p class="card__meaning">{{ conversionMeaning() }}</p>
           } @else {
             <p class="card__figure card__figure--none lf-num">—</p>
             <p class="card__meaning">{{ copy.insights.conversionNone }}</p>
@@ -55,7 +55,7 @@
 
         <div class="card">
           <span class="card__tab">{{ copy.insights.openValueLabel }}</span>
-          <p class="card__figure lf-num">{{ formatValue(s.open_value) }}</p>
+          <p class="card__figure lf-num">{{ s.open_value | lfValue }}</p>
           <p class="card__meaning">{{ copy.insights.openValueMeaning }}</p>
         </div>
       </div>
@@ -65,7 +65,7 @@
            figure here that is already banked. -->
       <div class="closed">
         <span class="closed__tab">{{ copy.insights.wonValueLabel }}</span>
-        <p class="closed__figure lf-num">{{ formatValue(s.won_value) }}</p>
+        <p class="closed__figure lf-num">{{ s.won_value | lfValue }}</p>
         <p class="closed__meaning">{{ copy.insights.wonValueMeaning }}</p>
       </div>
 
@@ -81,7 +81,7 @@
                 <span class="bar__label">{{ row.stage.shortName ?? row.stage.name }}</span>
                 <span class="bar__track">
                   <span
-                    [class]="barClass(row.stage)"
+                    [class]="row.barClass"
                     [style.inline-size.%]="row.share"
                     aria-hidden="true"
                   ></span>
@@ -135,7 +135,7 @@
           @if (!canCompare()) {
             <aside class="thin">
               <p class="thin__title">{{ copy.insights.thinTitle }}</p>
-              <p class="thin__body">{{ copy.insights.thinBody(shortBy()) }}</p>
+              <p class="thin__body">{{ thinBodyText() }}</p>
             </aside>
           }
         </section>

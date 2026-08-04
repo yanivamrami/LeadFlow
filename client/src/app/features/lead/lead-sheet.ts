@@ -29,7 +29,6 @@ import {
   LeadFieldKey,
   LOST_REASONS,
   SOURCE_LABEL,
-  formatValue,
   formatDue,
 } from '../../core/copy';
 import { GuidanceService } from '../../core/guidance.service';
@@ -51,9 +50,11 @@ import { hasErrors, validateLeadForm } from '../../core/lead-validation';
 import { LeadsStore } from '../../core/leads.store';
 import { StagesStore } from '../../core/stages.store';
 import { FormError } from '../../shared/form-error';
+import { ValuePipe } from '../../shared/format.pipes';
 import { StageTag } from '../../shared/stage-tag';
 import { DuePicker } from '../../shared/due-picker';
 import { TextField } from '../../shared/text-field';
+import { StampPipe } from './stamp.pipe';
 
 /** How many history entries show before the timeline asks to be expanded. */
 const TIMELINE_PAGE = 20;
@@ -87,6 +88,8 @@ type FooterMode = 'default' | 'dirty' | 'delete';
     FormError,
     StageTag,
     DuePicker,
+    ValuePipe,
+    StampPipe,
   ],
   templateUrl: './lead-sheet.html',
   styleUrl: './lead-sheet.scss',
@@ -127,7 +130,22 @@ export class LeadSheet {
   protected readonly checklistTotal = CHECKLIST_ITEMS.length;
   /** Typed so the template can index the label maps without casting. */
   protected readonly answerOptions: readonly QualificationAnswer[] = ['yes', 'no', 'unknown'];
-  protected readonly formatValue = formatValue;
+
+  /**
+   * The per-field "why does this matter" aria-label, resolved once per field instead of on
+   * every change-detection pass: `copy.lead.fieldHelpAria(...)` was being called from seven
+   * bindings across this template for a string that never changes once COPY is loaded.
+   * A plain readonly map, not a `computed()` — nothing here depends on a signal.
+   */
+  protected readonly fieldHelpAria: Record<LeadFieldKey, string> = {
+    name: COPY.lead.fieldHelpAria(COPY.lead.fields.name),
+    company: COPY.lead.fieldHelpAria(COPY.lead.fields.company),
+    phone: COPY.lead.fieldHelpAria(COPY.lead.fields.phone),
+    email: COPY.lead.fieldHelpAria(COPY.lead.fields.email),
+    source: COPY.lead.fieldHelpAria(COPY.lead.fields.source),
+    value: COPY.lead.fieldHelpAria(COPY.lead.fields.value),
+    status: COPY.lead.fieldHelpAria(COPY.lead.fields.status),
+  };
 
   protected readonly create = computed(() => this.id() === undefined);
   protected readonly lead = computed<Lead | undefined>(() =>
@@ -320,9 +338,10 @@ export class LeadSheet {
 
   protected readonly answeredCount = computed(() => Object.keys(this.answers()).length);
 
-  protected answerOf(item: ChecklistItem): QualificationAnswer | undefined {
-    return this.answers()[item];
-  }
+  /** "N of 5 answered". */
+  protected readonly checklistProgress = computed(() =>
+    COPY.lead.checklist.progress(this.answeredCount(), this.checklistTotal),
+  );
 
   protected setAnswer(item: ChecklistItem, answer: QualificationAnswer): void {
     this.touchedAnswers.update((current) => ({ ...current, [item]: answer }));
@@ -340,6 +359,16 @@ export class LeadSheet {
   /* ---------- timeline ---------- */
 
   protected readonly activities = computed<Activity[]>(() => this.lead()?.activities ?? []);
+
+  /** The timeline's expand label, which names the full count. */
+  protected readonly showAllLabel = computed(() =>
+    COPY.lead.timeline.showAll(this.activities().length),
+  );
+
+  /** The delete confirmation names the lead and how many history entries go with it. */
+  protected readonly deleteConfirmText = computed(() =>
+    COPY.lead.deleteConfirm(this.lead()?.name ?? '', this.activities().length),
+  );
   protected readonly visibleActivities = computed(() =>
     this.timelineExpanded() ? this.activities() : this.activities().slice(0, TIMELINE_PAGE),
   );
@@ -347,16 +376,9 @@ export class LeadSheet {
     () => this.activities().length > TIMELINE_PAGE,
   );
 
-  /** Dated, with the time on anything from today — two entries a day must be tellable apart. */
-  protected stamp(at: Date): string {
-    const now = this.store.now();
-    const sameDay = at.toDateString() === now.toDateString();
-    const time = at.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-    if (sameDay) return `היום ${time}`;
-    const yesterday = new Date(now.getTime() - 86_400_000);
-    if (at.toDateString() === yesterday.toDateString()) return `אתמול ${time}`;
-    return at.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
-  }
+  /** The clock the timeline's stamps are measured against — the `lfStamp` pipe takes it as
+   *  an argument rather than reading a clock itself; see stamp.pipe.ts. */
+  protected readonly now = this.store.now;
 
   /* ---------- validation ---------- */
 

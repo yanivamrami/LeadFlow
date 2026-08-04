@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { COPY, SOURCE_LABEL, formatValue } from '../../core/copy';
+import { COPY, SOURCE_LABEL } from '../../core/copy';
 import { InsightsStore } from '../../core/insights.store';
 import { Stage } from '../../core/lead.model';
+import { ValuePipe } from '../../shared/format.pipes';
 
 /**
  * Insights — the PRD's fourth pillar. Read mode: the visitor came to understand, so
@@ -24,7 +25,7 @@ import { Stage } from '../../core/lead.model';
 @Component({
   selector: 'lf-insights',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, ValuePipe],
   templateUrl: './insights.html',
   styleUrl: './insights.scss',
 })
@@ -33,18 +34,43 @@ export class Insights {
 
   protected readonly copy = COPY;
   protected readonly sourceLabel = SOURCE_LABEL;
-  protected readonly formatValue = formatValue;
 
   protected readonly stats = this.store.stats;
   protected readonly loading = this.store.loading;
   protected readonly failed = this.store.failed;
   protected readonly conversion = this.store.conversion;
-  protected readonly flow = this.store.flow;
   protected readonly sources = this.store.sources;
   protected readonly canCompare = this.store.canCompare;
   protected readonly shortBy = this.store.decidedShortBy;
 
+  /** How many more decided leads before a comparison is worth showing. */
+  protected readonly thinBodyText = computed(() => COPY.insights.thinBody(this.shortBy()));
+
   protected readonly skeletonBands = [0, 1, 2];
+
+  /**
+   * `copy.insights.totalMeaning`/`conversionMeaning` are functions of store values, so calling
+   * them from the binding re-ran them on every change-detection pass even though `stats()`
+   * changes only once per load. Resolved here instead, once per actual change.
+   */
+  protected readonly totalMeaning = computed(() => {
+    const s = this.stats();
+    return s ? this.copy.insights.totalMeaning(s.open) : '';
+  });
+  protected readonly conversionMeaning = computed(() => {
+    const s = this.stats();
+    return s ? this.copy.insights.conversionMeaning(s.won, s.decided) : '';
+  });
+
+  /**
+   * The store's `flow` rows plus the css class each bar renders with. Extended here rather
+   * than on `InsightsStore.flow` itself: `barClass` is a presentation concern (which swatch
+   * class a `<span>` gets), not a statistic, and keeping it in the component keeps the store
+   * free of view-layer detail.
+   */
+  protected readonly flow = computed(() =>
+    this.store.flow().map((row) => ({ ...row, barClass: this.barClassFor(row.stage) })),
+  );
 
   constructor() {
     void this.store.load();
@@ -60,7 +86,7 @@ export class Insights {
    * takes the red fill, lost always takes the dashed outline, regardless of what colour the
    * stage itself was given — colour follows what the stage *means*, not its label.
    */
-  protected barClass(stage: Stage): string {
+  private barClassFor(stage: Stage): string {
     if (stage.kind === 'won') return 'bar__fill bar__fill--won';
     if (stage.kind === 'lost') return 'bar__fill bar__fill--lost';
     return `bar__fill bar__fill--sw-${stage.swatch}`;

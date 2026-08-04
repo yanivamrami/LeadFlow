@@ -41,7 +41,7 @@
     routerLink="/reminders"
     routerLinkActive="on"
     ariaCurrentWhenActive="page"
-    [attr.aria-label]="copy.shell.remindersBadge(reminderCount())"
+    [attr.aria-label]="reminderBadgeLabel()"
   >
     <svg lucideBell aria-hidden="true"></svg>
     <!-- a 0 in a red dot is noise -->

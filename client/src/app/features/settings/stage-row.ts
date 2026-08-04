@@ -91,6 +91,10 @@ export class StageRow {
     this.allStages().filter((s) => s.archivedAt === null && s.id !== this.stage().id),
   );
 
+  /** The drag handle's accessible name — a copy-map sentence built from the stage name,
+   *  resolved once per stage instead of on every change-detection pass. */
+  protected readonly dragHandleLabel = computed(() => this.copyStages.dragHandleLabel(this.stage().name));
+
   /** `null` while the count is still loading — archiving is offered nothing until then. */
   protected readonly verdict = computed<ArchiveVerdict | null>(() => {
     const count = this.leadCount();
@@ -103,8 +107,43 @@ export class StageRow {
     return v !== null && typeof v === 'object' ? v.refused : null;
   });
 
+  /** The count line under the fields: "still counting" or the formatted number — one
+   *  sentence, decided once per count change rather than rebuilt every pass. */
+  protected readonly leadCountLabel = computed(() => {
+    const count = this.leadCount();
+    return count === null ? this.copyStages.leadCountUnknown : this.copyStages.leadCount(count);
+  });
+
+  /**
+   * The two archive-dialog sentences that depend on the count. Both are only ever shown
+   * once `leadCount()` is resolved — the empty-string branch below is never actually
+   * reached given the template's own guards (`leadCount() === null` short-circuits first)
+   * — but a computed is exactly the place to spell out what "no count yet" means instead
+   * of carrying a `leadCount()!` assertion into the call, which is what this replaces.
+   */
+  protected readonly archiveNeedsDestinationNote = computed(() => {
+    const count = this.leadCount();
+    return count === null ? '' : this.copy.stages.archiveNeedsDestination(count);
+  });
+
+  protected readonly willMoveNote = computed(() => {
+    const count = this.leadCount();
+    return count === null ? '' : this.copyStages.willMove(count, this.destinationName());
+  });
+
+  /** Same reasoning as `dragHandleLabel`: a copy sentence built from the stage name. */
+  protected readonly archiveConfirmNote = computed(() => this.copyStages.archiveConfirm(this.stage().name));
+
   protected readonly archiveOpen = signal(false);
   protected readonly destinationId = signal<string | null>(null);
+
+  /** The chosen destination's name, resolved once per pick instead of an array `.find()`
+   *  re-run on every change-detection pass while the archive dialog is open. */
+  protected readonly destinationName = computed<string>(() => {
+    const id = this.destinationId();
+    if (!id) return '';
+    return this.allStages().find((s) => s.id === id)?.name ?? '';
+  });
 
   /** Both name fields share one commit: `rename()` writes them together. */
   protected commitRename(): void {
@@ -179,9 +218,5 @@ export class StageRow {
   protected confirmArchive(): void {
     this.archiveRequested.emit(this.destinationId());
     this.archiveOpen.set(false);
-  }
-
-  protected destinationName(id: string): string {
-    return this.allStages().find((s) => s.id === id)?.name ?? '';
   }
 }

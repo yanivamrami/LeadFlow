@@ -102,6 +102,12 @@ export class Shell {
    */
   protected readonly reminderCount = this.reminders.openCount;
 
+  /** The badge's accessible name. A computed rather than a call in the aria binding: the
+   *  string changes only when the count does, not on every change-detection pass. */
+  protected readonly reminderBadgeLabel = computed(() =>
+    COPY.shell.remindersBadge(this.reminderCount()),
+  );
+
   protected readonly displayName = this.supabase.displayName;
 
   /** First letter of the real name — Hebrew or Latin, whatever they typed at signup. */
