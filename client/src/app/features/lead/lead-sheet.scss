@@ -48,6 +48,7 @@
   cursor: pointer;
   transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
 }
+
 .chip,
 .strip__b,
 .more,
@@ -55,6 +56,7 @@
 .add__b {
   border: 2px solid var(--lf-ink);
 }
+
 .chip:disabled,
 .strip__b:disabled,
 .seg__b:disabled,
@@ -80,7 +82,11 @@
   font-size: 13px;
   cursor: pointer;
 }
-.why { display: inline-flex; align-items: center; }
+
+.why {
+  display: inline-flex;
+  align-items: center;
+}
 
 /* and the annotation each one reveals */
 .why-text,
@@ -91,7 +97,10 @@
   line-height: 1.45;
   color: var(--lf-muted);
 }
-.why-text { margin: 8px 0 0; }
+
+.why-text {
+  margin: 8px 0 0;
+}
 
 /* Metadata is muted, everywhere. One rule rather than the same declaration nine times;
    anything that needs to override it (a label on the yellow reminder line) says so later. */
@@ -120,6 +129,7 @@
   background: var(--lf-ink);
   color: var(--lf-on-ink);
 }
+
 .more:hover,
 .b:hover:not(:disabled) {
   background: var(--lf-ink);
@@ -213,6 +223,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 /* Its focus ring is the shared one near the top of this file: it receives focus when the
    sheet opens (cdkFocusInitial), and a heading that takes focus must show it. */
 
@@ -231,8 +242,17 @@
   color: var(--lf-muted);
   cursor: pointer;
 }
-.hd__x:hover { color: var(--lf-ink); border-color: var(--lf-ink); }
-.hd__x svg { inline-size: 20px; block-size: 20px; stroke-width: 2.4; }
+
+.hd__x:hover {
+  color: var(--lf-ink);
+  border-color: var(--lf-ink);
+}
+
+.hd__x svg {
+  inline-size: 20px;
+  block-size: 20px;
+  stroke-width: 2.4;
+}
 
 .body {
   flex: 1 1 auto;
@@ -254,9 +274,20 @@
   border-block-start: 2px solid var(--lf-ink);
   border-block-end: 2px solid var(--lf-ink);
 }
-.next--urgent { background: var(--lf-day); color: var(--lf-fixed-ink); }
-.next__l { flex: 0 0 auto; }
-.next--urgent .next__l { color: var(--lf-fixed-ink); }
+
+.next--urgent {
+  background: var(--lf-day);
+  color: var(--lf-fixed-ink);
+}
+
+.next__l {
+  flex: 0 0 auto;
+}
+
+.next--urgent .next__l {
+  color: var(--lf-fixed-ink);
+}
+
 .next__t {
   flex: 1 1 auto;
   min-inline-size: 0;
@@ -273,6 +304,7 @@
   padding: var(--lf-space-8) 0;
   text-align: center;
 }
+
 .gone__title,
 .block__title {
   margin: 0;
@@ -290,6 +322,7 @@
 .stage {
   padding-block-start: var(--lf-space-3);
 }
+
 .stage__row {
   display: flex;
   align-items: center;
@@ -297,7 +330,10 @@
   gap: var(--lf-space-2);
   margin-block-end: 6px;
 }
-.stage__label { display: block; }
+
+.stage__label {
+  display: block;
+}
 
 /* A tight gap on purpose: the default six short stops then fit one row in the 380px desktop
    column as well as at 390px, instead of wrapping 5 + 1 and letting `flex-grow` stretch a lone
@@ -307,6 +343,7 @@
   flex-wrap: wrap;
   gap: var(--lf-space-1);
 }
+
 .strip__b {
   flex: 1 1 auto;
   min-inline-size: 0;
@@ -315,7 +352,11 @@
   font-weight: 500;
   line-height: 1.25;
 }
-.strip__b:hover:not(:disabled):not(.strip__b--on) { background: var(--lf-surface); }
+
+.strip__b:hover:not(:disabled):not(.strip__b--on) {
+  background: var(--lf-surface);
+}
+
 /* Selection, not identity: the stage's own swatch stays on the header's tag, so this one
    fill means "currently on this stop" and nothing else. --lf-day and --lf-on-day are fixed
    in both themes, so the pair stays legible in dark. */
@@ -324,7 +365,11 @@
   color: var(--lf-on-day);
   font-weight: 600;
 }
-.strip__b:disabled { opacity: 0.6; cursor: default; }
+
+.strip__b:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 
 /* ---------- the facts, read and written ---------- */
 
@@ -333,6 +378,7 @@
   margin-block-start: var(--lf-space-4);
   border-block-start: 3px solid var(--lf-ink);
 }
+
 .facts__hd {
   display: flex;
   align-items: center;
@@ -340,7 +386,10 @@
   gap: var(--lf-space-3);
   padding-block-end: var(--lf-space-1);
 }
-.facts__t { display: block; }
+
+.facts__t {
+  display: block;
+}
 
 .facts__g {
   display: grid;
@@ -348,18 +397,23 @@
   gap: 0 var(--lf-space-3);
   margin: 0;
 }
+
 .facts__i {
   min-inline-size: 0;
   padding-block: 7px;
   border-block-start: 1px solid var(--lf-rule-soft);
 }
+
 /* the address is the one fact that never fits half a column */
-.facts__i--wide { grid-column: 1 / -1; }
+.facts__i--wide {
+  grid-column: 1 / -1;
+}
 
 .facts__k {
   margin: 0;
   color: var(--lf-muted);
 }
+
 .facts__v {
   margin: 0;
   font-size: var(--lf-size-body);
@@ -367,7 +421,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.facts__v.lf-num { font-size: 17px; }
+
+.facts__v.lf-num {
+  font-size: 17px;
+}
+
 /* A phone number read on a phone should be diallable. Marked by a rule rather than a
    text-decoration underline, so it matches every other line on this surface. */
 .facts__link {
@@ -375,10 +433,16 @@
   text-decoration: none;
   border-block-end: 1px solid var(--lf-rule-soft);
 }
+
 /* Which of the two the reader gets. Both classes are always on .body, exactly one of them
    true, so the desktop override further down has something of equal weight to beat. */
-.body--folded .fields { display: none; }
-.body--open .facts { display: none; }
+.body--folded .fields {
+  display: none;
+}
+
+.body--open .facts {
+  display: none;
+}
 
 /* source + value: two picks, one row. The stage used to be here and no longer is, which is
    what makes the row safe — a tenant's stage name never fitted a half column at 390px. */
@@ -389,11 +453,29 @@
   align-items: start;
   padding-block-end: var(--lf-space-2);
 }
+
+/* The two halves of this pair are different objects — a hand-rolled `.pick` for the source and
+   the shared `lf-text-field` for the value — and only one of them carries vertical padding.
+   `lf-text-field` sets `padding-block` on its own host so that a *stack* of fields reads as one
+   ruled block; beside a `.pick` that has none, the same padding pushed the value's label a
+   space-3 lower than the source's, so the two columns started at different heights.
+   `align-items: start` cannot fix that: it aligns the boxes, and the offset is inside one of
+   them. Zeroing the top is the whole fix; a smaller bottom is kept so the help and error lines
+   still have room before the next section. */
+.pair > lf-text-field {
+  padding-block: 0 var(--lf-space-2);
+}
 @media (max-width: 380px) {
-  .pair { grid-template-columns: 1fr; }
+  .pair {
+    grid-template-columns: 1fr;
+  }
 }
 
-.pick { display: block; min-inline-size: 0; }
+.pick {
+  display: block;
+  min-inline-size: 0;
+}
+
 .pick__row {
   display: flex;
   align-items: center;
@@ -401,7 +483,10 @@
   gap: var(--lf-space-2);
   margin-block-end: 6px;
 }
-.pick__label { display: block; }
+
+.pick__label {
+  display: block;
+}
 
 /* `.why` and `.why-text` are declared once near the top of this file — the same act beside a
    native select as beside an lf-text-field, so it is one rule rather than two that drift. */
@@ -419,6 +504,7 @@
   font: inherit;
   font-size: 17px;
 }
+
 .pick__select {
   padding-inline: var(--lf-space-3);
   background: var(--lf-surface);
@@ -431,15 +517,18 @@
   border: 2px solid var(--lf-ink);
   background: var(--lf-surface);
 }
+
 .close-block {
   margin-block: var(--lf-space-2) var(--lf-space-4);
   padding: var(--lf-space-4);
 }
+
 .close-block__q {
   margin: 0 0 var(--lf-space-3);
   font-weight: 600;
   font-size: 17px;
 }
+
 .close-block__hint {
   margin: var(--lf-space-2) 0 0;
   font-size: 13px;
@@ -460,25 +549,42 @@
   padding-inline: var(--lf-space-3);
   font-size: 14px;
 }
-.chip--on { font-weight: 500; }
+
+.chip--on {
+  font-weight: 500;
+}
+
 .chip--bare {
   border-color: transparent;
   color: var(--lf-muted);
 }
+
 .chip--bare:hover:not(:disabled) {
   background: transparent;
   color: var(--lf-red-text);
 }
-.chip:disabled { opacity: 0.6; cursor: default; }
+
+.chip:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 
 /* bare inputs: used where lf-text-field's label block would be redundant */
-.bare { display: block; }
+.bare {
+  display: block;
+}
+
 .bare input,
 .bare textarea {
   padding: 12px var(--lf-space-3);
   background: var(--lf-ground);
 }
-.bare textarea { resize: vertical; min-block-size: 92px; line-height: 1.5; }
+
+.bare textarea {
+  resize: vertical;
+  min-block-size: 92px;
+  line-height: 1.5;
+}
 
 /* The composer commits on its own, so it needs its own action and its own explanation of why
    there are suddenly two buttons on one sheet: this one appends to the log now, the footer's
@@ -491,12 +597,17 @@
   gap: var(--lf-space-2) var(--lf-space-3);
   margin-block-start: var(--lf-space-2);
 }
+
 .add__hint {
   flex: 1 1 12ch;
   margin: 0;
   font-size: 13px;
 }
-.add__b { padding-inline: var(--lf-space-4); font-weight: 600; }
+
+.add__b {
+  padding-inline: var(--lf-space-4);
+  font-weight: 600;
+}
 
 /* ---------- the follow-up ---------- */
 
@@ -507,6 +618,7 @@
   margin-block-start: var(--lf-space-4);
   padding: var(--lf-space-2) var(--lf-space-3);
 }
+
 .follow--set {
   background: var(--lf-day);
   color: var(--lf-on-day);
@@ -519,15 +631,22 @@
   align-items: center;
   gap: var(--lf-space-2) var(--lf-space-3);
 }
+
 .follow__when {
   flex: 1 1 auto;
   font-size: 17px;
 }
+
 .follow__none {
   flex: 1 1 auto;
   font-size: 14px;
 }
-.follow__pending { font-size: 12px; color: var(--lf-red-text); }
+
+.follow__pending {
+  font-size: 12px;
+  color: var(--lf-red-text);
+}
+
 .follow__acts {
   display: flex;
   flex-wrap: wrap;
@@ -544,12 +663,19 @@
   color: inherit;
   border-color: currentColor;
 }
-.follow--set .follow__label { opacity: 0.75; }
+
+.follow--set .follow__label {
+  opacity: 0.75;
+}
+
 .follow--set .chip:hover:not(:disabled) {
   background: var(--lf-fixed-ink);
   color: var(--lf-fixed-paper);
 }
-.follow--set .chip--bare { border-color: transparent; }
+
+.follow--set .chip--bare {
+  border-color: transparent;
+}
 
 /* Destructive, so it sits at the end of the reading order rather than in the footer strip,
    where the thumb rests and שמור lives. The confirmation still replaces the footer, so
@@ -561,6 +687,7 @@
   color: var(--lf-muted);
   font-size: 14px;
 }
+
 .kill:hover:not(:disabled) {
   color: var(--lf-red-text, var(--lf-red));
   border-color: var(--lf-red-text, var(--lf-red));
@@ -571,18 +698,26 @@
   margin-block-start: var(--lf-space-6);
   border-block-start: 3px solid var(--lf-ink);
 }
+
 .block__hd {
   display: flex;
   align-items: baseline;
   gap: var(--lf-space-2);
   padding-block: var(--lf-space-3);
 }
-.block__title { line-height: 1.1; }
+
+.block__title {
+  line-height: 1.1;
+}
+
 .block__count {
   font-size: 13px;
 }
+
 /* the one "why ask?" for the whole set, pushed to the end of the heading row */
-.block__why { margin-inline-start: auto; }
+.block__why {
+  margin-inline-start: auto;
+}
 
 /* what the section is for, before the first question. "שאלות הכשרה" is jargon to
    someone who has never qualified a lead — which is precisely this audience. */
@@ -603,6 +738,7 @@
   padding-block: var(--lf-space-2);
   border-block-start: 1px solid var(--lf-rule-soft);
 }
+
 .q__text {
   margin: 0;
   font-size: 14px;
@@ -615,12 +751,20 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   border: 2px solid var(--lf-ink);
 }
+
 .seg__b {
   border: 0;
   font-weight: 500;
 }
-.seg__b + .seg__b { border-inline-start: 2px solid var(--lf-ink); }
-.seg__b:disabled { opacity: 0.6; cursor: default; }
+
+.seg__b+.seg__b {
+  border-inline-start: 2px solid var(--lf-ink);
+}
+
+.seg__b:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 
 /* Spans the row, so a revealed reason sits under both the question and its segments rather
    than squeezing into the label column. */
@@ -635,6 +779,7 @@
   padding: 0;
   list-style: none;
 }
+
 .ent {
   display: grid;
   grid-template-columns: 92px minmax(0, 1fr);
@@ -642,16 +787,22 @@
   padding-block: var(--lf-space-3);
   border-block-start: 1px solid var(--lf-rule-soft);
 }
+
 .ent__stamp {
   font-size: 12px;
   line-height: 1.5;
 }
-.ent__body { min-inline-size: 0; }
+
+.ent__body {
+  min-inline-size: 0;
+}
+
 .ent__type {
   display: inline-block;
   font-size: 12px;
   font-weight: 500;
 }
+
 .ent__text {
   margin: 4px 0 0;
   font-size: var(--lf-size-body);
@@ -666,21 +817,33 @@
   padding: 2px 7px;
   font-weight: 500;
 }
-.ent--sys .ent__text { color: var(--lf-muted); }
+
+.ent--sys .ent__text {
+  color: var(--lf-muted);
+}
 
 .tl__empty {
   padding: var(--lf-space-4);
   border: 2px dashed var(--lf-rule-soft);
   text-align: center;
 }
-.tl__emptyTitle { margin: 0; font-weight: 600; }
-.tl__emptyHint { margin: 6px 0 0; font-size: 13px; }
+
+.tl__emptyTitle {
+  margin: 0;
+  font-weight: 600;
+}
+
+.tl__emptyHint {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
 
 .more {
   inline-size: 100%;
   margin-block-start: var(--lf-space-2);
   font-weight: 500;
 }
+
 /* footer: one strip that changes job, so a confirm never stacks a second dialog */
 .ft {
   flex: 0 0 auto;
@@ -688,12 +851,17 @@
   border-block-start: 3px solid var(--lf-ink);
   background: var(--lf-ground);
 }
+
 .ft__ask {
   margin: 0 0 var(--lf-space-3);
   font-size: 14px;
   line-height: 1.45;
 }
-.ft__ask strong { font-weight: 600; }
+
+.ft__ask strong {
+  font-weight: 600;
+}
+
 .ft__acts {
   display: flex;
   gap: var(--lf-space-2);
@@ -704,12 +872,14 @@
   padding-inline: var(--lf-space-4);
   font-weight: 500;
 }
+
 .b--red {
   background: var(--lf-red);
   border-color: var(--lf-red);
   color: var(--lf-on-red);
   font-weight: 600;
 }
+
 .b--red:hover:not(:disabled) {
   background: var(--lf-ink);
   border-color: var(--lf-ink);
@@ -722,6 +892,7 @@
   color: var(--lf-muted);
   font-weight: 400;
 }
+
 .b--bare:hover:not(:disabled) {
   background: transparent;
   color: var(--lf-red-text, var(--lf-red));
@@ -729,12 +900,25 @@
 }
 
 @keyframes sheet-scrim {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
+
 @keyframes sheet-rise {
-  from { opacity: 0; translate: 0 16px; }
-  to { opacity: 1; translate: 0 0; }
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 
 /* ---------- desktop: a centred dialog rather than a drawer ---------- */
@@ -764,9 +948,15 @@
     max-block-size: 88vh;
     border: 3px solid var(--lf-ink);
   }
+
   .hd,
-  .ft { padding-inline: var(--lf-space-6); }
-  .body { padding-inline: var(--lf-space-6); }
+  .ft {
+    padding-inline: var(--lf-space-6);
+  }
+
+  .body {
+    padding-inline: var(--lf-space-6);
+  }
 
   .hd__grip {
     display: grid;
@@ -782,8 +972,15 @@
     color: var(--lf-muted);
     cursor: grab;
   }
-  .hd__grip:hover { color: var(--lf-ink); }
-  .hd__grip:active { cursor: grabbing; }
+
+  .hd__grip:hover {
+    color: var(--lf-ink);
+  }
+
+  .hd__grip:active {
+    cursor: grabbing;
+  }
+
   .hd__grip svg {
     inline-size: 20px;
     block-size: 20px;
@@ -800,15 +997,20 @@
   }
 
   /* room for one row again: name, stage and figure on a line, as they were */
-  .hd { align-items: center; }
+  .hd {
+    align-items: center;
+  }
+
   .hd__id {
     display: flex;
     align-items: center;
     gap: var(--lf-space-3);
   }
+
   .hd__name {
     min-inline-size: 0;
   }
+
   .hd__meta {
     flex: 0 0 auto;
     margin-block-start: 0;
@@ -826,13 +1028,13 @@
      `inset-block: 6vh auto`: the position is not a function of the height, so a growing
      column cannot move the dialog. It pairs with the same 88vh ceiling. */
   .sheet--split {
-    inline-size: min(1000px, calc(100vw - 64px));
-    block-size: min(760px, 88vh);
+    inline-size: min(1200px, 100vw - 64px);
+    block-size: min(960px, 88vh);
   }
 
   .sheet--split .body {
     display: grid;
-    grid-template-columns: 380px minmax(0, 1fr);
+    grid-template-columns: 420px minmax(0, 1fr);
     overflow: hidden;
     padding: 0;
   }
@@ -843,16 +1045,24 @@
     overflow-y: auto;
     padding: 0 var(--lf-space-6) var(--lf-space-6);
   }
+
   /* the divider between the two bills — the sheet's own 3px rule, stood on its end */
-  .sheet--split .lead { border-inline-end: 3px solid var(--lf-ink); }
+  .sheet--split .lead {
+    border-inline-end: 3px solid var(--lf-ink);
+  }
 
   /* Above 900px the fold buys nothing: the identity fields have a column of their own and no
      longer compete with the work for the first screen. Same specificity as the base rules
      further up and declared later, so these win without !important. */
   .sheet--split .body--folded .fields,
-  .sheet--split .body--open .fields { display: block; }
+  .sheet--split .body--open .fields {
+    display: block;
+  }
+
   .sheet--split .body--folded .facts,
-  .sheet--split .body--open .facts { display: none; }
+  .sheet--split .body--open .facts {
+    display: none;
+  }
 
   /* the composer heads its own column, so the rule that separated it from the lead's facts
      on a phone would now be a rule under nothing */
@@ -860,11 +1070,19 @@
     margin-block-start: 0;
     border-block-start: 0;
   }
-  .sheet--split .stage { padding-block-start: var(--lf-space-4); }
+
+  .sheet--split .stage {
+    padding-block-start: var(--lf-space-4);
+  }
+
   /* the next-step line spans the lead column's padding, so it needs its own top margin back */
-  .sheet--split .next { margin-block-start: var(--lf-space-4); }
+  .sheet--split .next {
+    margin-block-start: var(--lf-space-4);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sheet { animation-name: sheet-scrim; }
+  .sheet {
+    animation-name: sheet-scrim;
+  }
 }

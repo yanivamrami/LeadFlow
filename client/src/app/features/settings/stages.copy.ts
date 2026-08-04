@@ -24,6 +24,28 @@ export const COPY_STAGES = {
   reorderKeyboardHint:
     'אפשר גם עם מקלדת: התמקדו בידית הגרירה, רווח כדי להרים, חצים כדי להזיז, ורווח שוב כדי להניח.',
 
+  /* ---- the page's three sections (SCREENS 9.1 layout) ---- */
+  sectionPipeline: 'הסדר והשלבים',
+  sectionAdd: 'הוספת שלב',
+
+  /* ---- the roster strip: one line per stage, the numbers that decide which to open ---- */
+  stripDays: (n: number) => `${n} ימים לשקט`,
+  stripAwaiting: 'מחכים לתשובה',
+  /** Desktop: the strip loads the stage into the editor pane beside the roster. */
+  stripEdit: (name: string) => `ערכו את השלב "${name}"`,
+  /** Mobile: the same strip opens the editor underneath itself. */
+  stripOpen: (name: string) => `פתחו את "${name}" לעריכה`,
+  stripClose: (name: string) => `סגרו את "${name}"`,
+  /** Only reachable if the roster is empty of the selected stage — the pane never
+   *  renders empty in practice, because `Stages.selectedRow` falls back to the first row. */
+  paneEmpty: 'בחרו שלב מהרשימה כדי לערוך אותו.',
+
+  /* ---- the four field groups every stage editor is built from ---- */
+  groupIdentity: 'זהות',
+  groupTiming: 'תזמון והתנהגות',
+  groupTeaching: 'מה הליד לומד כאן',
+  groupArchive: 'ארכוב',
+
   kindLabel: { open: 'פתוח', won: 'זכייה', lost: 'אי-הצלחה' } as Record<StageKind, string>,
   kindLockedWon:
     'אפשר לשנות את השם, אבל לא את הסוג — זה תמיד יישאר שלב הזכייה של הפייפליין.',
@@ -35,6 +57,9 @@ export const COPY_STAGES = {
   shortNameHelp: 'מוצג בעמודות הלוח ובצ׳יפים של הסינון. משאירים ריק כדי להשתמש בשם המלא.',
 
   swatchLabel: 'צבע',
+  /** The picker's squares carry the colour and an `aria-label`; the chosen one is named
+   *  here in the group's own label, so the current value is readable, not just visible. */
+  swatchCurrent: (name: string) => `צבע — ${name}`,
   swatchLocked: 'הצבע קבוע לשלבים סגורים — הזכייה תמיד באדום, האי-הצלחה תמיד מקווקוות.',
   swatchName: {
     chalk: 'גיר',
@@ -81,6 +106,10 @@ export const COPY_STAGES = {
 
   archivedNote:
     'שלבים בארכיון אפשר לראות כאן, אבל לא להחזיר לפעילות בשלב הזה של המוצר.',
+  /** The section header already names the archive and counts it, so the disclosure
+   *  button says only what pressing it does. */
+  archivedShow: 'הצג',
+  archivedHide: 'הסתר',
 
   addTitle: 'איזה שלב להוסיף?',
   addLead: 'כל תבנית מגיעה עם הסבר מוכן למתחילים. תמיד אפשר לערוך את המילים אחר כך.',

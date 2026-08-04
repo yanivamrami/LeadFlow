@@ -1,6 +1,7 @@
+/* No top margin of its own: this now sits inside the page's own "הוספת שלב" section
+   (stages.scss `.sec`), which owns the headroom above it. */
 :host {
   display: block;
-  margin-block-start: var(--lf-space-6);
 }
 
 .add__toggle {

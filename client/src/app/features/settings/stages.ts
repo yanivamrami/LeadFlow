@@ -1,4 +1,6 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   CdkDrag,
   CdkDragDrop,
@@ -7,8 +9,10 @@ import {
   CdkDropList,
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { map } from 'rxjs';
 
-import { LucideChevronDown } from '@lucide/angular';
+import { LucideChevronDown, LucideGripVertical } from '@lucide/angular';
 
 import { COPY } from '../../core/copy';
 import { Stage } from '../../core/lead.model';
@@ -19,6 +23,17 @@ import { AddStage } from './add-stage';
 import { AutomationsPanel } from './automations-panel';
 import { COPY_STAGES } from './stages.copy';
 import { StageRow } from './stage-row';
+
+/** One roster strip's worth of resolved data — see `Stages.stageRows`. */
+interface StageRowView {
+  stage: Stage;
+  /** `null` = still counting. */
+  leadCount: number | null;
+  dragLabel: string;
+  countLabel: string;
+  /** `null` when the stage never counts as quiet, so the strip shows no drift chip. */
+  daysLabel: string | null;
+}
 
 /**
  * SCREENS 9.1 — the stage manager. Owner-only for writes (documents/CONTRACT-stages.md
@@ -33,16 +48,35 @@ import { StageRow } from './stage-row';
  * reads them itself with the one query that is cheap enough to justify a bespoke read: all
  * of a tenant's `stage_id` values, counted client-side. That is also the only correct way
  * to answer "how many leads would move" for the archive gate before the user commits.
+ *
+ * ## Layout: one roster, two shapes
+ *
+ * The screen has two jobs that used to fight over one column — *shape the pipeline*
+ * (order it, compare stages, see where leads sit) and *author one stage* (names, timing,
+ * teaching copy, rules). Both shapes below express the same state, `openId`:
+ *
+ * - **≥900px** — a roster rail beside an editor pane. `openId` is which stage the pane
+ *   holds; `selectedRow` falls back to the first row so the pane is never empty, which
+ *   also self-heals when the open stage is archived out from under it.
+ * - **<900px** — the roster *is* the page, and `openId` is the one stage expanded in
+ *   place underneath its own strip. `null` means everything is collapsed, so the phone
+ *   opens on the pipeline rather than on a wall of form fields.
+ *
+ * Exactly one `lf-stage-row` is instantiated either way: the branch is an `@if` on
+ * `wide()`, not two copies of the form hidden from each other by CSS, which would double
+ * every input's name and every commit-on-blur handler.
  */
 @Component({
   selector: 'lf-stages',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    NgTemplateOutlet,
     CdkDropList,
     CdkDrag,
     CdkDragPlaceholder,
     CdkDragPreview,
     LucideChevronDown,
+    LucideGripVertical,
     StageTag,
     StageRow,
     AddStage,
@@ -53,6 +87,7 @@ import { StageRow } from './stage-row';
 })
 export class Stages {
   private readonly supabase = inject(SupabaseService);
+  private readonly breakpoints = inject(BreakpointObserver);
   protected readonly stagesStore = inject(StagesStore);
 
   protected readonly copy = COPY;
@@ -70,6 +105,20 @@ export class Stages {
   protected readonly skeletonRows = [0, 1, 2, 3];
   protected readonly archivedOpen = signal(false);
 
+  /**
+   * The 900px line the brief draws. `BreakpointObserver` rather than a bare media query
+   * in the stylesheet because the two shapes are different *templates*, not one template
+   * restyled — see the class comment.
+   */
+  protected readonly wide = toSignal(
+    this.breakpoints.observe('(min-width: 900px)').pipe(map((state) => state.matches)),
+    { initialValue: this.breakpoints.isMatched('(min-width: 900px)') },
+  );
+
+  /** Which stage is under the cursor of attention: the pane's contents on desktop, the
+   *  one expanded strip on mobile. Null only ever means "mobile, nothing open". */
+  protected readonly openId = signal<string | null>(null);
+
   /** Optimistic reorder: `active()` only reflects the new order after the store's reload
    *  completes, and that round trip is two writes per row (StagesStore.reorder's own
    *  comment explains why). Without this, a drop would visually snap back and then jump
@@ -85,13 +134,40 @@ export class Stages {
   /** Each row paired with its own count, resolved once per change instead of a `Map.get`
    *  per row per change-detection pass — `leadCountFor` stays below for `onArchive`'s own
    *  one-off read, which is plain TS code on a click, not a per-pass template binding. */
-  protected readonly stageRows = computed<{ stage: Stage; leadCount: number | null }[]>(() => {
+  protected readonly stageRows = computed<StageRowView[]>(() => {
     const counts = this.leadCounts();
-    return this.rows().map((stage) => ({
-      stage,
-      leadCount: counts ? (counts.get(stage.id) ?? 0) : null,
-    }));
+    return this.rows().map((stage) => {
+      const leadCount = counts ? (counts.get(stage.id) ?? 0) : null;
+      return {
+        stage,
+        leadCount,
+        // The strip's own sentences, resolved per stage instead of per change-detection
+        // pass. `countLabel` is the roster's only accessible reading of the bare number
+        // beside each strip, so it is not decoration — see `stages.html`.
+        dragLabel: this.copyStages.dragHandleLabel(stage.name),
+        countLabel:
+          leadCount === null
+            ? this.copyStages.leadCountUnknown
+            : this.copyStages.leadCount(leadCount),
+        daysLabel: stage.driftDays === null ? null : this.copyStages.stripDays(stage.driftDays),
+      };
+    });
   });
+
+  /**
+   * The row the desktop pane holds. Falls back to the first row rather than rendering an
+   * empty pane, which makes two states correct for free: the first paint (nothing picked
+   * yet) and the moment the open stage is archived and leaves `stageRows()` entirely.
+   */
+  protected readonly selectedRow = computed<StageRowView | null>(() => {
+    const rows = this.stageRows();
+    const id = this.openId();
+    return rows.find((row) => row.stage.id === id) ?? rows[0] ?? null;
+  });
+
+  /** The pane's stage id, so the roster can mark the current strip without an optional
+   *  chain re-walked per strip per change-detection pass. */
+  protected readonly selectedId = computed(() => this.selectedRow()?.stage.id ?? null);
 
   constructor() {
     void this.stagesStore.load();
@@ -116,6 +192,24 @@ export class Stages {
 
   protected toggleArchived(): void {
     this.archivedOpen.update((v) => !v);
+  }
+
+  /**
+   * One strip, one handler, two meanings — because the two layouts mean different things
+   * by "activate". On desktop the pane always holds something, so activating a strip
+   * loads it and never unloads it; on mobile the strip owns a disclosure, so activating
+   * the open one closes it and returns the visitor to the pipeline.
+   */
+  protected activate(stageId: string): void {
+    if (this.wide()) {
+      this.openId.set(stageId);
+      return;
+    }
+    this.openId.update((current) => (current === stageId ? null : stageId));
+  }
+
+  protected isOpen(stageId: string): boolean {
+    return this.openId() === stageId;
   }
 
   protected async onDrop(event: CdkDragDrop<Stage[]>): Promise<void> {

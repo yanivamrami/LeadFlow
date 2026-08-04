@@ -1,5 +1,9 @@
-/* The stage manager — SCREENS 9.1. A settings screen, so unlike the register or
-   reminders it is read closely rather than scanned: rows are cards, not compact lines. */
+/* The stage manager — SCREENS 9.1.
+   Two shapes of one roster (see the class comment on `Stages`): below 900px the roster is
+   the page and one strip opens in place; at 900px and up a rail of strips sits beside an
+   editor pane. Spacing is a deliberate ladder rather than one repeated step — 48px between
+   page sections, 24px from a section's rule down to its content, 32px between field groups
+   on a phone, 12–16px between fields inside a group. */
 
 :host {
   display: block;
@@ -27,6 +31,47 @@
   margin: var(--lf-space-2) 0 0;
   font-size: 14px;
   color: var(--lf-muted);
+}
+
+/* ---------- the page's sections ---------- */
+
+/* The headroom the screen was missing: each section is announced by its own rule and given
+   48px of air, so "where does this thing end" is answered before anything is read. */
+.sec {
+  margin-block-start: var(--lf-space-12);
+}
+.sec__hd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lf-space-2) var(--lf-space-3);
+  padding-block-end: var(--lf-space-2);
+  border-block-end: var(--lf-rule-w) solid var(--lf-ink);
+}
+.sec__title {
+  margin: 0;
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: var(--lf-size-h2);
+  line-height: 1.1;
+}
+.sec__n {
+  font-family: var(--lf-font-num);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--lf-muted);
+}
+/* The reorder instruction belongs to the section, not to the list — its own line on a
+   phone, tucked against the end of the rule on a desktop. */
+.sec__hint {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--lf-muted);
+}
+.sec > *:not(.sec__hd) {
+  margin-block-start: var(--lf-space-6);
 }
 
 /* ---------- failed / empty / skeleton ---------- */
@@ -80,23 +125,23 @@
 }
 .act:hover { background: var(--lf-ink); color: var(--lf-on-ink); }
 
+/* Skeletons stand in for strips now, not for full cards. */
 .sk-row {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: var(--lf-space-4);
+  align-items: center;
+  gap: var(--lf-space-3);
+  min-block-size: 56px;
+  padding-inline: var(--lf-space-3);
   border: 2px solid var(--lf-rule-soft);
   margin-block-start: var(--lf-space-4);
 }
-.sk-row:first-child { margin-block-start: var(--lf-space-4); }
-.sk-a { block-size: 24px; inline-size: 45%; }
-.sk-b { block-size: 14px; inline-size: 80%; }
-.sk-c { block-size: 14px; inline-size: 60%; }
+.sk-row + .sk-row { margin-block-start: var(--lf-space-2); }
+.sk-a { block-size: 20px; inline-size: 32%; }
+.sk-b { block-size: 14px; inline-size: 24%; }
 
-/* ---------- counts warning, reorder hint ---------- */
+/* ---------- counts warning ---------- */
 
 .counts-warn {
-  margin: var(--lf-space-4) 0 0;
   font-size: 13px;
   color: var(--lf-muted);
 }
@@ -112,22 +157,109 @@
   cursor: pointer;
 }
 
-.reorder-hint {
-  margin: var(--lf-space-4) 0 0;
-  font-size: 13px;
+/* ---------- the roster strip ---------- */
+
+.rost__item + .rost__item {
+  margin-block-start: var(--lf-space-2);
+}
+
+.strip {
+  display: flex;
+  align-items: stretch;
+  min-block-size: 56px;
+  border: 2px solid var(--lf-ink);
+  background: var(--lf-surface);
+}
+/* The stage the editor pane is currently showing. Same mark the swatch picker uses for
+   "this is the chosen one", so selection reads identically across the screen. */
+.strip--current {
+  background: var(--lf-ground);
+  outline: 3px solid var(--lf-red);
+  outline-offset: 2px;
+}
+
+.strip__grip {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  inline-size: var(--lf-touch);
+  min-block-size: var(--lf-touch);
+  border: 0;
+  border-inline-end: 1px solid var(--lf-rule-soft);
+  background: transparent;
   color: var(--lf-muted);
-  line-height: 1.5;
+  cursor: grab;
+}
+.strip__grip:hover:not(:disabled) { background: var(--lf-ink); color: var(--lf-on-ink); }
+.strip__grip:active:not(:disabled) { cursor: grabbing; }
+.strip__grip:disabled { opacity: 0.5; cursor: default; }
+.strip__grip svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
+
+.strip__main {
+  display: flex;
+  align-items: center;
+  gap: var(--lf-space-2);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-block-size: var(--lf-touch);
+  padding-inline: var(--lf-space-3);
+  border: 0;
+  background: transparent;
+  color: var(--lf-ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.strip__main:hover { background: var(--lf-tan); }
+.strip--current .strip__main:hover { background: transparent; }
+
+/* Shrinkable, not fixed: a long stage name in a 330px rail has to ellipsize rather than
+   push the count off the end. `lf-stage-tag` already truncates its own label. */
+.strip__tag { flex: 0 1 auto; min-inline-size: 0; }
+
+/* Drift and "waiting on them" as quiet chips: the roster's job is to say which stage is
+   worth opening next, and those two facts are what decide it. */
+.strip__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--lf-space-2);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  font-size: 12px;
+  color: var(--lf-muted);
+  line-height: 1.3;
+}
+.strip__chip { white-space: nowrap; }
+
+.strip__count {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+.strip__num {
+  font-family: var(--lf-font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
 }
 
-/* ---------- the list ---------- */
+.strip__chev {
+  flex: 0 0 auto;
+  inline-size: 19px;
+  block-size: 19px;
+  stroke-width: 2.4;
+  color: var(--lf-muted);
+  transition: rotate var(--lf-dur-state) linear;
+}
+.strip__chev.flip { rotate: 180deg; }
 
-.list {
-  margin-block-start: 0;
+/* The editor hanging off its own strip on a phone: one shared rule at the seam. */
+.rost__open {
+  border: 2px solid var(--lf-ink);
+  border-block-start: 0;
+  background: var(--lf-surface);
 }
-.list__item {
-  display: block;
-  margin-block-start: var(--lf-space-4);
-}
+
+/* ---------- drag affordances ---------- */
 
 /* Paper peeled off the wall, not a card lifted off a surface — no shadow, same grammar
    the board's drag preview uses (board.scss). */
@@ -145,7 +277,7 @@
 .drop-ph {
   display: grid;
   place-items: center;
-  min-block-size: 76px;
+  min-block-size: 56px;
   border: 3px dashed var(--lf-red);
   background: color-mix(in srgb, var(--lf-red) 6%, transparent);
   color: var(--lf-red);
@@ -160,27 +292,24 @@
 
 @media (prefers-reduced-motion: reduce) {
   .drag-ghost { transform: none; }
+  .strip__chev { transition: none; }
 }
 
 /* ---------- archived section ---------- */
 
-.archived {
-  margin-block-start: var(--lf-space-8);
-  padding-block-start: var(--lf-space-3);
-  border-block-start: var(--lf-rule-w) solid var(--lf-ink);
-}
 .archived__toggle {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-inline-start: auto;
   min-block-size: var(--lf-touch);
   padding-inline: var(--lf-space-2);
   border: 0;
   background: transparent;
   color: var(--lf-muted);
   font: inherit;
-  font-weight: 600;
-  font-size: var(--lf-size-h2);
+  font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
 }
 .archived__toggle:hover { color: var(--lf-ink); }
@@ -193,7 +322,7 @@
 .archived__chevron.flip { rotate: 180deg; }
 
 .archived__note {
-  margin: var(--lf-space-2) 0 var(--lf-space-3);
+  margin: 0 0 var(--lf-space-4);
   font-size: 13px;
   color: var(--lf-muted);
   line-height: 1.5;
@@ -205,14 +334,68 @@
      now, and stacking is the only sane layout once that panel has any content at all. */
   flex-direction: column;
   align-items: flex-start;
-  padding-block: var(--lf-space-2);
+  padding-block: var(--lf-space-4);
   border-block-start: 1px solid var(--lf-rule-soft);
 }
 .archived__row > lf-automations-panel {
   inline-size: 100%;
 }
-.archived__row:first-of-type { border-block-start: 0; }
+.archived__row:first-of-type { border-block-start: 0; padding-block-start: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .archived__chevron { transition: none; }
+}
+
+/* ---------- the empty pane (only reachable with no stages at all) ---------- */
+
+.pipe__empty {
+  margin: 0;
+  padding: var(--lf-space-8) var(--lf-space-4);
+  border: 2px dashed var(--lf-rule-soft);
+  color: var(--lf-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ==================== 900px and up: the rail beside the pane ==================== */
+
+@media (min-width: 900px) {
+  /* The width the brief asked for. 1180px keeps a 330px rail and still leaves the editor's
+     two-column grid inside a readable measure — wider than this and the teaching-copy
+     fields stretch past a comfortable line length. */
+  .stages {
+    max-inline-size: 1180px;
+    padding-inline: var(--lf-space-6);
+  }
+
+  .sec__hint {
+    flex: 0 1 auto;
+    margin-inline-start: auto;
+    max-inline-size: 62ch;
+    text-align: end;
+  }
+
+  .pipe {
+    display: grid;
+    grid-template-columns: 330px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  /* A heavy rule rather than a gap: the rail and the pane are two regions of one board,
+     and this is the same 4px section rule the rest of the page is built from. Sticky, so a
+     long editor never puts the pipeline out of reach, and scrollable on its own once a
+     tenant has more stages than fit. */
+  .pipe__rail {
+    position: sticky;
+    inset-block-start: var(--lf-space-4);
+    max-block-size: calc(100dvh - var(--lf-space-8));
+    overflow-y: auto;
+    padding-inline-end: var(--lf-space-6);
+    border-inline-end: var(--lf-rule-w) solid var(--lf-ink);
+  }
+
+  .pipe__pane {
+    min-inline-size: 0;
+    padding-inline-start: var(--lf-space-6);
+  }
 }

@@ -1,5 +1,9 @@
-/* One stage, editable in place. A settings row is read closely, not scanned — so unlike
-   the register or reminders this is a tall card, not a dense line. */
+/* One stage, editable. Four legended groups rather than one undifferentiated stack —
+   identity, timing, teaching copy, archive — so that "which of these belong together" is
+   answered by the layout instead of by reading every label.
+
+   Two hosts render this: the desktop editor pane (`row--pane`, which owns a heading) and a
+   phone roster strip's disclosure (`row--attached`, which shares the strip's border). */
 
 :host {
   display: block;
@@ -7,46 +11,70 @@
   border: 2px solid var(--lf-ink);
   padding: var(--lf-space-4);
 }
-:host + :host {
-  margin-block-start: var(--lf-space-4);
+
+/* Attached to the strip above it: that strip already drew the top border, and the
+   `.rost__open` wrapper in stages.scss draws the rest. */
+:host(.row--attached) {
+  border: 0;
+  background: transparent;
+}
+
+/* In the pane the surrounding region is the frame, so the editor needs no box of its own —
+   the group legends carry the structure. */
+:host(.row--pane) {
+  border: 0;
+  background: transparent;
+  padding: 0;
 }
 
 .row__hd {
   display: flex;
-  align-items: center;
-  gap: var(--lf-space-2);
+  align-items: baseline;
+  gap: var(--lf-space-3);
+  flex-wrap: wrap;
+}
+.row__tag { flex: 0 0 auto; min-inline-size: 0; }
+.row__name {
+  margin: 0;
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: var(--lf-size-h2);
+  line-height: 1.1;
 }
 
-.handle {
+/* ---------- the four groups ---------- */
+
+.row__groups {
   display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  min-inline-size: var(--lf-touch);
-  min-block-size: var(--lf-touch);
-  margin-inline-start: calc(var(--lf-space-2) * -1);
-  border: 2px solid transparent;
-  background: transparent;
-  color: var(--lf-muted);
-  cursor: grab;
+  gap: var(--lf-space-8);
 }
-.handle:hover:not(:disabled) { color: var(--lf-ink); border-color: var(--lf-ink); }
-.handle:active:not(:disabled) { cursor: grabbing; }
-.handle:disabled { opacity: 0.5; cursor: default; }
-.handle svg { inline-size: 21px; block-size: 21px; stroke-width: 2.4; }
+:host(.row--pane) .row__groups {
+  margin-block-start: var(--lf-space-6);
+}
 
-.row__tag { min-inline-size: 0; }
-
-.row__kindnote {
-  margin: var(--lf-space-2) 0 0;
-  padding-inline-start: var(--lf-space-3);
-  border-inline-start: 2px solid var(--lf-rule-soft);
-  font-size: var(--lf-size-small);
-  line-height: 1.45;
+/* A real `fieldset`, because a `legend` is the one grouping cue that survives being read
+   aloud. `min-inline-size: 0` because a fieldset otherwise refuses to shrink below its
+   content's min-content width and blows out any grid it sits in. */
+.grp {
+  min-inline-size: 0;
+  margin: 0;
+  border: 0;
+  border-block-start: 2px solid var(--lf-ink);
+  padding: 0;
+}
+.grp__l {
+  padding-block: 0;
+  padding-inline: 0 var(--lf-space-2);
+  font-family: var(--lf-font-num);
+  font-weight: 700;
+  font-size: var(--lf-size-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--lf-muted);
 }
 
 .row__fields {
-  margin-block-start: var(--lf-space-4);
+  margin-block-start: var(--lf-space-2);
 }
 
 .row__swatch {
@@ -59,6 +87,10 @@
   line-height: 1.4;
 }
 
+/* Colour-only squares: eight named chips wrapped to four rows in a 330px measure and made
+   the picker the tallest thing in the group. The chosen colour is named in the group's own
+   label (`swatchCurrentLabel`), and every square keeps its Hebrew name as its accessible
+   name and its tooltip. */
 .swatches {
   display: flex;
   flex-wrap: wrap;
@@ -66,41 +98,40 @@
   margin-block-start: 8px;
 }
 .swatch {
-  min-inline-size: var(--lf-touch);
+  inline-size: var(--lf-touch);
   min-block-size: var(--lf-touch);
-  padding-inline: var(--lf-space-3);
   border: 2px solid var(--lf-ink);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
   cursor: pointer;
 }
 .swatch.on { outline: 3px solid var(--lf-red); outline-offset: 2px; }
 .swatch:disabled { opacity: 0.6; cursor: default; }
 
-.swatch--chalk { background: var(--lf-sw-chalk-bg); color: var(--lf-sw-chalk-fg); }
-.swatch--sky { background: var(--lf-sw-sky-bg); color: var(--lf-sw-sky-fg); }
-.swatch--moss { background: var(--lf-sw-moss-bg); color: var(--lf-sw-moss-fg); }
-.swatch--amber { background: var(--lf-sw-amber-bg); color: var(--lf-sw-amber-fg); }
-.swatch--plum { background: var(--lf-sw-plum-bg); color: var(--lf-sw-plum-fg); }
-.swatch--clay { background: var(--lf-sw-clay-bg); color: var(--lf-sw-clay-fg); }
-.swatch--slate { background: var(--lf-sw-slate-bg); color: var(--lf-sw-slate-fg); }
-.swatch--sand { background: var(--lf-sw-sand-bg); color: var(--lf-sw-sand-fg); }
+.swatch--chalk { background: var(--lf-sw-chalk-bg); }
+.swatch--sky { background: var(--lf-sw-sky-bg); }
+.swatch--moss { background: var(--lf-sw-moss-bg); }
+.swatch--amber { background: var(--lf-sw-amber-bg); }
+.swatch--plum { background: var(--lf-sw-plum-bg); }
+.swatch--clay { background: var(--lf-sw-clay-bg); }
+.swatch--slate { background: var(--lf-sw-slate-bg); }
+.swatch--sand { background: var(--lf-sw-sand-bg); }
 
-.row__grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--lf-space-4);
-  align-items: flex-start;
-  margin-block-start: var(--lf-space-2);
+.row__kindnote {
+  margin: var(--lf-space-3) 0 0;
+  padding-inline-start: var(--lf-space-3);
+  border-inline-start: 2px solid var(--lf-rule-soft);
+  font-size: var(--lf-size-small);
+  line-height: 1.45;
+  color: var(--lf-muted);
 }
-.field { flex: 1 1 160px; min-inline-size: 140px; }
+
+.field {
+  max-inline-size: 22ch;
+}
 
 .check {
   display: flex;
   align-items: flex-start;
   gap: var(--lf-space-2);
-  flex: 1 1 240px;
   min-block-size: var(--lf-touch);
   padding-block: var(--lf-space-2);
   cursor: pointer;
@@ -117,9 +148,16 @@
 .check__label { color: var(--lf-ink); }
 .check__help { font-size: var(--lf-size-small); color: var(--lf-muted); line-height: 1.4; }
 
+/* ---------- the teaching-copy pair ---------- */
+
+.row__texts {
+  display: grid;
+  gap: var(--lf-space-4);
+  margin-block-start: var(--lf-space-3);
+}
+
 .textarea-field {
   display: block;
-  margin-block-start: var(--lf-space-4);
 }
 .textarea-field textarea {
   display: block;
@@ -145,13 +183,10 @@
   line-height: 1.4;
 }
 
-.row__ft {
-  margin-block-start: var(--lf-space-4);
-  padding-block-start: var(--lf-space-3);
-  border-block-start: 1px solid var(--lf-rule-soft);
-}
+/* ---------- archive ---------- */
+
 .row__count {
-  margin: 0 0 var(--lf-space-2);
+  margin: var(--lf-space-3) 0;
   font-size: var(--lf-size-small);
   color: var(--lf-muted);
 }
@@ -169,6 +204,7 @@
 .dest {
   display: block;
   margin: 0 0 var(--lf-space-2);
+  max-inline-size: 36ch;
 }
 .dest select {
   display: block;
@@ -212,6 +248,23 @@
 .b--danger { border-color: var(--lf-red); color: var(--lf-red-text); }
 .b--danger:hover:not(:disabled) { background: var(--lf-red); border-color: var(--lf-red); color: var(--lf-on-red); }
 
+/* ==================== 900px and up ==================== */
+
 @media (min-width: 900px) {
-  .row__grid { flex-wrap: nowrap; }
+  /* Identity and timing side by side; the teaching copy and the archive gate span the full
+     measure, because a sentence field and a destructive confirmation both want room. */
+  .row__groups {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--lf-space-8) var(--lf-space-6);
+  }
+  .grp--wide {
+    grid-column: 1 / -1;
+  }
+
+  /* The two teaching-copy fields are a pair — "where is the lead" and "what to do next" —
+     and reading them beside each other is how you tell whether they agree. */
+  .row__texts {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--lf-space-6);
+  }
 }
