@@ -69,6 +69,7 @@
    fields — are one act with one look, padded to a full touch target though the words are
    small. */
 .why,
+.block__fold,
 .facts__edit {
   flex: 0 0 auto;
   min-block-size: var(--lf-touch);
@@ -81,7 +82,8 @@
   cursor: pointer;
 }
 
-.why {
+.why,
+.block__fold {
   display: inline-flex;
   align-items: center;
 }
@@ -246,7 +248,8 @@
   border-color: var(--lf-ink);
 }
 
-.hd__x svg {
+.hd__x svg,
+.block__fold svg {
   inline-size: 20px;
   block-size: 20px;
   stroke-width: 2.4;
@@ -691,8 +694,19 @@
 }
 
 /* the one "why ask?" for the whole set, pushed to the end of the heading row */
-.block__why {
+/* Whatever follows the title and its count is pushed to the far end — the "why ask?" toggle
+   when it is there, the fold control otherwise. One rule instead of one per control. */
+.block__hd > *:nth-child(3) {
   margin-inline-start: auto;
+}
+
+/* The questions' fold control. Takes the bare-button base from `.why` below, then ink rather
+   than the annotation red: this one changes what you can see, it does not explain anything. */
+.block__fold {
+  justify-content: center;
+  align-self: center;
+  inline-size: var(--lf-touch);
+  color: var(--lf-ink);
 }
 
 /* what the section is for, before the first question. "שאלות הכשרה" is jargon to

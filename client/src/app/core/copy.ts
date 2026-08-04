@@ -550,6 +550,9 @@ export const COPY = {
       progress: (answered: number, total: number) => `${answered} מתוך ${total}`,
       why: 'למה שואלים?',
       hideWhy: 'הסתר',
+      /** The fold control is an icon, so these are its accessible name — never rendered text. */
+      fold: 'כווץ את השאלות',
+      unfold: 'הרחב את השאלות',
     },
 
     timeline: {

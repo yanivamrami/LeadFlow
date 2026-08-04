@@ -16,7 +16,13 @@ import { Router } from '@angular/router';
 import { A11yModule } from '@angular/cdk/a11y';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 
-import { LucideGripVertical, LucideTrash2, LucideX } from '@lucide/angular';
+import {
+  LucideChevronDown,
+  LucideChevronUp,
+  LucideGripVertical,
+  LucideTrash2,
+  LucideX,
+} from '@lucide/angular';
 
 import {
   ACTIVITY_LABEL,
@@ -92,6 +98,8 @@ type FooterMode = 'default' | 'dirty' | 'delete';
     LucideX,
     LucideGripVertical,
     LucideTrash2,
+    LucideChevronUp,
+    LucideChevronDown,
     TextField,
     FormError,
     StageTag,
@@ -233,6 +241,14 @@ export class LeadSheet {
    */
   protected readonly canDrag = signal(false);
 
+  /**
+   * The five questions fold away. Open by default, because someone who has never qualified a
+   * lead will not go looking for the control that would show them what to ask. Session-local
+   * on purpose: this is a per-visit convenience, not a preference — the guidance setting in
+   * §6.6 is where a lasting "explain less" choice belongs.
+   */
+  protected readonly checklistOpen = signal(true);
+
   private readonly checklistEl = viewChild<ElementRef<HTMLElement>>('checklist');
   private readonly composerEl = viewChild<ElementRef<HTMLElement>>('composer');
   private readonly noteInputEl = viewChild<ElementRef<HTMLTextAreaElement>>('noteInput');
@@ -288,7 +304,12 @@ export class LeadSheet {
       const el = this.checklistEl()?.nativeElement;
       if (!el) return;
       this.landed = true;
-      untracked(() => this.landOnChecklist(el));
+      // The nudge promises the questions, so it opens them: landing on a folded section
+      // would scroll to a heading and a count and look like the link had failed.
+      untracked(() => {
+        this.checklistOpen.set(true);
+        this.landOnChecklist(el);
+      });
     });
 
     // `?at=note` — land on the activity composer. Unlike the checklist, the user's next
