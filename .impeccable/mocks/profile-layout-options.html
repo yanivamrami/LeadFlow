@@ -962,8 +962,9 @@ and the index will already have the two extra rows it needs.</p>
   <li><span class="dl__id">3</span><span><b>No copy changes.</b> Every Hebrew string in every frame above is
     already in <code>COPY.profile</code>, <code>COPY.auth.signUp.passwordHelp</code>, or the two local pipeline
     labels in <code>profile.ts</code>. Nothing here needs a new string, and nothing invents a claim.</span></li>
-  <li id="note"><span class="dl__id">4</span><span><b>Nothing here was measured in a browser.</b> Headless
-    Chrome and headless Edge both exit 0 with empty output on this machine (blocked by policy), so every height
+  <li id="note"><span class="dl__id">4</span><span><b>Nothing here was measured in a browser.</b> One-shot
+    <code>chrome --headless --dump-dom</code> and <code>--screenshot</code> return zero bytes on this machine
+    (headless itself works — karma launches it fine — but not those flags), so every height
     quoted in this document is arithmetic summed off the stylesheet above (declared line-heights, 48px field floor,
     44px control floor, token spacing), ±30px for line-wrap guesses in the Hebrew help copy. The frames themselves
     are real HTML at real widths, so <i>proportion</i> and <i>topology</i> are trustworthy; the pixel totals are
