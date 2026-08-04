@@ -16,7 +16,7 @@ import { Router } from '@angular/router';
 import { A11yModule } from '@angular/cdk/a11y';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 
-import { LucideGripVertical, LucideX } from '@lucide/angular';
+import { LucideGripVertical, LucideTrash2, LucideX } from '@lucide/angular';
 
 import {
   ACTIVITY_LABEL,
@@ -91,6 +91,7 @@ type FooterMode = 'default' | 'dirty' | 'delete';
     DragDropModule,
     LucideX,
     LucideGripVertical,
+    LucideTrash2,
     TextField,
     FormError,
     StageTag,
