@@ -4,31 +4,46 @@
   display: block;
 }
 
+/* One grid for the whole wall, not six independent stacks: header, meaning and cards each
+   get a shared row, so a two-line stage name or a two-line meaning moves every column's
+   next band down together instead of only its own. */
 .board {
-  display: flex;
-  gap: 14px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 1fr);
+  grid-template-rows: auto auto auto;
+  column-gap: 14px;
+  row-gap: 0;
   padding: var(--lf-space-6) var(--lf-space-8) var(--lf-space-8);
-  align-items: flex-start;
+  align-items: stretch;
   overflow-x: auto;
 }
 
 .col {
-  flex: 1 1 0;
-  min-inline-size: 200px;
+  display: grid;
+  grid-row: 1 / -1;
+  grid-template-rows: subgrid;
 }
 
+/* Pinned rather than flowed: a stage with no meaning skips the caption, and its cards must
+   still start on the same line as everyone else's. */
 .col__hd {
+  grid-row: 1;
   display: flex;
   align-items: baseline;
   gap: var(--lf-space-2);
   padding: 8px var(--lf-space-3) 9px;
   background: var(--lf-ink);
   color: var(--lf-on-ink);
+  /* Lost draws a dashed border; the rest reserve the same 2px so every ink block is the
+     same height and the names sit on one line. */
+  border: 2px solid transparent;
 }
 
 /* Sits on the column body, not on the ink header — the header is already dense and the
    meaning is a caption for the column rather than part of its title. */
 .col__meaning {
+  grid-row: 2;
   margin: 0;
   padding: 8px var(--lf-space-3);
   border-block-end: 1px solid var(--lf-rule-soft);
@@ -62,6 +77,7 @@
 }
 
 .col__drop {
+  grid-row: 3;
   min-block-size: 92px;
   padding-block-end: var(--lf-space-2);
 }
