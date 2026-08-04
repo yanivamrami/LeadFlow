@@ -310,6 +310,20 @@
           </div>
         </div>
 
+        <!-- Files, with the lead's own material rather than in the work column: a proposal is
+             part of what this lead *is*, and it is read far more often than it is added. In
+             create mode the choice is held here and uploaded once the insert returns an id. -->
+        <lf-lead-files
+          [files]="files()"
+          [pending]="pendingFiles()"
+          [busy]="filesBusy()"
+          [disabled]="saving()"
+          (picked)="pickFiles($event)"
+          (openRequested)="openFile($event)"
+          (removeRequested)="removeFile($event)"
+          (pendingDropped)="dropPending($event)"
+        />
+
         <!-- closing: inline, never a second dialog -->
         @if (selectedKind() === 'lost') {
           <div class="close-block">

@@ -561,6 +561,31 @@ export const COPY = {
       systemEntry: 'נרשם אוטומטית',
     },
 
+    /**
+     * Files on the lead. Sizes and type names stay Latin (MB, PDF, Excel) because that is what
+     * the OS picker and the file itself say — translating them would make the two disagree.
+     */
+    files: {
+      title: 'קבצים',
+      add: 'הוסף קובץ',
+      adding: 'מעלה…',
+      none: 'אין קבצים על הליד הזה.',
+      hint: 'עד 5MB לקובץ. PDF, Word, Excel, PowerPoint, טקסט או תמונה.',
+      open: 'פתח',
+      remove: 'מחק',
+      /** Create mode: there is no lead to attach to yet, so the choice is held until save. */
+      queued: (n: number) => (n === 1 ? 'קובץ אחד יעלה עם שמירת הליד.' : `${n} קבצים יעלו עם שמירת הליד.`),
+      uploaded: (n: number) => (n === 1 ? 'הקובץ נוסף' : `${n} קבצים נוספו`),
+      deleted: 'הקובץ נמחק',
+      deleteFailed: 'הקובץ לא נמחק. אפשר לנסות שוב.',
+      openFailed: 'לא הצלחנו לפתוח את הקובץ. אפשר לנסות שוב.',
+      uploadFailed: 'ההעלאה נכשלה. אפשר לנסות שוב.',
+      uploadFailedFor: (name: string) => `${name} לא הועלה.`,
+      tooBig: (name: string, max: string) => `${name} גדול מ-${max} ולכן לא הועלה.`,
+      zeroBytes: (name: string) => `${name} ריק ולכן לא הועלה.`,
+      badType: (name: string) => `${name} — סוג הקובץ הזה לא נתמך.`,
+    },
+
     composer: {
       label: 'הוסיפו הערה',
       placeholder: 'מה קרה? מה הצעד הבא?',
@@ -768,6 +793,18 @@ const ILS = new Intl.NumberFormat('he-IL', {
   currency: 'ILS',
   maximumFractionDigits: 0,
 });
+
+/**
+ * A file size, in the units the OS file picker uses. Latin and LTR on purpose: `MB` beside a
+ * Hebrew filename is what every other program on the user's machine shows, and a translated unit
+ * would make this the only place that disagrees. One decimal below 10MB, none above — nobody
+ * needs to know a document is 4.27MB rather than 4.3MB.
+ */
+export function formatBytes(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) return `${mb >= 10 ? Math.round(mb) : Number(mb.toFixed(1))}MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))}KB`;
+}
 
 /** ₪12,500 in lists; over a million compacts to ₪1.2מ׳ so columns stay narrow. */
 export function formatValue(value: number): string {

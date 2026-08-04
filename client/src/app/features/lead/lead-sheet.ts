@@ -33,6 +33,7 @@ import {
   formatDue,
 } from '../../core/copy';
 import { GuidanceService } from '../../core/guidance.service';
+import { NotifyService } from '../../core/notify.service';
 import { nextStepOf } from '../../core/guidance';
 import {
   Activity,
@@ -50,11 +51,13 @@ import {
 } from '../../core/lead.model';
 import { hasErrors, validateLeadForm } from '../../core/lead-validation';
 import { LeadsStore } from '../../core/leads.store';
+import { LeadFile, LeadFilesStore, rejectionOf } from '../../core/lead-files.store';
 import { StagesStore } from '../../core/stages.store';
 import { FormError } from '../../shared/form-error';
 import { StageTag } from '../../shared/stage-tag';
 import { DuePicker } from '../../shared/due-picker';
 import { TextField } from '../../shared/text-field';
+import { LeadFiles } from './lead-files';
 
 /** How many history entries show before the timeline asks to be expanded. */
 const TIMELINE_PAGE = 20;
@@ -88,6 +91,7 @@ type FooterMode = 'default' | 'dirty' | 'delete';
     FormError,
     StageTag,
     DuePicker,
+    LeadFiles,
   ],
   templateUrl: './lead-sheet.html',
   styleUrl: './lead-sheet.scss',
@@ -95,6 +99,8 @@ type FooterMode = 'default' | 'dirty' | 'delete';
 export class LeadSheet {
   private readonly store = inject(LeadsStore);
   private readonly stagesStore = inject(StagesStore);
+  private readonly filesStore = inject(LeadFilesStore);
+  private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
   /** Read by the template: how much of the teaching layer is expanded by default. */
   protected readonly guidance = inject(GuidanceService);
@@ -245,6 +251,13 @@ export class LeadSheet {
       if (!lead || this.hydratedFor === lead.id) return;
       this.hydratedFor = lead.id;
       untracked(() => this.hydrate(lead));
+    });
+
+    // Load this lead's files once, when we know which lead we are. Keyed off the route input
+    // rather than the loaded lead, so the list is on its way while the store is still reading.
+    effect(() => {
+      const id = this.id();
+      if (id) untracked(() => void this.filesStore.load(id));
     });
 
     // `?at=checklist` — wait for the lead, because the checklist does not render without it.
@@ -445,6 +458,8 @@ export class LeadSheet {
   protected readonly dirty = computed(() => {
     if (this.note().trim().length > 0) return true;
     if (Object.keys(this.touchedAnswers()).length > 0) return true;
+    // Files chosen on a new lead are not written until the save, so leaving would lose them.
+    if (this.pendingFiles().length > 0) return true;
 
     const lead = this.lead();
     if (!lead) return this.name().trim().length > 0;
@@ -487,11 +502,20 @@ export class LeadSheet {
         const id = await this.store.createLead(this.draft());
         // Null means the write did not happen. Stay open so nothing typed is lost.
         if (!id) return;
-        // A new lead can carry its first note. It cannot be appended before the lead exists,
-        // so unlike the edit case it rides along with the save rather than having its own
-        // button — and it is written after the insert, against the id we just got back.
+        // A new lead can carry its first note and its first files. Neither can be attached
+        // before the lead exists, so unlike the edit case they ride along with the save rather
+        // than having their own buttons — written after the insert, against the id we just got
+        // back. The lead is already saved by this point, so a failed attachment is reported by
+        // the store and costs the user the attachment, never the lead.
         const body = this.note().trim();
         if (body) await this.store.logActivity(id, this.noteType(), body);
+
+        const held = this.pendingFiles();
+        if (held.length) {
+          await this.filesStore.upload(id, held);
+          this.pendingFiles.set([]);
+        }
+
         this.close();
         return;
       }
@@ -533,10 +557,15 @@ export class LeadSheet {
     this.footerMode.set('delete');
   }
 
-  protected confirmDelete(): void {
+  protected async confirmDelete(): Promise<void> {
     const id = this.id();
     if (!id) return;
+    // Before the lead goes, not after: the FK cascade takes the file rows with it, and the rows
+    // are the only record of where the objects live. Storage cannot be cascaded from SQL, so this
+    // is the one moment the paths are still known. Failures do not stop the delete.
+    await this.filesStore.purgeObjectsFor(id);
     this.store.remove(id);
+    this.filesStore.forget(id);
     this.close();
   }
 
@@ -562,6 +591,50 @@ export class LeadSheet {
 
   protected setNoteType(type: ActivityType): void {
     this.noteType.set(type);
+  }
+
+  /* ---------- files ---------- */
+
+  protected readonly filesBusy = this.filesStore.working;
+
+  /** What is already attached. Empty in create mode, where there is nothing to attach to yet. */
+  protected readonly files = computed(() => this.filesStore.filesFor(this.id()));
+
+  /**
+   * Create mode holds the chosen files in memory and uploads them once the insert returns an
+   * id — there is no lead to attach them to before that, and asking the user to save and then
+   * come back to add a file would be a worse answer than waiting.
+   */
+  protected readonly pendingFiles = signal<readonly File[]>([]);
+
+  /** Validated on choosing rather than on saving, so a rejected file is named while it is
+   *  still the thing the user is looking at. */
+  protected pickFiles(chosen: readonly File[]): void {
+    if (!chosen.length) return;
+
+    const accepted: File[] = [];
+    for (const file of chosen) {
+      const rejection = rejectionOf(file);
+      if (rejection) this.notify.failed(rejection);
+      else accepted.push(file);
+    }
+    if (!accepted.length) return;
+
+    const id = this.id();
+    if (id) void this.filesStore.upload(id, accepted);
+    else this.pendingFiles.update((held) => [...held, ...accepted]);
+  }
+
+  protected dropPending(index: number): void {
+    this.pendingFiles.update((held) => held.filter((_, i) => i !== index));
+  }
+
+  protected openFile(file: LeadFile): void {
+    void this.filesStore.open(file);
+  }
+
+  protected removeFile(file: LeadFile): void {
+    void this.filesStore.remove(file);
   }
 
   /* ---------- the composer, which commits on its own ---------- */
