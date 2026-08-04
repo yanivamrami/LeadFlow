@@ -23,8 +23,9 @@ import {
 import { NotifyService } from './notify.service';
 import { StagesStore } from './stages.store';
 import { AppError, SupabaseService, costsData, isAppError } from './supabase.service';
+import { DashboardView, readViewPreference, writeViewPreference } from './view-preference';
 
-export type DashboardView = 'list' | 'board';
+export type { DashboardView };
 
 /**
  * Activity types that count as having actually reached the person, and therefore close an
@@ -97,7 +98,8 @@ export class LeadsStore {
   readonly stageFilter = signal<string | 'all'>('all');
   /** Arrives from an insights row (`?source=`); validated by the caller before it lands here. */
   readonly sourceFilter = signal<LeadSource | 'all'>('all');
-  readonly view = signal<DashboardView>('list');
+  /** Seeded from storage, so a refresh opens the view the user left. */
+  readonly view = signal<DashboardView>(readViewPreference());
   readonly sheetExpanded = signal(false);
   readonly explainerDismissed = signal(false);
   /** Announced politely to screen readers after a stage move. */
@@ -263,7 +265,13 @@ export class LeadsStore {
     });
   }
 
-  /** Back to the state a fresh load starts from. Filters and view preferences go too. */
+  /**
+   * Back to the state a fresh load starts from. Filters, sort and sheet state go too.
+   *
+   * `view` deliberately stays: it is a stored layout preference rather than the previous
+   * user's data, and clearing it here would make every sign-in start on the list again —
+   * which is what persisting it exists to prevent.
+   */
   reset(): void {
     this._rows.set([]);
     this._tenantId.set(null);
@@ -443,6 +451,7 @@ export class LeadsStore {
 
   setView(view: DashboardView): void {
     this.view.set(view);
+    writeViewPreference(view);
   }
 
   clearFilters(): void {
