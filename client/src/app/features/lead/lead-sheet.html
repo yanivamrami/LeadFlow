@@ -470,67 +470,9 @@
           </section>
 
           @if (!create()) {
-          <!-- checklist -->
-          <!-- tabindex -1 so the nudge's "מלא עכשיו" can land focus on the section itself:
-               the heading and progress are announced, and nothing is pre-selected -->
-          <section #checklist class="block" tabindex="-1" aria-labelledby="cl-title">
-            <header class="block__hd">
-              <h3 class="block__title" id="cl-title">{{ copy.lead.checklist.title }}</h3>
-              <span class="block__count lf-num">
-                {{ checklistProgress() }}
-              </span>
-              <!-- One toggle for all five reasons rather than five separate ones. The five
-                   cost a 44px row each and answered the same question. Hidden when the
-                   guidance setting already keeps every explanation open. -->
-              @if (!guidance.verbose()) {
-                <button
-                  type="button"
-                  class="why block__why"
-                  [attr.aria-expanded]="whyAllOpen()"
-                  (click)="whyAllOpen.set(!whyAllOpen())"
-                >
-                  {{ whyAllOpen() ? copy.lead.checklist.hideWhy : copy.lead.checklist.why }}
-                </button>
-              }
-            </header>
-
-            <p class="block__lead">{{ copy.lead.checklist.lead }}</p>
-
-            <!-- Question and answer on one row: the label still carries the answer and the
-                 segment is still 44px, so only the empty vertical goes. Not a
-                 fieldset/legend pair — a legend inside a grid container is rendered
-                 inconsistently across browsers, and pairing it with the radiogroup's own
-                 aria-label announced the question twice. The visible question *is* the
-                 group's label now, referenced by id. -->
-            @for (item of items; track item) {
-              <div class="q">
-                <p class="q__text" [id]="'q-' + item">{{ question[item] }}</p>
-
-                <div class="seg" role="radiogroup" [attr.aria-labelledby]="'q-' + item">
-                  @for (option of answerOptions; track option) {
-                    <button
-                      type="button"
-                      role="radio"
-                      class="seg__b"
-                      [class.seg__b--on]="answers()[item] === option"
-                      [attr.aria-checked]="answers()[item] === option"
-                      [attr.aria-label]="answerAria[option]"
-                      [disabled]="saving()"
-                      (click)="setAnswer(item, option)"
-                    >
-                      {{ answerLabel[option] }}
-                    </button>
-                  }
-                </div>
-
-                @if (whyShown()) {
-                  <p class="q__whytext">{{ why[item] }}</p>
-                }
-              </div>
-            }
-          </section>
-
           <!-- timeline -->
+          <!-- Above the checklist: what already happened is the context for answering the five
+               questions, and the composer directly above has just added to it. -->
           <section class="block" aria-labelledby="tl-title">
             <header class="block__hd">
               <h3 class="block__title" id="tl-title">{{ copy.lead.timeline.title }}</h3>
@@ -565,6 +507,93 @@
                 }}
               </button>
             }
+          </section>
+
+          <!-- checklist -->
+          <!-- tabindex -1 so the nudge's "מלא עכשיו" can land focus on the section itself:
+               the heading and progress are announced, and nothing is pre-selected -->
+          <section #checklist class="block" tabindex="-1" aria-labelledby="cl-title">
+            <header class="block__hd">
+              <h3 class="block__title" id="cl-title">{{ copy.lead.checklist.title }}</h3>
+              <span class="block__count lf-num">
+                {{ checklistProgress() }}
+              </span>
+              <!-- One toggle for all five reasons rather than five separate ones. The five
+                   cost a 44px row each and answered the same question. Hidden when the
+                   guidance setting already keeps every explanation open. -->
+              <!-- Only while the questions are showing: a "why ask?" toggle over a folded
+                   section would reveal annotations nobody can see. -->
+              @if (!guidance.verbose() && checklistOpen()) {
+                <button
+                  type="button"
+                  class="why block__why"
+                  [attr.aria-expanded]="whyAllOpen()"
+                  (click)="whyAllOpen.set(!whyAllOpen())"
+                >
+                  {{ whyAllOpen() ? copy.lead.checklist.hideWhy : copy.lead.checklist.why }}
+                </button>
+              }
+
+              <!-- Folds the five questions away. The progress count stays in the header, so a
+                   folded section still says where you are. Icon-only, so the label is the
+                   accessible name; a chevron needs no mirroring in RTL. -->
+              <button
+                type="button"
+                class="block__fold"
+                [attr.aria-expanded]="checklistOpen()"
+                aria-controls="cl-body"
+                [attr.aria-label]="
+                  checklistOpen() ? copy.lead.checklist.fold : copy.lead.checklist.unfold
+                "
+                (click)="checklistOpen.set(!checklistOpen())"
+              >
+                @if (checklistOpen()) {
+                  <svg lucideChevronUp aria-hidden="true"></svg>
+                } @else {
+                  <svg lucideChevronDown aria-hidden="true"></svg>
+                }
+              </button>
+            </header>
+
+            <!-- The region stays in the DOM so `aria-controls` always resolves to it. -->
+            <div id="cl-body">
+              @if (checklistOpen()) {
+                <p class="block__lead">{{ copy.lead.checklist.lead }}</p>
+
+                <!-- Question and answer on one row: the label still carries the answer and the
+                     segment is still 44px, so only the empty vertical goes. Not a
+                     fieldset/legend pair — a legend inside a grid container is rendered
+                     inconsistently across browsers, and pairing it with the radiogroup's own
+                     aria-label announced the question twice. The visible question *is* the
+                     group's label now, referenced by id. -->
+                @for (item of items; track item) {
+                  <div class="q">
+                    <p class="q__text" [id]="'q-' + item">{{ question[item] }}</p>
+
+                    <div class="seg" role="radiogroup" [attr.aria-labelledby]="'q-' + item">
+                      @for (option of answerOptions; track option) {
+                        <button
+                          type="button"
+                          role="radio"
+                          class="seg__b"
+                          [class.seg__b--on]="answers()[item] === option"
+                          [attr.aria-checked]="answers()[item] === option"
+                          [attr.aria-label]="answerAria[option]"
+                          [disabled]="saving()"
+                          (click)="setAnswer(item, option)"
+                        >
+                          {{ answerLabel[option] }}
+                        </button>
+                      }
+                    </div>
+
+                    @if (whyShown()) {
+                      <p class="q__whytext">{{ why[item] }}</p>
+                    }
+                  </div>
+                }
+              }
+            </div>
           </section>
           }
       </div>
