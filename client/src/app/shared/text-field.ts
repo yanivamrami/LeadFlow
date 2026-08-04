@@ -139,9 +139,25 @@ let seq = 0;
       color: var(--lf-muted);
     }
 
+    /* This component owns its own box model rather than inheriting a parent's reset. There is
+       no global border-box rule — styles.scss imports only tokens.css — and a parent's scoped
+       reset cannot reach in here: these elements carry this component's encapsulation
+       attribute, not the parent's. Without it the field measured 52px beside a 48px native
+       select on the same row, because the height was set on the input and the 2px border was
+       then added outside it. */
+    :host *,
+    :host *::before,
+    :host *::after {
+      box-sizing: border-box;
+    }
+
+    /* The 48px floor belongs on the bordered element, not on the input: that is what makes the
+       stated height the height you actually see. align-items: stretch then lets the input and
+       the reveal button fill it, so the whole 48px stays tappable. */
     .box {
       display: flex;
       align-items: stretch;
+      min-block-size: 48px;
       border: 2px solid var(--lf-ink);
       background: var(--lf-surface);
     }
@@ -154,7 +170,8 @@ let seq = 0;
     input {
       flex: 1 1 auto;
       min-inline-size: 0;
-      min-block-size: 48px;
+      /* No block-size here — .box sets the height and this stretches into it. A 48px floor
+         on the input would sit *inside* the border and put the field back at 52px. */
       padding-inline: var(--lf-space-3);
       border: 0;
       background: transparent;
