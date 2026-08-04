@@ -527,12 +527,6 @@
   font-size: 17px;
 }
 
-.close-block__hint {
-  margin: var(--lf-space-2) 0 0;
-  font-size: 13px;
-  color: var(--lf-muted);
-}
-
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -894,19 +888,6 @@
 .b__i {
   inline-size: 18px;
   block-size: 18px;
-}
-
-.b--bare {
-  flex: 0 0 auto;
-  border-color: transparent;
-  color: var(--lf-muted);
-  font-weight: 400;
-}
-
-.b--bare:hover:not(:disabled) {
-  background: transparent;
-  color: var(--lf-red-text, var(--lf-red));
-
 }
 
 @keyframes sheet-scrim {
