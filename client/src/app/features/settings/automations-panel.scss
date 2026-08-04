@@ -2,11 +2,13 @@
    archived list (`stages.html`), so this host carries its own top rule rather than a full
    border — the parent already frames the stage itself. */
 
+/* A 2px rule and 32px of air, matching the field groups above it in `stage-row.scss`:
+   automations are a peer of those groups, not a footnote hanging off the last field. */
 :host {
   display: block;
-  margin-block-start: var(--lf-space-4);
-  padding-block-start: var(--lf-space-3);
-  border-block-start: 1px solid var(--lf-rule-soft);
+  margin-block-start: var(--lf-space-8);
+  padding-block-start: var(--lf-space-4);
+  border-block-start: 2px solid var(--lf-ink);
 }
 
 .panel__hd {
