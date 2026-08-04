@@ -1,7 +1,11 @@
 <div class="scrim" (click)="attemptClose()"></div>
 
+<!-- `sheet--split` is the two-bill desktop topology, and it is deliberately not offered in
+     create mode: there is no checklist, timeline or activity log to put in a second column,
+     so a create sheet stays the narrow centred dialog it always was. -->
 <section
   class="sheet"
+  [class.sheet--split]="!create()"
   role="dialog"
   aria-modal="true"
   [attr.aria-label]="create() ? copy.lead.createTitle : copy.lead.editAria"
@@ -27,99 +31,63 @@
       <svg lucideGripVertical></svg>
     </button>
 
-    <h2 class="hd__name">{{ create() ? copy.lead.createTitle : (lead()?.name ?? '') }}</h2>
+    <!-- The name takes its own line on a phone, with the stage and the figure under it.
+         Sharing one row with a tag, a figure, a grip and a close button left the lead's own
+         name as the most truncated thing on the sheet — a real Hebrew name came out as
+         "דנה כהן...". There is room for one row again at 900px, so it goes back to one. -->
+    <div class="hd__id">
+      <!-- Focus lands on the name, not on the first tabbable control. The stage strip now
+           leads the form, and auto-capturing a stage radio would put one stray keystroke
+           between the user and a stage they never chose — the same reasoning that keeps the
+           checklist landing off its radios. -->
+      <h2 class="hd__name" tabindex="-1" cdkFocusInitial>
+        {{ create() ? copy.lead.createTitle : (lead()?.name ?? '') }}
+      </h2>
 
-    @if (!create() && lead(); as current) {
-      <lf-stage-tag [stage]="current.stage" />
-      <span class="hd__value lf-num">{{ current.estimatedValue | lfValue }}</span>
-    }
+      @if (!create() && lead(); as current) {
+        <div class="hd__meta">
+          <lf-stage-tag [stage]="current.stage" />
+          <span class="hd__value lf-num">{{ current.estimatedValue | lfValue }}</span>
+        </div>
+      }
+    </div>
 
     <button type="button" class="hd__x lf-hit" [attr.aria-label]="copy.lead.close" (click)="attemptClose()">
       <svg lucideX aria-hidden="true"></svg>
     </button>
   </header>
 
-  <div class="body">
+  <div class="body" [class.body--folded]="folded()" [class.body--open]="!folded()">
     @if (missing()) {
       <div class="gone">
         <p class="gone__title">{{ copy.errors.notFound }}</p>
       </div>
     } @else {
-      @if (create()) {
-        <p class="sub">{{ copy.lead.createSubtitle }}</p>
-      }
+      <!-- ============ the lead: what it is ============ -->
+      <div class="lead">
+        <!-- What to do with this lead, before any field. Urgent reasons carry a verb; a healthy
+             lead carries the stage's own next step. Advisory: it names an action, never blocks. -->
+        @if (nextStep(); as step) {
+          <p class="next" [class.next--urgent]="step.urgent">
+            <span class="next__l lf-label">{{ copy.lead.nextStep }}</span>
+            <span class="next__t">
+              {{ step.text }}@if (step.action) { · {{ step.action }}}
+            </span>
+          </p>
+        }
 
-      <!-- What to do with this lead, before any field. Urgent reasons carry a verb; a healthy
-           lead carries the stage's own next step. Advisory: it names an action, never blocks. -->
-      @if (nextStep(); as step) {
-        <p class="next" [class.next--urgent]="step.urgent">
-          <span class="next__l lf-label">{{ copy.lead.nextStep }}</span>
-          <span class="next__t">
-            {{ step.text }}@if (step.action) { · {{ step.action }}}
-          </span>
-        </p>
-      }
+        @if (create()) {
+          <p class="sub">{{ copy.lead.createSubtitle }}</p>
+        }
 
-      <!-- fields -->
-      <lf-text-field
-        [label]="copy.lead.fields.name"
-        name="name"
-        [(value)]="name"
-        [error]="nameError()"
-        [disabled]="saving()"
-        enterkeyhint="next"
-        [fieldHelp]="fieldHelp.name"
-        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'name'"
-        [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="fieldHelpAria.name"
-        (fieldHelpToggled)="toggleFieldHelp('name')"
-      />
-      <lf-text-field
-        [label]="copy.lead.fields.company"
-        name="company"
-        [(value)]="company"
-        [help]="copy.lead.fields.optional"
-        [disabled]="saving()"
-        [fieldHelp]="fieldHelp.company"
-        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'company'"
-        [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="fieldHelpAria.company"
-        (fieldHelpToggled)="toggleFieldHelp('company')"
-      />
-      <lf-text-field
-        [label]="copy.lead.fields.phone"
-        name="phone"
-        [(value)]="phone"
-        autocomplete="tel"
-        inputmode="tel"
-        [help]="copy.lead.fields.optional"
-        [disabled]="saving()"
-        [fieldHelp]="fieldHelp.phone"
-        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'phone'"
-        [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="fieldHelpAria.phone"
-        (fieldHelpToggled)="toggleFieldHelp('phone')"
-      />
-      <lf-text-field
-        [label]="copy.lead.fields.email"
-        name="email"
-        type="email"
-        [(value)]="email"
-        autocomplete="email"
-        [error]="emailError()"
-        [help]="copy.lead.fields.optional"
-        [disabled]="saving()"
-        [fieldHelp]="fieldHelp.email"
-        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'email'"
-        [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="fieldHelpAria.email"
-        (fieldHelpToggled)="toggleFieldHelp('email')"
-      />
-
-      <div class="pair">
-        <div class="pick">
-          <div class="pick__row">
-            <label class="pick__label lf-label" for="status-select">{{ copy.lead.fields.status }}</label>
+        <!-- Stage as a strip of stops rather than a closed select: moving a lead along is the
+             commonest reason this sheet opens, and the pipeline is the thing this audience is
+             here to learn — a select shows the one stage it is on and hides every other. The
+             stops wrap, because a tenant's pipeline can be three stages or eleven, and they
+             use the pipeline's own `shortName` where one is set. -->
+        <div class="stage">
+          <div class="stage__row">
+            <span class="stage__label lf-label" id="stage-label">{{ copy.lead.fields.status }}</span>
             @if (!guidance.verbose()) {
               <button
                 type="button"
@@ -133,23 +101,33 @@
               </button>
             }
           </div>
-          <select
-            id="status-select"
-            class="pick__select"
-            [value]="stageId()"
-            [disabled]="saving()"
+
+          <div
+            class="strip"
+            role="radiogroup"
+            aria-labelledby="stage-label"
             [attr.aria-describedby]="statusHelpOpen() ? 'status-why status-next' : 'status-next'"
-            (change)="setStageId($any($event.target).value)"
           >
             @for (stage of stages(); track stage.id) {
-              <option [value]="stage.id">{{ stage.name }}</option>
+              <button
+                type="button"
+                role="radio"
+                class="strip__b"
+                [class.strip__b--on]="stageId() === stage.id"
+                [attr.aria-checked]="stageId() === stage.id"
+                [attr.aria-label]="stage.name"
+                [disabled]="saving()"
+                (click)="setStageId(stage.id)"
+              >
+                {{ stage.shortName ?? stage.name }}
+              </button>
             }
-          </select>
+          </div>
 
-          <!-- Keyed off status(), so both lines answer for the stage currently selected —
-               before the save, which is when the question is actually being asked. The
-               meaning follows the guidance setting; the next step is always shown, because
-               it is the actionable half and it is short. -->
+          <!-- Keyed off the selected stage, so both lines answer for the stage currently
+               chosen — before the save, which is when the question is actually being asked.
+               The meaning follows the guidance setting; the next step is always shown,
+               because it is the actionable half and it is short. -->
           @if (statusHelpOpen() && selectedStage()?.meaning; as meaning) {
             <p class="why-text" id="status-why">{{ meaning }}</p>
           }
@@ -161,271 +139,441 @@
           }
         </div>
 
-        <div class="pick">
-          <div class="pick__row">
-            <label class="pick__label lf-label" for="source-select">{{ copy.lead.fields.source }}</label>
-            @if (!guidance.verbose()) {
-              <button
-                type="button"
-                class="why"
-                [attr.aria-expanded]="sourceHelpOpen()"
-                aria-controls="source-why"
-                [attr.aria-label]="fieldHelpAria.source"
-                (click)="toggleFieldHelp('source')"
-              >
-                {{ sourceHelpOpen() ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
+        <!-- The lead's own facts, read-only. Below 900px in edit mode these are reference
+             rather than the task, so they cost a line each instead of a 154px field each,
+             and the field stack below is one tap away. Hidden once that stack is open, and
+             above 900px, where the second column makes the fold pointless. -->
+        @if (!create()) {
+          <div class="facts">
+            <div class="facts__hd">
+              <span class="facts__t lf-label">{{ copy.lead.factsTitle }}</span>
+              <button type="button" class="facts__edit" (click)="factsOpen.set(true)">
+                {{ copy.lead.factsEdit }}
               </button>
-            }
-          </div>
-          <select
-            id="source-select"
-            class="pick__select"
-            [value]="source()"
-            [disabled]="saving()"
-            [attr.aria-describedby]="sourceHelpOpen() ? 'source-why' : null"
-            (change)="setSource($any($event.target).value)"
-          >
-            @for (option of sources; track option) {
-              <option [value]="option">{{ sourceLabel[option] }}</option>
-            }
-          </select>
-          @if (sourceHelpOpen()) {
-            <p class="why-text" id="source-why">{{ fieldHelp.source }}</p>
-          }
-        </div>
-      </div>
-
-      <lf-text-field
-        [label]="copy.lead.fields.value"
-        name="value"
-        [(value)]="value"
-        inputmode="decimal"
-        [error]="valueError()"
-        [disabled]="saving()"
-        [fieldHelp]="fieldHelp.value"
-        [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'value'"
-        [fieldHelpToggleHidden]="guidance.verbose()"
-        [fieldHelpAria]="fieldHelpAria.value"
-        (fieldHelpToggled)="toggleFieldHelp('value')"
-      />
-
-      <!-- closing: inline, never a second dialog -->
-      @if (selectedKind() === 'lost') {
-        <div class="close-block">
-          <p class="close-block__q">{{ copy.lead.lostReason }}</p>
-          <div class="chips">
-            @for (reason of lostReasons; track reason) {
-              <button
-                type="button"
-                class="chip"
-                [class.chip--on]="lostReason() === reason"
-                [attr.aria-pressed]="lostReason() === reason"
-                (click)="pickLostReason(reason)"
-              >
-                {{ reason }}
-              </button>
-            }
-          </div>
-          <label class="bare">
-            <span class="lf-sr">{{ copy.lead.lostReason }}</span>
-            <input
-              type="text"
-              [placeholder]="copy.lead.lostReasonPlaceholder"
-              [value]="lostReason()"
-              [disabled]="saving()"
-              (input)="lostReason.set($any($event.target).value)"
-            />
-          </label>
-          @if (lostReasonError(); as text) {
-            <lf-form-error [message]="text" />
-          }
-        </div>
-      }
-
-      @if (selectedKind() === 'won') {
-        <div class="close-block">
-          <p class="close-block__q">{{ copy.lead.wonAmount }}</p>
-          <label class="bare">
-            <span class="lf-sr">{{ copy.lead.wonAmount }}</span>
-            <input
-              type="text"
-              inputmode="decimal"
-              [value]="value()"
-              [disabled]="saving()"
-              (input)="value.set($any($event.target).value)"
-            />
-          </label>
-          <p class="close-block__hint">{{ copy.lead.wonAmountHint }}</p>
-        </div>
-      }
-
-      @if (!create()) {
-        <!-- follow-up: read and managed here, committed by the one save like everything
-             else on this sheet -->
-        <div class="follow">
-          <p class="follow__label lf-label">{{ copy.lead.reminder }}</p>
-
-          @if (reminderLabel(); as when) {
-            <p class="follow__when">
-              <span class="lf-num">{{ when }}</span>
-              @if (reminderAction() === 'set') {
-                <span class="follow__pending">{{ copy.lead.reminderPending }}</span>
-              }
-            </p>
-          } @else {
-            <p class="follow__none">{{ copy.lead.reminderNone }}</p>
-          }
-
-          @if (!pickingReminder()) {
-            <div class="follow__acts">
-              <button
-                type="button"
-                class="chip"
-                [disabled]="saving()"
-                (click)="pickingReminder.set(true)"
-              >
-                {{ reminderLabel() ? copy.lead.reminderChange : copy.lead.reminderSet }}
-              </button>
-              @if (reminderLabel()) {
-                <button
-                  type="button"
-                  class="chip chip--bare"
-                  [disabled]="saving()"
-                  (click)="clearReminder()"
-                >
-                  {{ copy.lead.reminderClear }}
-                </button>
-              }
             </div>
-          } @else {
-            <lf-due-picker
-              [busy]="saving()"
-              (picked)="pickReminder($event)"
-              (cancel)="pickingReminder.set(false)"
-            />
-          }
-        </div>
 
-        <!-- checklist -->
-        <!-- tabindex -1 so the nudge's "מלא עכשיו" can land focus on the section itself:
-             the heading and progress are announced, and nothing is pre-selected -->
-        <section #checklist class="block" tabindex="-1" aria-labelledby="cl-title">
-          <header class="block__hd">
-            <h3 class="block__title" id="cl-title">{{ copy.lead.checklist.title }}</h3>
-            <span class="block__count lf-num">
-              {{ checklistProgress() }}
-            </span>
-          </header>
+            <dl class="facts__g">
+              <div class="facts__i">
+                <dt class="facts__k lf-label">{{ copy.lead.fields.company }}</dt>
+                <dd class="facts__v">
+                  @if (company()) {
+                    {{ company() }}
+                  } @else {
+                    <span class="facts__none">{{ copy.lead.factsEmpty }}</span>
+                  }
+                </dd>
+              </div>
+              <div class="facts__i">
+                <dt class="facts__k lf-label">{{ copy.lead.fields.source }}</dt>
+                <dd class="facts__v">{{ sourceLabel[source()] }}</dd>
+              </div>
+              <div class="facts__i">
+                <dt class="facts__k lf-label">{{ copy.lead.fields.phone }}</dt>
+                <dd class="facts__v">
+                  @if (phone(); as tel) {
+                    <a class="facts__link lf-ltr" [href]="'tel:' + tel">{{ tel }}</a>
+                  } @else {
+                    <span class="facts__none">{{ copy.lead.factsEmpty }}</span>
+                  }
+                </dd>
+              </div>
+              <div class="facts__i">
+                <dt class="facts__k lf-label">{{ copy.lead.fields.value }}</dt>
+                <dd class="facts__v lf-num">{{ valueRead() }}</dd>
+              </div>
+              <div class="facts__i facts__i--wide">
+                <dt class="facts__k lf-label">{{ copy.lead.fields.email }}</dt>
+                <dd class="facts__v">
+                  @if (email(); as address) {
+                    <a class="facts__link lf-ltr" [href]="'mailto:' + address">{{ address }}</a>
+                  } @else {
+                    <span class="facts__none">{{ copy.lead.factsEmpty }}</span>
+                  }
+                </dd>
+              </div>
+            </dl>
+          </div>
+        }
 
-          <p class="block__lead">{{ copy.lead.checklist.lead }}</p>
+        <!-- the same facts as controls -->
+        <div class="fields">
+          <lf-text-field
+            [label]="copy.lead.fields.name"
+            name="name"
+            [(value)]="name"
+            [error]="nameError()"
+            [disabled]="saving()"
+            enterkeyhint="next"
+            [fieldHelp]="fieldHelp.name"
+            [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'name'"
+            [fieldHelpToggleHidden]="guidance.verbose()"
+            [fieldHelpAria]="fieldHelpAria.name"
+            (fieldHelpToggled)="toggleFieldHelp('name')"
+          />
+          <lf-text-field
+            [label]="copy.lead.fields.company"
+            name="company"
+            [(value)]="company"
+            [help]="copy.lead.fields.optional"
+            [disabled]="saving()"
+            [fieldHelp]="fieldHelp.company"
+            [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'company'"
+            [fieldHelpToggleHidden]="guidance.verbose()"
+            [fieldHelpAria]="fieldHelpAria.company"
+            (fieldHelpToggled)="toggleFieldHelp('company')"
+          />
+          <lf-text-field
+            [label]="copy.lead.fields.phone"
+            name="phone"
+            [(value)]="phone"
+            autocomplete="tel"
+            inputmode="tel"
+            [help]="copy.lead.fields.optional"
+            [disabled]="saving()"
+            [fieldHelp]="fieldHelp.phone"
+            [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'phone'"
+            [fieldHelpToggleHidden]="guidance.verbose()"
+            [fieldHelpAria]="fieldHelpAria.phone"
+            (fieldHelpToggled)="toggleFieldHelp('phone')"
+          />
+          <lf-text-field
+            [label]="copy.lead.fields.email"
+            name="email"
+            type="email"
+            [(value)]="email"
+            autocomplete="email"
+            [error]="emailError()"
+            [help]="copy.lead.fields.optional"
+            [disabled]="saving()"
+            [fieldHelp]="fieldHelp.email"
+            [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'email'"
+            [fieldHelpToggleHidden]="guidance.verbose()"
+            [fieldHelpAria]="fieldHelpAria.email"
+            (fieldHelpToggled)="toggleFieldHelp('email')"
+          />
 
-          @for (item of items; track item) {
-            <fieldset class="q">
-              <legend class="q__text">{{ question[item] }}</legend>
-
-              <div class="seg" role="radiogroup" [attr.aria-label]="question[item]">
-                @for (option of answerOptions; track option) {
+          <!-- Source and value pair up. The stage used to sit here and no longer does, which
+               is what makes the pair safe: a stage name never fitted a half column at 390px,
+               and a source and a figure both do. -->
+          <div class="pair">
+            <div class="pick">
+              <div class="pick__row">
+                <label class="pick__label lf-label" for="source-select">{{ copy.lead.fields.source }}</label>
+                @if (!guidance.verbose()) {
                   <button
                     type="button"
-                    role="radio"
-                    class="seg__b"
-                    [class.seg__b--on]="answers()[item] === option"
-                    [attr.aria-checked]="answers()[item] === option"
-                    [attr.aria-label]="answerAria[option]"
-                    [disabled]="saving()"
-                    (click)="setAnswer(item, option)"
+                    class="why"
+                    [attr.aria-expanded]="sourceHelpOpen()"
+                    aria-controls="source-why"
+                    [attr.aria-label]="fieldHelpAria.source"
+                    (click)="toggleFieldHelp('source')"
                   >
-                    {{ answerLabel[option] }}
+                    {{ sourceHelpOpen() ? copy.lead.fieldHelpHide : copy.lead.fieldHelpShow }}
                   </button>
                 }
               </div>
-
-              <button
-                type="button"
-                class="q__why"
-                [attr.aria-expanded]="whyOpen() === item"
-                (click)="toggleWhy(item)"
-              >
-                {{ whyOpen() === item ? copy.lead.checklist.hideWhy : copy.lead.checklist.why }}
-              </button>
-              @if (whyOpen() === item) {
-                <p class="q__whytext">{{ why[item] }}</p>
-              }
-            </fieldset>
-          }
-        </section>
-
-        <!-- timeline -->
-        <section class="block" aria-labelledby="tl-title">
-          <header class="block__hd">
-            <h3 class="block__title" id="tl-title">{{ copy.lead.timeline.title }}</h3>
-            <span class="block__count lf-num">{{ activities().length }}</span>
-          </header>
-
-          <ol class="tl">
-            @for (entry of visibleActivities(); track entry.id) {
-              <li class="ent" [class.ent--sys]="entry.type === 'status_changed'">
-                <span class="ent__stamp lf-num">{{ entry.occurredAt | lfStamp: now() }}</span>
-                <div class="ent__body">
-                  <span class="ent__type">{{ activityLabel[entry.type] }}</span>
-                  @if (entry.body) {
-                    <p class="ent__text">{{ entry.body }}</p>
-                  }
-                </div>
-              </li>
-            } @empty {
-              <li class="tl__empty">
-                <p class="tl__emptyTitle">{{ copy.lead.timeline.empty }}</p>
-                <p class="tl__emptyHint">{{ copy.lead.timeline.emptyHint }}</p>
-              </li>
-            }
-          </ol>
-
-          @if (hasMoreActivities()) {
-            <button type="button" class="more" (click)="timelineExpanded.set(!timelineExpanded())">
-              {{
-                timelineExpanded()
-                  ? copy.lead.timeline.showLess
-                  : showAllLabel()
-              }}
-            </button>
-          }
-        </section>
-
-        <!-- composer: part of the one save, not a second action -->
-        <section #composer class="block" aria-labelledby="cmp-title">
-          <header class="block__hd">
-            <h3 class="block__title" id="cmp-title">{{ copy.lead.composer.label }}</h3>
-          </header>
-
-          <div class="chips" role="group" [attr.aria-label]="copy.lead.composer.type">
-            @for (type of noteTypes; track type) {
-              <button
-                type="button"
-                class="chip"
-                [class.chip--on]="noteType() === type"
-                [attr.aria-pressed]="noteType() === type"
+              <select
+                id="source-select"
+                class="pick__select"
+                [value]="source()"
                 [disabled]="saving()"
-                (click)="setNoteType(type)"
+                [attr.aria-describedby]="sourceHelpOpen() ? 'source-why' : null"
+                (change)="setSource($any($event.target).value)"
               >
-                {{ activityLabel[type] }}
-              </button>
+                @for (option of sources; track option) {
+                  <option [value]="option">{{ sourceLabel[option] }}</option>
+                }
+              </select>
+              @if (sourceHelpOpen()) {
+                <p class="why-text" id="source-why">{{ fieldHelp.source }}</p>
+              }
+            </div>
+
+            <!-- One control for one datum. On a `won` stage this field *becomes* the final
+                 amount rather than growing a second input further down the sheet: two live
+                 inputs bound to one value is how a typed figure gets silently overwritten by
+                 whichever one the user did not look at. -->
+            <lf-text-field
+              [label]="valueLabel()"
+              name="value"
+              [(value)]="value"
+              inputmode="decimal"
+              [error]="valueError()"
+              [help]="valueHelp()"
+              [disabled]="saving()"
+              [fieldHelp]="fieldHelp.value"
+              [fieldHelpOpen]="guidance.verbose() || fieldHelpOpen() === 'value'"
+              [fieldHelpToggleHidden]="guidance.verbose()"
+              [fieldHelpAria]="fieldHelpAria.value"
+              (fieldHelpToggled)="toggleFieldHelp('value')"
+            />
+          </div>
+        </div>
+
+        <!-- Files, with the lead's own material rather than in the work column: a proposal is
+             part of what this lead *is*, and it is read far more often than it is added. In
+             create mode the choice is held here and uploaded once the insert returns an id. -->
+        <lf-lead-files
+          [files]="files()"
+          [pending]="pendingFiles()"
+          [busy]="filesBusy()"
+          [disabled]="saving()"
+          (picked)="pickFiles($event)"
+          (openRequested)="openFile($event)"
+          (removeRequested)="removeFile($event)"
+          (pendingDropped)="dropPending($event)"
+        />
+
+        <!-- closing: inline, never a second dialog -->
+        @if (selectedKind() === 'lost') {
+          <div class="close-block">
+            <p class="close-block__q">{{ copy.lead.lostReason }}</p>
+            <div class="chips">
+              @for (reason of lostReasons; track reason) {
+                <button
+                  type="button"
+                  class="chip"
+                  [class.chip--on]="lostReason() === reason"
+                  [attr.aria-pressed]="lostReason() === reason"
+                  (click)="pickLostReason(reason)"
+                >
+                  {{ reason }}
+                </button>
+              }
+            </div>
+            <label class="bare">
+              <span class="lf-sr">{{ copy.lead.lostReason }}</span>
+              <input
+                type="text"
+                [placeholder]="copy.lead.lostReasonPlaceholder"
+                [value]="lostReason()"
+                [disabled]="saving()"
+                (input)="lostReason.set($any($event.target).value)"
+              />
+            </label>
+            @if (lostReasonError(); as text) {
+              <lf-form-error [message]="text" />
+            }
+          </div>
+        }
+
+        @if (!create()) {
+          <!-- follow-up: read and managed here, committed by the one save like everything
+               else on this sheet. A line rather than a bordered panel, and it takes the
+               fluorescent field only when something is actually owed — yellow means "owed"
+               everywhere else in this product, so an empty reminder must not claim it. -->
+          <div class="follow" [class.follow--set]="!!reminderLabel()">
+            <div class="follow__line">
+              <span class="follow__label lf-label">{{ copy.lead.reminder }}</span>
+
+              @if (reminderLabel(); as when) {
+                <span class="follow__when lf-num">{{ when }}</span>
+                @if (reminderAction() === 'set') {
+                  <span class="follow__pending">{{ copy.lead.reminderPending }}</span>
+                }
+              } @else {
+                <span class="follow__none">{{ copy.lead.reminderNone }}</span>
+              }
+
+              @if (!pickingReminder()) {
+                <span class="follow__acts">
+                  <button
+                    type="button"
+                    class="chip"
+                    [disabled]="saving()"
+                    (click)="pickingReminder.set(true)"
+                  >
+                    {{ reminderLabel() ? copy.lead.reminderChange : copy.lead.reminderSet }}
+                  </button>
+                  @if (reminderLabel()) {
+                    <button
+                      type="button"
+                      class="chip chip--bare"
+                      [disabled]="saving()"
+                      (click)="clearReminder()"
+                    >
+                      {{ copy.lead.reminderClear }}
+                    </button>
+                  }
+                </span>
+              }
+            </div>
+
+            @if (pickingReminder()) {
+              <lf-due-picker
+                [busy]="saving()"
+                (picked)="pickReminder($event)"
+                (cancel)="pickingReminder.set(false)"
+              />
             }
           </div>
 
-          <label class="bare bare--area">
-            <span class="lf-sr">{{ copy.lead.composer.label }}</span>
-            <textarea
-              #noteInput
-              rows="3"
-              [placeholder]="copy.lead.composer.placeholder"
-              [value]="note()"
-              [disabled]="saving()"
-              (input)="note.set($any($event.target).value)"
-            ></textarea>
-          </label>
-        </section>
-      }
+          <!-- Destructive, so it leaves the footer strip: on a phone that strip is where the
+               thumb rests, and `שמור` lives there. The confirmation still replaces the
+               footer, so nothing stacks a second dialog on the first. -->
+          <button type="button" class="kill" [disabled]="saving()" (click)="askDelete()">
+            {{ copy.lead.delete }}
+          </button>
+        }
+      </div>
+
+      <!-- ============ the work: what to do about it ============ -->
+      <!-- The composer renders in create mode too, so a new lead can carry its first note;
+           the checklist and the log below it need a lead that exists, and wait for one. -->
+      <div class="work">
+          <!-- The composer leads this column because the commonest reason to open a lead is
+               that something just happened to it; it used to sit roughly 2,000px down a shared
+               scroll. In edit mode it commits on its own button — see addNote(). -->
+          <section #composer class="block block--first" aria-labelledby="cmp-title">
+            <header class="block__hd">
+              <h3 class="block__title" id="cmp-title">{{ copy.lead.composer.label }}</h3>
+            </header>
+
+            <div class="chips" role="group" [attr.aria-label]="copy.lead.composer.type">
+              @for (type of noteTypes; track type) {
+                <button
+                  type="button"
+                  class="chip"
+                  [class.chip--on]="noteType() === type"
+                  [attr.aria-pressed]="noteType() === type"
+                  [disabled]="saving()"
+                  (click)="setNoteType(type)"
+                >
+                  {{ activityLabel[type] }}
+                </button>
+              }
+            </div>
+
+            <label class="bare bare--area">
+              <span class="lf-sr">{{ copy.lead.composer.label }}</span>
+              <textarea
+                #noteInput
+                rows="3"
+                [placeholder]="copy.lead.composer.placeholder"
+                [value]="note()"
+                [disabled]="saving() || addingNote()"
+                (input)="note.set($any($event.target).value)"
+              ></textarea>
+            </label>
+
+            <!-- Its own commit. Appends to the log now and stays open; clearing the textarea on
+                 success is what stops the footer's save from writing the same note twice. -->
+            <div class="add">
+              @if (create()) {
+                <p class="add__hint">{{ copy.lead.composer.addOnCreate }}</p>
+              } @else {
+                <p class="add__hint">{{ copy.lead.composer.addHint }}</p>
+                <button
+                  type="button"
+                  class="add__b"
+                  [disabled]="!canAddNote()"
+                  (click)="addNote()"
+                >
+                  {{ addingNote() ? copy.lead.composer.adding : copy.lead.composer.add }}
+                </button>
+              }
+            </div>
+          </section>
+
+          @if (!create()) {
+          <!-- checklist -->
+          <!-- tabindex -1 so the nudge's "מלא עכשיו" can land focus on the section itself:
+               the heading and progress are announced, and nothing is pre-selected -->
+          <section #checklist class="block" tabindex="-1" aria-labelledby="cl-title">
+            <header class="block__hd">
+              <h3 class="block__title" id="cl-title">{{ copy.lead.checklist.title }}</h3>
+              <span class="block__count lf-num">
+                {{ checklistProgress() }}
+              </span>
+              <!-- One toggle for all five reasons rather than five separate ones. The five
+                   cost a 44px row each and answered the same question. Hidden when the
+                   guidance setting already keeps every explanation open. -->
+              @if (!guidance.verbose()) {
+                <button
+                  type="button"
+                  class="why block__why"
+                  [attr.aria-expanded]="whyAllOpen()"
+                  (click)="whyAllOpen.set(!whyAllOpen())"
+                >
+                  {{ whyAllOpen() ? copy.lead.checklist.hideWhy : copy.lead.checklist.why }}
+                </button>
+              }
+            </header>
+
+            <p class="block__lead">{{ copy.lead.checklist.lead }}</p>
+
+            <!-- Question and answer on one row: the label still carries the answer and the
+                 segment is still 44px, so only the empty vertical goes. Not a
+                 fieldset/legend pair — a legend inside a grid container is rendered
+                 inconsistently across browsers, and pairing it with the radiogroup's own
+                 aria-label announced the question twice. The visible question *is* the
+                 group's label now, referenced by id. -->
+            @for (item of items; track item) {
+              <div class="q">
+                <p class="q__text" [id]="'q-' + item">{{ question[item] }}</p>
+
+                <div class="seg" role="radiogroup" [attr.aria-labelledby]="'q-' + item">
+                  @for (option of answerOptions; track option) {
+                    <button
+                      type="button"
+                      role="radio"
+                      class="seg__b"
+                      [class.seg__b--on]="answers()[item] === option"
+                      [attr.aria-checked]="answers()[item] === option"
+                      [attr.aria-label]="answerAria[option]"
+                      [disabled]="saving()"
+                      (click)="setAnswer(item, option)"
+                    >
+                      {{ answerLabel[option] }}
+                    </button>
+                  }
+                </div>
+
+                @if (whyShown()) {
+                  <p class="q__whytext">{{ why[item] }}</p>
+                }
+              </div>
+            }
+          </section>
+
+          <!-- timeline -->
+          <section class="block" aria-labelledby="tl-title">
+            <header class="block__hd">
+              <h3 class="block__title" id="tl-title">{{ copy.lead.timeline.title }}</h3>
+              <span class="block__count lf-num">{{ activities().length }}</span>
+            </header>
+
+            <ol class="tl">
+              @for (entry of visibleActivities(); track entry.id) {
+                <li class="ent" [class.ent--sys]="entry.type === 'status_changed'">
+                  <span class="ent__stamp lf-num">{{ entry.occurredAt | lfStamp: now() }}</span>
+                  <div class="ent__body">
+                    <span class="ent__type">{{ activityLabel[entry.type] }}</span>
+                    @if (entry.body) {
+                      <p class="ent__text">{{ entry.body }}</p>
+                    }
+                  </div>
+                </li>
+              } @empty {
+                <li class="tl__empty">
+                  <p class="tl__emptyTitle">{{ copy.lead.timeline.empty }}</p>
+                  <p class="tl__emptyHint">{{ copy.lead.timeline.emptyHint }}</p>
+                </li>
+              }
+            </ol>
+
+            @if (hasMoreActivities()) {
+              <button type="button" class="more" (click)="timelineExpanded.set(!timelineExpanded())">
+                {{
+                  timelineExpanded()
+                    ? copy.lead.timeline.showLess
+                    : showAllLabel()
+                }}
+              </button>
+            }
+          </section>
+          }
+      </div>
     }
   </div>
 
@@ -459,11 +607,6 @@
           <button type="button" class="b" [disabled]="saving()" (click)="attemptClose()">
             {{ copy.lead.cancel }}
           </button>
-          @if (!create() && !missing()) {
-            <button type="button" class="b b--bare" [disabled]="saving()" (click)="askDelete()">
-              {{ copy.lead.delete }}
-            </button>
-          }
         </div>
       }
     }

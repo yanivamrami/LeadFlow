@@ -508,6 +508,15 @@ export const COPY = {
     nextStep: 'מה עושים עכשיו',
     nextStepDone: 'הליד סגור. אין מה לעשות איתו.',
 
+    /**
+     * The read grid. Below 900px the identity fields are shown as facts until asked for, so
+     * they need a heading, a way in, and a word for "nothing here yet" — a bare dash reads
+     * as a glyph to a screen reader and as a mistake to everyone else.
+     */
+    factsTitle: 'הפרטים',
+    factsEdit: 'ערוך פרטים',
+    factsEmpty: 'לא מולא',
+
     /** The per-field help toggle. Same words as the checklist's, because it is the same act. */
     fieldHelpShow: 'למה זה חשוב?',
     fieldHelpHide: 'סגור',
@@ -552,10 +561,45 @@ export const COPY = {
       systemEntry: 'נרשם אוטומטית',
     },
 
+    /**
+     * Files on the lead. Sizes and type names stay Latin (MB, PDF, Excel) because that is what
+     * the OS picker and the file itself say — translating them would make the two disagree.
+     */
+    files: {
+      title: 'קבצים',
+      add: 'הוסף קובץ',
+      adding: 'מעלה…',
+      none: 'אין קבצים על הליד הזה.',
+      hint: 'עד 5MB לקובץ. PDF, Word, Excel, PowerPoint, טקסט או תמונה.',
+      open: 'פתח',
+      remove: 'מחק',
+      /** Create mode: there is no lead to attach to yet, so the choice is held until save. */
+      queued: (n: number) => (n === 1 ? 'קובץ אחד יעלה עם שמירת הליד.' : `${n} קבצים יעלו עם שמירת הליד.`),
+      uploaded: (n: number) => (n === 1 ? 'הקובץ נוסף' : `${n} קבצים נוספו`),
+      deleted: 'הקובץ נמחק',
+      deleteFailed: 'הקובץ לא נמחק. אפשר לנסות שוב.',
+      openFailed: 'לא הצלחנו לפתוח את הקובץ. אפשר לנסות שוב.',
+      uploadFailed: 'ההעלאה נכשלה. אפשר לנסות שוב.',
+      uploadFailedFor: (name: string) => `${name} לא הועלה.`,
+      tooBig: (name: string, max: string) => `${name} גדול מ-${max} ולכן לא הועלה.`,
+      zeroBytes: (name: string) => `${name} ריק ולכן לא הועלה.`,
+      badType: (name: string) => `${name} — סוג הקובץ הזה לא נתמך.`,
+    },
+
     composer: {
       label: 'הוסיפו הערה',
       placeholder: 'מה קרה? מה הצעד הבא?',
       type: 'סוג',
+      /**
+       * The composer commits on its own now, which is the one place this sheet has two commit
+       * buttons — so the hint says which does what. Without it, "הוסף" beside "שמור" reads as
+       * two words for the same act.
+       */
+      add: 'הוסף',
+      adding: 'מוסיף…',
+      addHint: 'נרשם מיד ביומן, בלי לסגור. השמירה למטה שומרת את שדות הליד.',
+      /** Create mode: there is no lead to append to yet, so the note rides along with the save. */
+      addOnCreate: 'ההערה תיווסף ליומן עם הליד.',
     },
 
     /** Destructive, so it names the blast radius before asking. */
@@ -749,6 +793,18 @@ const ILS = new Intl.NumberFormat('he-IL', {
   currency: 'ILS',
   maximumFractionDigits: 0,
 });
+
+/**
+ * A file size, in the units the OS file picker uses. Latin and LTR on purpose: `MB` beside a
+ * Hebrew filename is what every other program on the user's machine shows, and a translated unit
+ * would make this the only place that disagrees. One decimal below 10MB, none above — nobody
+ * needs to know a document is 4.27MB rather than 4.3MB.
+ */
+export function formatBytes(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) return `${mb >= 10 ? Math.round(mb) : Number(mb.toFixed(1))}MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))}KB`;
+}
 
 /** ₪12,500 in lists; over a million compacts to ₪1.2מ׳ so columns stay narrow. */
 export function formatValue(value: number): string {
