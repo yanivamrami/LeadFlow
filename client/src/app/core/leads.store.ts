@@ -90,6 +90,7 @@ export class LeadsStore {
   private readonly _loaded = signal(false);
   private readonly _loadFailed = signal(false);
   private readonly _tenantId = signal<string | null>(null);
+  private readonly _writes = signal(0);
 
   readonly search = signal('');
   readonly sort = signal<SortKey>('urgency');
@@ -101,6 +102,20 @@ export class LeadsStore {
   readonly explainerDismissed = signal(false);
   /** Announced politely to screen readers after a stage move. */
   readonly announcement = signal('');
+
+  /**
+   * Bumped once per lead write that has landed and been re-read. It carries no payload on
+   * purpose — it is a "the server's answer for this tenant's leads just changed" signal, not
+   * a description of what changed, so a listener re-reads its own table rather than trying to
+   * patch itself from a diff it was not given.
+   *
+   * `RemindersStore` is the reason it exists: several writes here move rows in `reminders`
+   * without that store being involved at all (see its constructor for the list). Exposed as a
+   * signal rather than having this store call `RemindersStore.reload()` because
+   * `RemindersStore` already injects *this* store for its suggestions — the reverse injection
+   * would close the cycle.
+   */
+  readonly writeTick = this._writes.asReadonly();
 
   /**
    * Folded against whatever StagesStore currently holds, rather than at fetch time — a
@@ -255,6 +270,7 @@ export class LeadsStore {
     this._loaded.set(false);
     this._loadFailed.set(false);
     this._loading.set(false);
+    this._writes.set(0);
     this.search.set('');
     this.stageFilter.set('all');
     this.sourceFilter.set('all');
@@ -703,6 +719,9 @@ export class LeadsStore {
     const run = async () => {
       await write();
       await this.reload();
+      // After the re-read, not before: a listener woken by this tick must find this store
+      // already holding the server's new answer, not the one it is about to replace.
+      this._writes.update((n) => n + 1);
     };
 
     try {

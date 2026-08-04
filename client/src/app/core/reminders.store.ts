@@ -110,6 +110,29 @@ export class RemindersStore {
     effect(() => {
       if (this.supabase.sessionEpoch() > 0) untracked(() => this.reset());
     });
+
+    // A lead write moves rows in `reminders` without this store being asked. Four ways today:
+    // a stage move fires the server-side `set_reminder` automation (20260804091100), which
+    // schedules or reschedules the follow-up inside the same transaction as the move;
+    // `save_lead` carries its own reminder intent; logging real contact closes the open
+    // follow-up (`CONTACT_TYPES` / G-26); and deleting a lead cascades its reminders away.
+    // Until this effect existed, the bell badge and `/reminders` all kept showing the
+    // pre-write answer until the next navigation happened to re-`load()` them — the automation
+    // had fired and the user had no way to see it.
+    //
+    // `reload()` rather than `load()`, deliberately: the user did something to a *lead*, so a
+    // spinner on a reminders list they may not even be looking at is a worse answer than the
+    // one row that is briefly stale. Same reason a failure here is swallowed — this is a
+    // background correction, not the user's request, and the next real `load()` reports it.
+    effect(() => {
+      const tick = this.leads.writeTick();
+      // 0 is the initial value and the post-sign-out reset, neither of which is a write.
+      if (tick === 0) return;
+      untracked(() => {
+        if (!this._loaded()) return;
+        void this.reload().catch(() => undefined);
+      });
+    });
   }
 
   reset(): void {
