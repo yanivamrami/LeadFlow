@@ -35,8 +35,16 @@ import { OfflineBanner } from '../../shared/offline-banner';
         }
 
         <!-- novalidate: the browser's own bubbles are English, and this product's
-             error copy is part of the design. -->
-        <form class="form" novalidate (ngSubmit)="submitted.emit()">
+             error copy is part of the design.
+             (submit) with an explicit preventDefault, NOT ngSubmit: that output comes from
+             NgForm, which only exists on a form when FormsModule is imported *here*. It was
+             not, so the binding listened for an event nothing raises, the submit button fell
+             through to a native browser submission, and every auth screen reloaded itself
+             back to an empty form. Silent — no console error, because nothing threw.
+             Not fixed by importing FormsModule: these screens deliberately validate with
+             signals and their own rules, so attaching NgForm would make it track control
+             state nobody reads, for the sake of one event the DOM already provides. -->
+        <form class="form" novalidate (submit)="onSubmit($event)">
           <ng-content />
         </form>
 
@@ -165,4 +173,15 @@ export class AuthPage {
 
   /** The page owns the `<form>` so every screen inherits its layout and its submit path. */
   readonly submitted = output<void>();
+
+  /**
+   * The whole reason this is a method rather than an inline expression: the
+   * `preventDefault()` is the load-bearing half. Without it the browser submits the form
+   * itself, the SPA reloads, and the screen comes back empty as though nothing was typed —
+   * which is exactly how this broke.
+   */
+  protected onSubmit(event: Event): void {
+    event.preventDefault();
+    this.submitted.emit();
+  }
 }

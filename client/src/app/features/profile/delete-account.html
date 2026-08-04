@@ -21,7 +21,7 @@
     }
   </section>
 
-  <form novalidate (ngSubmit)="submit()">
+  <form novalidate (submit)="$event.preventDefault(); submit()">
     <label class="ack">
       <input type="checkbox" [checked]="acknowledged()" (change)="toggle($event)" />
       <span class="ack__box" aria-hidden="true">

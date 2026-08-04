@@ -4,7 +4,7 @@
   <section class="sec">
     <h2 class="sec__h lf-label">{{ copy.profile.identity }}</h2>
 
-    <form novalidate (ngSubmit)="saveName()">
+    <form novalidate (submit)="$event.preventDefault(); saveName()">
       <lf-text-field
         name="displayName"
         autocomplete="name"
@@ -23,7 +23,7 @@
       </button>
     </form>
 
-    <form novalidate (ngSubmit)="saveBusiness()">
+    <form novalidate (submit)="$event.preventDefault(); saveBusiness()">
       <lf-text-field
         name="businessName"
         autocomplete="organization"
@@ -52,7 +52,7 @@
   <section class="sec">
     <h2 class="sec__h lf-label">{{ copy.profile.security }}</h2>
 
-    <form novalidate (ngSubmit)="changePassword()">
+    <form novalidate (submit)="$event.preventDefault(); changePassword()">
       <lf-text-field
         name="currentPassword"
         type="password"
