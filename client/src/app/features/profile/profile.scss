@@ -1,4 +1,7 @@
-/* Account settings as a register: sections under rules, one row per thing. */
+/* Account settings as a register: sections under rules, one row per thing.
+   On a phone that register is one column, top to bottom. From 900px it becomes a spread —
+   three ruled columns with the account's end as a band across the foot — because the account
+   fits on one sheet and a rare visit should not be a scroll. */
 
 :host {
   display: block;
@@ -24,10 +27,23 @@
   border-block-start: var(--lf-rule-w) solid var(--lf-ink);
 }
 
-/* more air above a heading than below it — the rule belongs to what follows */
+/* more air above a heading than below it — the rule belongs to what follows.
+   The section name is a name, not metadata: at 12px muted, "סיסמה" and "תצוגה" read at the
+   same rank, and one of them cannot be undone. The 12px label register stays where it
+   belongs, on field labels. */
 .sec__h {
-  margin: 0 0 var(--lf-space-2);
-  color: var(--lf-muted);
+  margin: 0 0 var(--lf-space-3);
+  font-family: var(--lf-font-ui);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+/* No field grows with the page. A name is not 440px of content, and an input the width of a
+   desktop column is harder to aim at, not easier. */
+lf-text-field {
+  display: block;
+  max-inline-size: 440px;
 }
 
 /* ---------- controls ---------- */
@@ -72,6 +88,7 @@
   margin-block-start: var(--lf-space-6);
   padding-block-start: var(--lf-space-3);
   border-block-start: var(--lf-rule-w-3) solid var(--lf-rule-soft);
+  max-inline-size: 440px;
 }
 .ro__l {
   margin: 0;
@@ -102,6 +119,10 @@
   font-weight: 600;
   font-size: var(--lf-size-label);
 }
+/* the second label in the section needs its own air from the segment above it */
+.seg + .seg__l {
+  margin-block-start: var(--lf-space-4);
+}
 
 /* What a segmented choice actually changes. Same register as the read-only email note. */
 .seg__n {
@@ -109,6 +130,7 @@
   color: var(--lf-muted);
   font-size: var(--lf-size-small);
   line-height: 1.45;
+  max-inline-size: 52ch;
 }
 
 /* the dashboard's view toggle, same organ: one ink frame, selected segment fills yellow */
@@ -162,12 +184,73 @@
   color: var(--lf-on-red);
 }
 
+/* ---------- desktop: the register becomes a spread ---------- */
+
 @media (min-width: 900px) {
   .page {
+    /* the width cap moves off the page and onto the columns, where it belongs */
+    max-inline-size: none;
     padding-inline: var(--lf-space-8);
   }
   .ttl {
     margin-block-start: var(--lf-space-8);
     font-size: var(--lf-size-display);
+  }
+
+  .cols {
+    display: grid;
+    /* two while there is only room for two: identity beside סיסמה, the light sections below */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--lf-space-6);
+    row-gap: var(--lf-space-8);
+    align-items: start;
+    /* 2 × 440 of column + the gutter. Past this the columns stop growing. */
+    max-inline-size: 928px;
+    margin-block-start: var(--lf-space-6);
+  }
+
+  /* a printed column rule, 1px — the thing that keeps three adjacent commit buttons from
+     reading as one toolbar */
+  .col + .col {
+    border-inline-start: var(--lf-rule-w-3) solid var(--lf-rule-soft);
+    padding-inline-start: var(--lf-space-6);
+  }
+
+  /* the three 4px section rules align across the top of the spread: that alignment is the
+     page's strongest single mark, and a 32px margin on the first section would break it */
+  .col > .sec:first-child {
+    margin-block-start: 0;
+  }
+
+  /* the account's end runs the full width, statement one side, the act the other */
+  .sec--danger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--lf-space-8);
+  }
+  .sec--danger .b {
+    flex: 0 0 auto;
+    margin-block-start: 0;
+  }
+  .danger__t .sec__h {
+    margin-block-end: var(--lf-space-2);
+  }
+}
+
+/* Two columns only, so the third lands under the first and must not carry a column rule
+   into open paper. */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .col:nth-child(3) {
+    border-inline-start: 0;
+    padding-inline-start: 0;
+  }
+}
+
+@media (min-width: 1200px) {
+  .cols {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* 3 × 440 of column, two gutters, two rule paddings */
+    max-inline-size: 1416px;
   }
 }
