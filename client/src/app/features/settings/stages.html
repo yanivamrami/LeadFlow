@@ -12,12 +12,11 @@
     </div>
   } @else if (loading() && !loaded()) {
     <p class="lf-sr" role="status" aria-live="polite">{{ copyStages.loading }}</p>
-    <div class="list">
+    <div class="rost">
       @for (row of skeletonRows; track row) {
         <div class="sk-row" aria-hidden="true">
           <span class="lf-sk sk-a"></span>
           <span class="lf-sk sk-b"></span>
-          <span class="lf-sk sk-c"></span>
         </div>
       }
     </div>
@@ -28,69 +27,190 @@
       <p class="none__body">{{ copyStages.emptyBody }}</p>
     </div>
   } @else {
-    @if (leadCountsFailed()) {
-      <p class="counts-warn" role="status">
-        {{ copyStages.leadCountFailed }}
-        <button type="button" class="link" (click)="retryLeadCounts()">{{ copyStages.retry }}</button>
-      </p>
-    }
+    <section class="sec" aria-labelledby="stages-pipeline-hd">
+      <div class="sec__hd">
+        <h2 class="sec__title" id="stages-pipeline-hd">{{ copyStages.sectionPipeline }}</h2>
+        <span class="sec__n" aria-hidden="true">{{ active().length }}</span>
+        <p class="sec__hint">{{ copy.stages.reorderHint }} {{ copyStages.reorderKeyboardHint }}</p>
+      </div>
 
-    <p class="reorder-hint">{{ copy.stages.reorderHint }} {{ copyStages.reorderKeyboardHint }}</p>
-
-    <div
-      class="list"
-      cdkDropList
-      [cdkDropListDisabled]="stagesStore.busyId() === 'reorder'"
-      (cdkDropListDropped)="onDrop($event)"
-    >
-      @for (row of stageRows(); track row.stage.id) {
-        <lf-stage-row
-          cdkDrag
-          class="list__item"
-          [stage]="row.stage"
-          [leadCount]="row.leadCount"
-          [allStages]="all()"
-          [busy]="stagesStore.busyId() === row.stage.id"
-          (renamed)="onRenamed(row.stage, $event)"
-          (patched)="onPatched(row.stage, $event)"
-          (archiveRequested)="onArchive(row.stage, $event)"
-        >
-          <div class="drop-ph" *cdkDragPlaceholder>{{ copyStages.dropHere }}</div>
-          <div class="drag-ghost" *cdkDragPreview>
-            <span class="drag-ghost__name">{{ row.stage.name }}</span>
-          </div>
-        </lf-stage-row>
+      @if (leadCountsFailed()) {
+        <p class="counts-warn" role="status">
+          {{ copyStages.leadCountFailed }}
+          <button type="button" class="link" (click)="retryLeadCounts()">{{ copyStages.retry }}</button>
+        </p>
       }
-    </div>
+
+      <!-- Two shapes of the same roster (see the class comment on `Stages`): a rail beside
+           an editor pane on a desktop, or the roster alone with one strip opened in place
+           on a phone. Only one is ever instantiated, so the editor's fields exist once. -->
+      @if (wide()) {
+        <div class="pipe">
+          <div
+            class="pipe__rail"
+            cdkDropList
+            [cdkDropListDisabled]="stagesStore.busyId() === 'reorder'"
+            (cdkDropListDropped)="onDrop($event)"
+          >
+            @for (row of stageRows(); track row.stage.id) {
+              <div class="rost__item" cdkDrag>
+                <ng-container [ngTemplateOutlet]="strip" [ngTemplateOutletContext]="{ $implicit: row }" />
+                <div class="drop-ph" *cdkDragPlaceholder>{{ copyStages.dropHere }}</div>
+                <div class="drag-ghost" *cdkDragPreview>
+                  <span class="drag-ghost__name">{{ row.stage.name }}</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="pipe__pane">
+            @if (selectedRow(); as row) {
+              <lf-stage-row
+                [heading]="true"
+                [stage]="row.stage"
+                [leadCount]="row.leadCount"
+                [allStages]="all()"
+                [busy]="stagesStore.busyId() === row.stage.id"
+                (renamed)="onRenamed(row.stage, $event)"
+                (patched)="onPatched(row.stage, $event)"
+                (archiveRequested)="onArchive(row.stage, $event)"
+              />
+            } @else {
+              <p class="pipe__empty">{{ copyStages.paneEmpty }}</p>
+            }
+          </div>
+        </div>
+      } @else {
+        <div
+          class="rost"
+          cdkDropList
+          [cdkDropListDisabled]="stagesStore.busyId() === 'reorder'"
+          (cdkDropListDropped)="onDrop($event)"
+        >
+          @for (row of stageRows(); track row.stage.id) {
+            <div class="rost__item" cdkDrag>
+              <ng-container [ngTemplateOutlet]="strip" [ngTemplateOutletContext]="{ $implicit: row }" />
+
+              @if (isOpen(row.stage.id)) {
+                <div class="rost__open" [id]="'stage-editor-' + row.stage.id">
+                  <lf-stage-row
+                    [attached]="true"
+                    [stage]="row.stage"
+                    [leadCount]="row.leadCount"
+                    [allStages]="all()"
+                    [busy]="stagesStore.busyId() === row.stage.id"
+                    (renamed)="onRenamed(row.stage, $event)"
+                    (patched)="onPatched(row.stage, $event)"
+                    (archiveRequested)="onArchive(row.stage, $event)"
+                  />
+                </div>
+              }
+
+              <div class="drop-ph" *cdkDragPlaceholder>{{ copyStages.dropHere }}</div>
+              <div class="drag-ghost" *cdkDragPreview>
+                <span class="drag-ghost__name">{{ row.stage.name }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
   }
 
   @if (!loadFailed() && loaded()) {
-    <lf-add-stage [busy]="stagesStore.busyId() === 'create'" (create)="onCreate($event)" />
+    <section class="sec" aria-labelledby="stages-add-hd">
+      <div class="sec__hd">
+        <h2 class="sec__title" id="stages-add-hd">{{ copyStages.sectionAdd }}</h2>
+      </div>
+      <lf-add-stage [busy]="stagesStore.busyId() === 'create'" (create)="onCreate($event)" />
+    </section>
   }
 
   @if (archivedStages().length) {
-    <section class="archived">
-      <button
-        type="button"
-        class="archived__toggle"
-        [attr.aria-expanded]="archivedOpen()"
-        (click)="toggleArchived()"
-      >
-        <svg lucideChevronDown aria-hidden="true" class="archived__chevron" [class.flip]="archivedOpen()"></svg>
-        {{ copy.stages.archived }} ({{ archivedStages().length }})
-      </button>
+    <section class="sec" aria-labelledby="stages-archived-hd">
+      <div class="sec__hd">
+        <h2 class="sec__title" id="stages-archived-hd">{{ copy.stages.archived }}</h2>
+        <span class="sec__n" aria-hidden="true">{{ archivedStages().length }}</span>
+        <button
+          type="button"
+          class="archived__toggle"
+          [attr.aria-expanded]="archivedOpen()"
+          aria-controls="stages-archived-body"
+          (click)="toggleArchived()"
+        >
+          <svg lucideChevronDown aria-hidden="true" class="archived__chevron" [class.flip]="archivedOpen()"></svg>
+          {{ archivedOpen() ? copyStages.archivedHide : copyStages.archivedShow }}
+        </button>
+      </div>
 
       @if (archivedOpen()) {
-        <p class="archived__note">{{ copyStages.archivedNote }}</p>
-        @for (stage of archivedStages(); track stage.id) {
-          <div class="archived__row">
-            <lf-stage-tag [stage]="stage" />
-            <!-- SCREENS 9.2: a rule whose stage was archived is suspended, not deleted —
-                 read-only here so it stays visible with its reason. -->
-            <lf-automations-panel [stage]="stage" [allStages]="all()" [readOnly]="true" />
-          </div>
-        }
+        <div class="archived" id="stages-archived-body">
+          <p class="archived__note">{{ copyStages.archivedNote }}</p>
+          @for (stage of archivedStages(); track stage.id) {
+            <div class="archived__row">
+              <lf-stage-tag [stage]="stage" />
+              <!-- SCREENS 9.2: a rule whose stage was archived is suspended, not deleted —
+                   read-only here so it stays visible with its reason. -->
+              <lf-automations-panel [stage]="stage" [allStages]="all()" [readOnly]="true" />
+            </div>
+          }
+        </div>
       }
     </section>
   }
 </section>
+
+<!-- One stage as a roster line. Its accessible name is its own text — tag, drift chips, and
+     the count's screen-reader sentence — so no aria-label has to be kept in sync with what
+     is rendered. What activation *means* differs by layout, and only the state attributes
+     say so: `aria-current` while a pane is showing the stage, `aria-expanded` while the
+     strip owns a disclosure. -->
+<ng-template #strip let-row>
+  <div class="strip" [class.strip--current]="wide() && selectedId() === row.stage.id">
+    <button
+      type="button"
+      class="strip__grip"
+      cdkDragHandle
+      [disabled]="stagesStore.busyId() === 'reorder'"
+      [attr.aria-label]="row.dragLabel"
+    >
+      <svg lucideGripVertical aria-hidden="true"></svg>
+    </button>
+
+    <button
+      type="button"
+      class="strip__main"
+      [attr.aria-current]="wide() && selectedId() === row.stage.id ? 'true' : null"
+      [attr.aria-expanded]="wide() ? null : isOpen(row.stage.id)"
+      [attr.aria-controls]="wide() ? null : 'stage-editor-' + row.stage.id"
+      (click)="activate(row.stage.id)"
+    >
+      <lf-stage-tag class="strip__tag" [stage]="row.stage" />
+
+      <span class="strip__meta">
+        @if (row.daysLabel) {
+          <span class="strip__chip">{{ row.daysLabel }}</span>
+        }
+        @if (row.stage.expectsReply) {
+          <span class="strip__chip">{{ copyStages.stripAwaiting }}</span>
+        }
+      </span>
+
+      <span class="strip__count">
+        @if (row.leadCount !== null) {
+          <span class="strip__num" aria-hidden="true">{{ row.leadCount }}</span>
+        }
+        <span class="lf-sr">{{ row.countLabel }}</span>
+      </span>
+
+      @if (!wide()) {
+        <svg
+          lucideChevronDown
+          aria-hidden="true"
+          class="strip__chev"
+          [class.flip]="isOpen(row.stage.id)"
+        ></svg>
+      }
+    </button>
+  </div>
+</ng-template>

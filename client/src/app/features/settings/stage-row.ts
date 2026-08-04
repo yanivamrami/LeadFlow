@@ -8,9 +8,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { CdkDragHandle } from '@angular/cdk/drag-drop';
-
-import { LucideGripVertical } from '@lucide/angular';
 
 import { COPY } from '../../core/copy';
 import { Stage, SwatchName } from '../../core/lead.model';
@@ -45,13 +42,25 @@ let seq = 0;
  * `value` is a `model()`, read straight off the template reference at commit time, so
  * there is no local draft signal that has to be kept in sync with the store's
  * reload-replaces-everything write pattern (see `StagesStore.commit`).
+ *
+ * The fields are grouped into four `fieldset`s — identity, timing, teaching copy, archive —
+ * because a legend is the one grouping cue that survives being read aloud, and this form is
+ * long enough that "which of these belong together" is a real question. Drag reorder is not
+ * this component's business any more: the handle lives on the roster strip in `stages.html`,
+ * which is the thing that actually moves.
  */
 @Component({
   selector: 'lf-stage-row',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDragHandle, LucideGripVertical, StageTag, TextField, AutomationsPanel],
+  imports: [StageTag, TextField, AutomationsPanel],
   templateUrl: './stage-row.html',
   styleUrl: './stage-row.scss',
+  host: {
+    // Attached: the editor hangs off the strip above it on a phone, so it shares that
+    // strip's border instead of drawing a second one across the seam.
+    '[class.row--attached]': 'attached()',
+    '[class.row--pane]': 'heading()',
+  },
 })
 export class StageRow {
   protected readonly copy = COPY;
@@ -66,6 +75,13 @@ export class StageRow {
    *  whether this is the last live open stage, and what the destination picker offers. */
   readonly allStages = input.required<readonly Stage[]>();
   readonly busy = input(false);
+
+  /** True in the desktop editor pane, where this component has to name what it is showing.
+   *  False on a phone, where the roster strip above it already does. */
+  readonly heading = input(false);
+  /** True when rendered directly under its own roster strip (phone), which shares a border
+   *  with it rather than each drawing their own. */
+  readonly attached = input(false);
 
   readonly renamed = output<{ name: string; shortName: string | null }>();
   readonly patched = output<StagePatch>();
@@ -87,13 +103,19 @@ export class StageRow {
    *  offering the picker there would edit a field with no visible effect. */
   protected readonly swatchLocked = computed(() => this.stage().kind !== 'open');
 
+  /**
+   * The swatch group's label names the chosen colour: the squares themselves carry only
+   * hue plus an `aria-label`, so without this the current value would be visible and
+   * nowhere readable. Resolved per swatch change rather than per pass, like the sentences
+   * below it.
+   */
+  protected readonly swatchCurrentLabel = computed(() =>
+    this.copyStages.swatchCurrent(this.copyStages.swatchName[this.stage().swatch]),
+  );
+
   protected readonly destinationOptions = computed(() =>
     this.allStages().filter((s) => s.archivedAt === null && s.id !== this.stage().id),
   );
-
-  /** The drag handle's accessible name — a copy-map sentence built from the stage name,
-   *  resolved once per stage instead of on every change-detection pass. */
-  protected readonly dragHandleLabel = computed(() => this.copyStages.dragHandleLabel(this.stage().name));
 
   /** `null` while the count is still loading — archiving is offered nothing until then. */
   protected readonly verdict = computed<ArchiveVerdict | null>(() => {
