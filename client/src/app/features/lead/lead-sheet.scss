@@ -39,7 +39,6 @@
 .seg__b,
 .more,
 .b,
-.kill,
 .add__b {
   min-block-size: var(--lf-touch);
   background: transparent;
@@ -61,7 +60,6 @@
 .strip__b:disabled,
 .seg__b:disabled,
 .b:disabled,
-.kill:disabled,
 .add__b:disabled {
   opacity: 0.6;
   cursor: default;
@@ -677,22 +675,6 @@
   border-color: transparent;
 }
 
-/* Destructive, so it sits at the end of the reading order rather than in the footer strip,
-   where the thumb rests and שמור lives. The confirmation still replaces the footer, so
-   nothing stacks a second dialog on the first. */
-.kill {
-  inline-size: 100%;
-  margin-block-start: var(--lf-space-4);
-  border: 2px solid transparent;
-  color: var(--lf-muted);
-  font-size: 14px;
-}
-
-.kill:hover:not(:disabled) {
-  color: var(--lf-red-text, var(--lf-red));
-  border-color: var(--lf-red-text, var(--lf-red));
-}
-
 /* a titled region: checklist, timeline, composer all share it */
 .block {
   margin-block-start: var(--lf-space-6);
@@ -884,6 +866,34 @@
   background: var(--lf-ink);
   border-color: var(--lf-ink);
   color: var(--lf-on-ink);
+}
+
+/* Destructive, in the strip, and deliberately not `.b--red`: filled red is what "the button
+   you came here to press" looks like everywhere in this product, and שמור is standing right
+   beside it. Outlined red says the same word in a quieter voice — still unmistakably red,
+   still unmistakably not the primary act. `flex: 0 0 auto` is what puts it at the far
+   inline-end edge: שמור and ביטול take the remaining space, so this one ends up as far from
+   the thumb as the strip allows without a hanging auto margin. */
+.b--kill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-inline: var(--lf-space-3);
+  border-color: var(--lf-red-text, var(--lf-red));
+  color: var(--lf-red-text, var(--lf-red));
+}
+.b--kill:hover:not(:disabled) {
+  background: var(--lf-red);
+  border-color: var(--lf-red);
+  color: var(--lf-on-red);
+}
+/* Sized in px rather than em: at 1em the glyph matches the x-height of the word beside it and
+   reads as a smudge rather than as a bin. This file sits ~30 bytes under its CSS budget, so
+   anything added here has to earn its length — see the build error if it doesn't. */
+.b__i {
+  inline-size: 18px;
+  block-size: 18px;
 }
 
 .b--bare {

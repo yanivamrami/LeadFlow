@@ -408,12 +408,6 @@
             }
           </div>
 
-          <!-- Destructive, so it leaves the footer strip: on a phone that strip is where the
-               thumb rests, and `שמור` lives there. The confirmation still replaces the
-               footer, so nothing stacks a second dialog on the first. -->
-          <button type="button" class="kill" [disabled]="saving()" (click)="askDelete()">
-            {{ copy.lead.delete }}
-          </button>
         }
       </div>
 
@@ -607,6 +601,24 @@
           <button type="button" class="b" [disabled]="saving()" (click)="attemptClose()">
             {{ copy.lead.cancel }}
           </button>
+
+          <!-- Destructive, and it now shares the strip with `שמור` at the user's request. Three
+               things keep that safe: it is last in the row, so on RTL it sits at the far
+               inline-end edge with the widest possible gap from the save button under the thumb;
+               it is outlined rather than filled, so red-filled still means "the one you meant";
+               and it still cannot delete anything on its own — the click only swaps the footer
+               into the `delete` confirmation below, in place, never a second dialog over this one. -->
+          @if (!create()) {
+            <button
+              type="button"
+              class="b b--kill"
+              [disabled]="saving()"
+              (click)="askDelete()"
+            >
+              <svg lucideTrash2 class="b__i" aria-hidden="true"></svg>
+              {{ copy.lead.delete }}
+            </button>
+          }
         </div>
       }
     }
