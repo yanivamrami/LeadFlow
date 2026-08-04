@@ -23,6 +23,11 @@
   display: grid;
   grid-row: 1 / -1;
   grid-template-rows: subgrid;
+  /* The column never widens for its content. Without an explicit track this grid gets one
+     implicit auto column, which sizes to its widest child's min-content — a card holding a
+     long company name and a six-figure sum measured 214px inside a 200px track and painted
+     over the 14px gutter, so two neighbouring columns read as one block with no gap. */
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* Pinned rather than flowed: a stage with no meaning skips the caption, and its cards must
@@ -78,6 +83,8 @@
 
 .col__drop {
   grid-row: 3;
+  /* the cards' own floor is 0: whatever they hold, the stack stays inside the column */
+  min-inline-size: 0;
   min-block-size: 92px;
   padding-block-end: var(--lf-space-2);
 }
