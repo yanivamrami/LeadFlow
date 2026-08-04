@@ -454,6 +454,17 @@
   padding-block-end: var(--lf-space-2);
 }
 
+/* The two halves of this pair are different objects — a hand-rolled `.pick` for the source and
+   the shared `lf-text-field` for the value — and only one of them carries vertical padding.
+   `lf-text-field` sets `padding-block` on its own host so that a *stack* of fields reads as one
+   ruled block; beside a `.pick` that has none, the same padding pushed the value's label a
+   space-3 lower than the source's, so the two columns started at different heights.
+   `align-items: start` cannot fix that: it aligns the boxes, and the offset is inside one of
+   them. Zeroing the top is the whole fix; a smaller bottom is kept so the help and error lines
+   still have room before the next section. */
+.pair > lf-text-field {
+  padding-block: 0 var(--lf-space-2);
+}
 @media (max-width: 380px) {
   .pair {
     grid-template-columns: 1fr;
