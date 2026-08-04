@@ -1,157 +1,166 @@
 <div class="page">
   <h1 class="ttl">{{ copy.profile.title }}</h1>
 
-  <section class="sec">
-    <h2 class="sec__h lf-label">{{ copy.profile.identity }}</h2>
+  <div class="cols">
+    <div class="col">
+      <section class="sec">
+        <h2 class="sec__h">{{ copy.profile.identity }}</h2>
 
-    <form novalidate (submit)="$event.preventDefault(); saveName()">
-      <lf-text-field
-        name="displayName"
-        autocomplete="name"
-        enterkeyhint="done"
-        [label]="copy.profile.nameLabel"
-        [help]="copy.profile.nameHelp"
-        [error]="nameProblem()"
-        [disabled]="savingName()"
-        [(value)]="name"
-      />
+        <form novalidate (submit)="$event.preventDefault(); saveName()">
+          <lf-text-field
+            name="displayName"
+            autocomplete="name"
+            enterkeyhint="done"
+            [label]="copy.profile.nameLabel"
+            [help]="copy.profile.nameHelp"
+            [error]="nameProblem()"
+            [disabled]="savingName()"
+            [(value)]="name"
+          />
 
-      <lf-form-error [message]="nameServerProblem()" />
+          <lf-form-error [message]="nameServerProblem()" />
 
-      <button type="submit" class="b" [disabled]="savingName() || !nameChanged()">
-        {{ savingName() ? copy.auth.working : copy.profile.save }}
-      </button>
-    </form>
+          <button type="submit" class="b" [disabled]="savingName() || !nameChanged()">
+            {{ savingName() ? copy.auth.working : copy.profile.save }}
+          </button>
+        </form>
 
-    <form novalidate (submit)="$event.preventDefault(); saveBusiness()">
-      <lf-text-field
-        name="businessName"
-        autocomplete="organization"
-        enterkeyhint="done"
-        [label]="copy.profile.businessLabel"
-        [help]="copy.profile.businessHelp"
-        [error]="businessProblem()"
-        [disabled]="savingBusiness()"
-        [(value)]="business"
-      />
+        <form novalidate (submit)="$event.preventDefault(); saveBusiness()">
+          <lf-text-field
+            name="businessName"
+            autocomplete="organization"
+            enterkeyhint="done"
+            [label]="copy.profile.businessLabel"
+            [help]="copy.profile.businessHelp"
+            [error]="businessProblem()"
+            [disabled]="savingBusiness()"
+            [(value)]="business"
+          />
 
-      <lf-form-error [message]="businessServerProblem()" />
+          <lf-form-error [message]="businessServerProblem()" />
 
-      <button type="submit" class="b" [disabled]="savingBusiness() || !businessChanged()">
-        {{ savingBusiness() ? copy.auth.working : copy.profile.save }}
-      </button>
-    </form>
+          <button type="submit" class="b" [disabled]="savingBusiness() || !businessChanged()">
+            {{ savingBusiness() ? copy.auth.working : copy.profile.save }}
+          </button>
+        </form>
 
-    <div class="ro">
-      <p class="ro__l lf-label">{{ copy.profile.emailLabel }}</p>
-      <p class="ro__v">{{ email() }}</p>
-      <p class="ro__n">{{ copy.profile.emailNote }}</p>
+        <div class="ro">
+          <p class="ro__l lf-label">{{ copy.profile.emailLabel }}</p>
+          <p class="ro__v">{{ email() }}</p>
+          <p class="ro__n">{{ copy.profile.emailNote }}</p>
+        </div>
+      </section>
     </div>
-  </section>
 
-  <section class="sec">
-    <h2 class="sec__h lf-label">{{ copy.profile.security }}</h2>
+    <div class="col">
+      <section class="sec">
+        <h2 class="sec__h">{{ copy.profile.security }}</h2>
 
-    <form novalidate (submit)="$event.preventDefault(); changePassword()">
-      <lf-text-field
-        name="currentPassword"
-        type="password"
-        autocomplete="current-password"
-        enterkeyhint="next"
-        [label]="copy.profile.currentPassword"
-        [error]="currentProblem()"
-        [disabled]="savingPassword()"
-        [(value)]="current"
-      />
+        <form novalidate (submit)="$event.preventDefault(); changePassword()">
+          <lf-text-field
+            name="currentPassword"
+            type="password"
+            autocomplete="current-password"
+            enterkeyhint="next"
+            [label]="copy.profile.currentPassword"
+            [error]="currentProblem()"
+            [disabled]="savingPassword()"
+            [(value)]="current"
+          />
 
-      <lf-text-field
-        name="newPassword"
-        type="password"
-        autocomplete="new-password"
-        enterkeyhint="next"
-        [label]="copy.profile.newPassword"
-        [help]="copy.auth.signUp.passwordHelp"
-        [error]="freshProblem()"
-        [disabled]="savingPassword()"
-        [(value)]="fresh"
-      />
+          <lf-text-field
+            name="newPassword"
+            type="password"
+            autocomplete="new-password"
+            enterkeyhint="next"
+            [label]="copy.profile.newPassword"
+            [help]="copy.auth.signUp.passwordHelp"
+            [error]="freshProblem()"
+            [disabled]="savingPassword()"
+            [(value)]="fresh"
+          />
 
-      <lf-text-field
-        name="confirmPassword"
-        type="password"
-        autocomplete="new-password"
-        enterkeyhint="done"
-        [label]="copy.profile.confirmPassword"
-        [error]="confirmProblem()"
-        [disabled]="savingPassword()"
-        [(value)]="confirm"
-      />
+          <lf-text-field
+            name="confirmPassword"
+            type="password"
+            autocomplete="new-password"
+            enterkeyhint="done"
+            [label]="copy.profile.confirmPassword"
+            [error]="confirmProblem()"
+            [disabled]="savingPassword()"
+            [(value)]="confirm"
+          />
 
-      <lf-form-error [message]="passwordServerProblem()" />
+          <lf-form-error [message]="passwordServerProblem()" />
 
-      <button type="submit" class="b" [disabled]="savingPassword()">
-        {{ savingPassword() ? copy.auth.working : copy.profile.changePassword }}
-      </button>
-    </form>
-  </section>
+          <button type="submit" class="b" [disabled]="savingPassword()">
+            {{ savingPassword() ? copy.auth.working : copy.profile.changePassword }}
+          </button>
+        </form>
+      </section>
+    </div>
 
-  <section class="sec">
-    <h2 class="sec__h lf-label">{{ copy.profile.appearance }}</h2>
+    <div class="col">
+      <section class="sec">
+        <h2 class="sec__h">{{ copy.profile.appearance }}</h2>
 
-    <p class="seg__l">{{ copy.profile.themeLabel }}</p>
-    <div class="seg" role="group" [attr.aria-label]="copy.profile.themeLabel">
-      @for (option of themeOptions; track option.value) {
-        <button
-          type="button"
-          [class.on]="theme.choice() === option.value"
-          [attr.aria-pressed]="theme.choice() === option.value"
-          (click)="theme.set(option.value)"
-        >
-          {{ option.label }}
+        <p class="seg__l">{{ copy.profile.themeLabel }}</p>
+        <div class="seg" role="group" [attr.aria-label]="copy.profile.themeLabel">
+          @for (option of themeOptions; track option.value) {
+            <button
+              type="button"
+              [class.on]="theme.choice() === option.value"
+              [attr.aria-pressed]="theme.choice() === option.value"
+              (click)="theme.set(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+
+        <p class="seg__l">{{ copy.profile.guidanceLabel }}</p>
+        <div class="seg" role="group" [attr.aria-label]="copy.profile.guidanceLabel">
+          <button
+            type="button"
+            [class.on]="guidance.verbose()"
+            [attr.aria-pressed]="guidance.verbose()"
+            (click)="guidance.set('full')"
+          >
+            {{ copy.profile.guidanceFull }}
+          </button>
+          <button
+            type="button"
+            [class.on]="!guidance.verbose()"
+            [attr.aria-pressed]="!guidance.verbose()"
+            (click)="guidance.set('quiet')"
+          >
+            {{ copy.profile.guidanceQuiet }}
+          </button>
+        </div>
+        <p class="seg__n">{{ copy.profile.guidanceHelp }}</p>
+      </section>
+
+      <section class="sec">
+        <h2 class="sec__h">{{ pipelineLabel }}</h2>
+        <a class="b" routerLink="/settings/stages">{{ pipelineLinkLabel }}</a>
+      </section>
+
+      <section class="sec">
+        <h2 class="sec__h">{{ copy.profile.session }}</h2>
+
+        <button type="button" class="b" [disabled]="signingOut()" (click)="signOut()">
+          <svg lucideLogOut aria-hidden="true"></svg>
+          {{ signingOut() ? copy.auth.working : copy.profile.signOut }}
         </button>
-      }
+      </section>
     </div>
-
-    <p class="seg__l">{{ copy.profile.guidanceLabel }}</p>
-    <div class="seg" role="group" [attr.aria-label]="copy.profile.guidanceLabel">
-      <button
-        type="button"
-        [class.on]="guidance.verbose()"
-        [attr.aria-pressed]="guidance.verbose()"
-        (click)="guidance.set('full')"
-      >
-        {{ copy.profile.guidanceFull }}
-      </button>
-      <button
-        type="button"
-        [class.on]="!guidance.verbose()"
-        [attr.aria-pressed]="!guidance.verbose()"
-        (click)="guidance.set('quiet')"
-      >
-        {{ copy.profile.guidanceQuiet }}
-      </button>
-    </div>
-    <p class="seg__n">{{ copy.profile.guidanceHelp }}</p>
-  </section>
-
-  <section class="sec">
-    <h2 class="sec__h lf-label">{{ pipelineLabel }}</h2>
-    <a class="b" routerLink="/settings/stages">{{ pipelineLinkLabel }}</a>
-  </section>
-
-  <section class="sec">
-    <h2 class="sec__h lf-label">{{ copy.profile.session }}</h2>
-
-    <button type="button" class="b" [disabled]="signingOut()" (click)="signOut()">
-      <svg lucideLogOut aria-hidden="true"></svg>
-      {{ signingOut() ? copy.auth.working : copy.profile.signOut }}
-    </button>
-  </section>
+  </div>
 
   <section class="sec sec--danger">
-    <h2 class="sec__h lf-label">{{ copy.profile.danger }}</h2>
-
-    <p class="danger__b">{{ copy.profile.dangerBody }}</p>
+    <div class="danger__t">
+      <h2 class="sec__h">{{ copy.profile.danger }}</h2>
+      <p class="danger__b">{{ copy.profile.dangerBody }}</p>
+    </div>
 
     <a class="b b--danger" routerLink="/profile/delete">{{ copy.profile.dangerAction }}</a>
   </section>
