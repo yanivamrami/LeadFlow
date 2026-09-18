@@ -16,12 +16,8 @@ export const authRoutes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./sign-in').then((m) => m.SignIn),
   },
-  {
-    path: 'sign-up',
-    title: 'פתיחת חשבון · LeadFlow Manager',
-    canActivate: [guestGuard],
-    loadComponent: () => import('./sign-up').then((m) => m.SignUp),
-  },
+  // `sign-up` is deliberately unrouted: the product is internal and public signup is off in
+  // Supabase Auth. The component stays in ./sign-up.ts; re-add the route here to reopen it.
   {
     path: 'reset',
     pathMatch: 'full',

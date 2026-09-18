@@ -82,11 +82,6 @@ export class SignIn {
 
   protected readonly footRows: readonly StripRow[] = [
     {
-      text: this.copy.auth.signIn.noAccount,
-      linkLabel: this.copy.auth.signIn.createOne,
-      link: '/auth/sign-up',
-    },
-    {
       text: this.copy.auth.signIn.forgot,
       linkLabel: this.copy.auth.reset.title,
       link: '/auth/reset',
