@@ -227,8 +227,8 @@ No custom REST API. Data access via Supabase auto-generated PostgREST endpoints 
   - **.NET minimal API** — if the logic becomes complex, needs the .NET ecosystem (rich libraries, strong typing, testability), integrations, or long-running/background work. Would live in a new `api/` folder in the monorepo and record an ADR when introduced.
 - **Candidate server-side tasks (initial set):**
   - ~~`reminders-due` — scheduled (pg_cron → function or Supabase Cron) computation of due follow-up reminders based on status + last activity. Likely Edge Function.~~ **Withdrawn 2026-08-03 — see §6.1.** The notification-channel decision stands: **in-app only at launch** — reminders list + badge + toast on login; email digest is a later add, push/PWA out of scope for v1.
-  - `capture-form` (future) — public endpoint for embeddable web forms; rate-limited, validates + inserts lead for the form's owner.
-- **Idempotency / rate limiting:** relevant only to `capture-form`; design it with a per-form token + basic rate limit when built.
+  - ~~`capture-form` (future)~~ **Built 2026-09-18 as `capture-lead`** (`client/supabase/functions/capture-lead`): a generic inbound endpoint, not form-specific. Bearer = a per-tenant capture token (hashed in `capture_tokens`, minted by the owner via `mint_capture_token`); the function is a thin adapter over the `capture_lead` RPC, which does auth, 60/min per-token rate limit, validation, idempotency on `leads.external_ref`, and the lead + note inserts in one transaction. First caller: the Netlush WhatsApp bot. The web form (SCREENS 8.2) will call the same endpoint. Spec: documents/PLAN-capture-lead.md.
+- **Idempotency / rate limiting:** handled inside `capture_lead` (per-token fixed window on the token row; `(tenant_id, external_ref)` unique index). Per-IP limiting before auth is not built; the Supabase Upstash recipe is the upgrade path if the public form needs it.
 
 ### 6.2 Stages are rows, and automations run in the database (2026-08-04)
 

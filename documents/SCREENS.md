@@ -113,7 +113,7 @@ eagerly and refuses to construct unconfigured.
 | # | Screen | Notes |
 |---|---|---|
 | 8.1 | Embeddable web-form builder | PRD marks it explicitly future. |
-| 8.2 | Public capture form | Needs the `capture-form` Edge Function first. |
+| 8.2 | Public capture form | The endpoint exists as `capture-lead` (2026-09-18, documents/PLAN-capture-lead.md); the form UI itself is still unbuilt. |
 | 8.3 | Team invite / members | Post-launch. |
 | 8.4 | Custom checklist items | V2 backlog per the PM decisions doc. |
 

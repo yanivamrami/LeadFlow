@@ -72,7 +72,7 @@ import { LeadFiles } from './lead-files';
 /** How many history entries show before the timeline asks to be expanded. */
 const TIMELINE_PAGE = 20;
 
-const SOURCES: readonly LeadSource[] = ['website', 'referral', 'social_media', 'phone', 'other'];
+const SOURCES: readonly LeadSource[] = ['website', 'referral', 'social_media', 'phone', 'whatsapp', 'other'];
 
 /** The footer is one strip that changes job, so a confirm never stacks a second modal. */
 type FooterMode = 'default' | 'dirty' | 'delete';

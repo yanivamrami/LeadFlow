@@ -1,6 +1,6 @@
 /** Domain model. Mirrors the `leads` table in docs/ARCHITECTURE.md §5. */
 
-export type LeadSource = 'website' | 'referral' | 'social_media' | 'phone' | 'other';
+export type LeadSource = 'website' | 'referral' | 'social_media' | 'phone' | 'whatsapp' | 'other';
 
 /** Every value the union permits, for validating untrusted input (e.g. `?source=`). */
 export const LEAD_SOURCES: readonly LeadSource[] = [
@@ -8,6 +8,7 @@ export const LEAD_SOURCES: readonly LeadSource[] = [
   'referral',
   'social_media',
   'phone',
+  'whatsapp',
   'other',
 ];
 

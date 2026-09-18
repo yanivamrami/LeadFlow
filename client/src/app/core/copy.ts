@@ -35,6 +35,7 @@ export const SOURCE_LABEL: Record<LeadSource, string> = {
   referral: 'המלצה',
   social_media: 'רשתות',
   phone: 'טלפון',
+  whatsapp: 'וואטסאפ',
   other: 'אחר',
 };
 

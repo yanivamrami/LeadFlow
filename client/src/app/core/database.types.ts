@@ -253,6 +253,7 @@ export type Database = {
           created_by: string | null
           email: string | null
           estimated_value: number | null
+          external_ref: string | null
           id: string
           is_demo: boolean
           lost_reason: string | null
@@ -271,6 +272,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           estimated_value?: number | null
+          external_ref?: string | null
           id?: string
           is_demo?: boolean
           lost_reason?: string | null
@@ -289,6 +291,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           estimated_value?: number | null
+          external_ref?: string | null
           id?: string
           is_demo?: boolean
           lost_reason?: string | null
@@ -575,6 +578,10 @@ export type Database = {
         Args: { p_destination_id?: string; p_stage_id: string }
         Returns: undefined
       }
+      capture_lead: {
+        Args: { p_token: string; p_payload: Json }
+        Returns: Json
+      }
       create_lead: {
         Args: {
           p_company?: string
@@ -590,6 +597,10 @@ export type Database = {
       }
       fire_automation_run: { Args: { p_run_id: string }; Returns: undefined }
       lead_stats: { Args: { p_tenant_id: string }; Returns: Json }
+      mint_capture_token: {
+        Args: { p_tenant_id: string; p_label: string }
+        Returns: string
+      }
       mint_webhook_secret: {
         Args: { p_automation_id: string }
         Returns: string
@@ -641,7 +652,7 @@ export type Database = {
         | "webhook"
       automation_trigger: "lead_enters_stage" | "lead_idle_in_stage"
       checklist_item: "interest" | "need" | "budget" | "authority" | "timeline"
-      lead_source: "website" | "referral" | "social_media" | "phone" | "other"
+      lead_source: "website" | "referral" | "social_media" | "phone" | "whatsapp" | "other"
       member_role: "owner" | "member"
       qualification_answer: "yes" | "no" | "unknown"
       stage_kind: "open" | "won" | "lost"
@@ -785,7 +796,7 @@ export const Constants = {
       ],
       automation_trigger: ["lead_enters_stage", "lead_idle_in_stage"],
       checklist_item: ["interest", "need", "budget", "authority", "timeline"],
-      lead_source: ["website", "referral", "social_media", "phone", "other"],
+      lead_source: ["website", "referral", "social_media", "phone", "whatsapp", "other"],
       member_role: ["owner", "member"],
       qualification_answer: ["yes", "no", "unknown"],
       stage_kind: ["open", "won", "lost"],
