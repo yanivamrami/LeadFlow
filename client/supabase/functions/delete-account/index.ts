@@ -14,9 +14,10 @@
 // docs/ARCHITECTURE.md §9.
 //
 // Deploy:  supabase functions deploy delete-account
-// Secrets: supabase secrets set SUPABASE_SECRET_KEY=sb_secret_…
-//          (the modern secret key — the legacy service_role JWT is deprecated and must
-//           not be introduced here, per PRODUCT.md)
+// Secrets: none to set. Supabase injects SUPABASE_SECRET_KEYS (a JSON dictionary of the
+//          project's secret keys, named) into every function; we read `default`. The
+//          legacy service_role JWT is deprecated and must not be introduced here, per
+//          PRODUCT.md.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -38,9 +39,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
   const url = Deno.env.get('SUPABASE_URL');
-  const secret = Deno.env.get('SUPABASE_SECRET_KEY');
+  const secret = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}')['default'];
   if (!url || !secret) {
-    console.error('delete-account: SUPABASE_URL or SUPABASE_SECRET_KEY is not set');
+    console.error('delete-account: SUPABASE_URL or SUPABASE_SECRET_KEYS.default is not set');
     return json({ error: 'not_configured' }, 500);
   }
 

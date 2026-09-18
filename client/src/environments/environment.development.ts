@@ -1,6 +1,6 @@
 /**
- * Development configuration — the shared Supabase cloud dev project
- * (docs/ARCHITECTURE.md §11: no local Docker stack, `ng serve` talks to the cloud).
+ * Development configuration — the same single Supabase cloud project as production
+ * (docs/ARCHITECTURE.md §11: no local Docker stack, `ng serve` talks to live data).
  *
  * The publishable key belongs in source control. It identifies the project and
  * carries no privileges of its own; RLS is the enforcement boundary (§212).

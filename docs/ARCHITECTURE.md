@@ -375,11 +375,11 @@ Two environments only:
 
 | Env | Client | Database |
 |---|---|---|
-| Local (dev) | `ng serve` on developer machine | Supabase cloud **dev** project (shared dev instance — no local Docker stack) |
-| Production (when we get there) | Vercel production | Supabase cloud **prod** project |
+| Local (dev) | `ng serve` on developer machine | The one Supabase cloud project (no local Docker stack) |
+| Production | Vercel (root `client/`, output `dist/client/browser`, SPA rewrite in `client/vercel.json`) | The same single Supabase cloud project |
 
-- Dev: Angular environment file points at the dev project's URL + publishable key; migrations applied to dev via `supabase db push` (CLI linked to the dev project).
-- Production (later): separate Supabase project + Vercel deploy from `main`; same migration files pushed to prod when it exists. Additive-first migrations to avoid breaking the live client.
+- One Supabase project serves both, by decision (2026-09-18): no separate prod project will be created. Migrations go straight to it via `supabase db push`, so every migration is a production migration — additive-first, tested on a branch of the SQL first if it touches data.
+- Production: Vercel deploys from `main`, output `dist/client/browser`, SPA rewrite in `client/vercel.json`.
 - No preview environments / branch DBs for now — revisit if team grows.
 
 ## 12. Risks & open questions

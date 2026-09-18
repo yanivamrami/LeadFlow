@@ -2,13 +2,13 @@
  * Production configuration. This is the default build target; `ng serve` swaps in
  * environment.development.ts via the fileReplacements in angular.json.
  *
- * The production Supabase project does not exist yet — docs/ARCHITECTURE.md §11
- * has it as "Production (when we get there)". These stay empty deliberately:
- * SupabaseService refuses to start on an unconfigured URL or key, so a production
- * build fails loudly instead of quietly pointing real users at the dev database.
+ * There is one Supabase cloud project and it is production (docs/ARCHITECTURE.md §11).
+ * The publishable key belongs in source control: it identifies the project and carries
+ * no privileges of its own; RLS is the enforcement boundary. The secret key
+ * (`sb_secret_…`) lives only in Edge Function secrets.
  */
 export const environment = {
   production: true,
-  supabaseUrl: '',
-  supabasePublishableKey: '',
+  supabaseUrl: 'https://awifckxssybwiheveqqv.supabase.co',
+  supabasePublishableKey: 'sb_publishable_R3qn8X1VEA70ZqMoO-nNHw_bNr_Xgjt',
 };
