@@ -24,7 +24,8 @@ npm start          # ng serve → http://localhost:4280
 - `npm start` points at the **local Docker stack** (`src/environments/environment.ts`), not the
   cloud project. Break anything you like; `supabase db reset` restores the seeded board in
   seconds. To test against production data, use the deployed Vercel URL.
-- Sign-up is off in the app; the seed creates the one login above.
+- Sign-up is off in the app; the seed creates the one login above, and a capture token
+  `local-dev-token` for `supabase functions serve capture-lead --no-verify-jwt`.
 - Test on a phone-sized viewport **first** — devtools at 390×844 — then repeat the marked
   scenarios at ~1440px. The board only activates at ≥768px, the desktop nav at ≥900px.
 - Keep the browser console open. An error there during a passing scenario is still a finding.

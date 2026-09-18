@@ -2,6 +2,7 @@
 -- Never run against the cloud project: it creates an auth user with a known password.
 --
 -- One login:  yaniv@quickdev.co.il / leadflow
+-- One capture token: local-dev-token (for `supabase functions serve capture-lead --no-verify-jwt`)
 -- The signup trigger (handle_new_user) builds the tenant, owner membership, stages and the
 -- welcome lead; seed_dev_leads.sql (listed next in config.toml) then fills the board.
 
@@ -29,3 +30,9 @@ values (
   now(), now(), now()
 );
 
+
+-- A capture token for the local capture-lead function. Bearer value: local-dev-token.
+insert into public.capture_tokens (tenant_id, token_hash, label)
+select tenant_id, extensions.digest('local-dev-token', 'sha256'), 'local dev'
+  from public.memberships
+ where user_id = '4951b380-eae0-4a1e-919b-fd6fe97479c6' and role = 'owner';
