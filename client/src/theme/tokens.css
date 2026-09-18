@@ -218,7 +218,7 @@ body::before {
 .lf-ltr {
   direction: ltr;
   display: inline-block;
-  text-align: end;
+  text-align: start; /* +972… reads from the left, like the input it came from */
 }
 
 /* Labels carry Hebrew, so they are Fredoka. Tracking stays near zero: Hebrew has no

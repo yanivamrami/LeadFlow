@@ -798,6 +798,7 @@
   font-size: var(--lf-size-body);
   line-height: 1.5;
   overflow-wrap: anywhere;
+  white-space: pre-line; /* notes are multi-line: the bot's header, a pasted message */
 }
 
 /* the machine speaking, not the user — an ink chip rather than plain paper */

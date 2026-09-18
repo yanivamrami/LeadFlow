@@ -260,7 +260,13 @@ export class TextField {
    * Email and password are Latin even inside a Hebrew RTL page. Left to inherit, an
    * address types right-to-left and reads back scrambled around its `@`.
    */
-  protected readonly dir = computed(() => (this.type() === 'text' ? null : 'ltr'));
+  /** Latin-only content reads LTR: a typed type (email, password, url…) or a text input whose
+   *  inputmode says so (`tel` is the phone field: without this it renders as 972…+). */
+  protected readonly dir = computed(() =>
+    this.type() !== 'text' || ['tel', 'email', 'url', 'numeric', 'decimal'].includes(this.inputmode() ?? '')
+      ? 'ltr'
+      : null,
+  );
 
   protected readonly describedBy = computed(() => {
     const parts: string[] = [];
