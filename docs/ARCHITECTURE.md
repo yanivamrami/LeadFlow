@@ -376,10 +376,12 @@ Two environments only:
 
 | Env | Client | Database |
 |---|---|---|
-| Local (dev) | `ng serve` on developer machine | The one Supabase cloud project (no local Docker stack) |
-| Production | Vercel (root `client/`, output `dist/client/browser`, SPA rewrite in `client/vercel.json`) | The same single Supabase cloud project |
+| Local (dev) | `ng serve` (`npm start`) on developer machine, `src/environments/environment.ts` | **Local Supabase stack in Docker** (`supabase start`), port 54321 |
+| Production | Vercel (root `client/`, output `dist/client/browser`, SPA rewrite in `client/vercel.json`), `src/environments/environment.prod.ts` swapped in by `ng build` | The one Supabase cloud project |
 
-- One Supabase project serves both, by decision (2026-09-18): no separate prod project will be created. Migrations go straight to it via `supabase db push`, so every migration is a production migration — additive-first, tested on a branch of the SQL first if it touches data.
+- **Local stack (2026-09-18).** The Supabase CLI runs the whole platform in Docker: Postgres, Auth, PostgREST, Realtime, Storage, Edge runtime. `supabase db reset` replays every migration in `client/supabase/migrations` and then the seeds in `config.toml` (`seed.sql`: one login, `yaniv@quickdev.co.il` / `leadflow`, whose signup trigger builds the tenant; `seed_dev_leads.sql`: a full board). `supabase functions serve --no-verify-jwt` runs Edge Functions against it. Nothing in it touches the cloud project; `db push` never runs seeds. This replaces the earlier "no local Docker stack" stance: a free-tier account allows one cloud project, and that one is production, so local Docker is the only place to break things.
+- **File swap.** `environment.ts` holds the local URL and the CLI's fixed local publishable key (the same on every machine, not a secret). `angular.json`'s `production` configuration replaces it with `environment.prod.ts`, which is the only file that names the cloud project. `ng build` defaults to `production`; `ng serve` defaults to `development` and does no replacement.
+- One Supabase project serves production, by decision (2026-09-18): no separate prod project will be created. Migrations go straight to it via `supabase db push`, so every migration is a production migration — validated on the local stack first (`supabase db reset`), additive-first.
 - Production: Vercel deploys from `main`, output `dist/client/browser`, SPA rewrite in `client/vercel.json`.
 - No preview environments / branch DBs for now — revisit if team grows.
 

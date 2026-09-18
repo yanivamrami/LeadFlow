@@ -173,12 +173,12 @@ export class SupabaseService {
 
     if (!supabaseUrl || !supabasePublishableKey) {
       // Fail at startup, not on the first query where it would surface as a
-      // confusing network error. Production is unconfigured on purpose until the
-      // prod project exists — see src/environments/environment.ts.
+      // confusing network error. See src/environments/environment.ts (local stack) and
+      // environment.prod.ts (the cloud project).
       throw new Error(
         'Supabase is not configured: supabaseUrl and supabasePublishableKey are empty. ' +
-          'Set them in src/environments/environment.ts (production) or ' +
-          'src/environments/environment.development.ts (dev).',
+          'Set them in src/environments/environment.ts (local) or ' +
+          'src/environments/environment.prod.ts (production).',
       );
     }
 

@@ -1,14 +1,15 @@
 /**
- * Production configuration. This is the default build target; `ng serve` swaps in
- * environment.development.ts via the fileReplacements in angular.json.
+ * Development configuration: the local Supabase stack (docs/ARCHITECTURE.md §11).
  *
- * There is one Supabase cloud project and it is production (docs/ARCHITECTURE.md §11).
- * The publishable key belongs in source control: it identifies the project and carries
- * no privileges of its own; RLS is the enforcement boundary. The secret key
- * (`sb_secret_…`) lives only in Edge Function secrets.
+ *   supabase start        boots Postgres, Auth, PostgREST, Realtime, Storage in Docker
+ *   supabase db reset     replays every migration and supabase/seed.sql (a login + demo leads)
+ *   npm start             ng serve against it
+ *
+ * The URL and key are the CLI's fixed local defaults, identical on every machine; nothing
+ * here is a secret. `ng build` replaces this file with environment.prod.ts.
  */
 export const environment = {
-  production: true,
-  supabaseUrl: 'https://awifckxssybwiheveqqv.supabase.co',
-  supabasePublishableKey: 'sb_publishable_R3qn8X1VEA70ZqMoO-nNHw_bNr_Xgjt',
+  production: false,
+  supabaseUrl: 'http://127.0.0.1:54321',
+  supabasePublishableKey: 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',
 };

@@ -16,14 +16,15 @@
 
 ```bash
 cd client
-npm start          # ng serve → http://localhost:4200
+supabase start     # local Supabase in Docker (once per session)
+supabase db reset  # migrations + seed: login yaniv@quickdev.co.il / leadflow, a full board
+npm start          # ng serve → http://localhost:4280
 ```
 
-- The dev build points at the **cloud dev** Supabase project
-  (`src/environments/environment.development.ts`). Writes are real; there is no local emulator
-  in play.
-- Use a **throwaway account** for anything destructive. Sign-up creates a personal tenant plus
-  one Hebrew demo lead automatically.
+- `npm start` points at the **local Docker stack** (`src/environments/environment.ts`), not the
+  cloud project. Break anything you like; `supabase db reset` restores the seeded board in
+  seconds. To test against production data, use the deployed Vercel URL.
+- Sign-up is off in the app; the seed creates the one login above.
 - Test on a phone-sized viewport **first** — devtools at 390×844 — then repeat the marked
   scenarios at ~1440px. The board only activates at ≥768px, the desktop nav at ≥900px.
 - Keep the browser console open. An error there during a passing scenario is still a finding.
