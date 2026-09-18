@@ -189,12 +189,13 @@ Tenant-based from day one — the product is multi-tenant even though launch use
 
 - **`tenants`** is the ownership boundary. Every business-data row (`leads`, `activities`, `reminders`) carries `tenant_id uuid not null` — never a bare user id.
 - **`memberships`** links users to tenants with a role (`owner`, `member`; finer roles later). A user can belong to multiple tenants (e.g. a freelancer serving two businesses); the client keeps an "active tenant" context.
+- **Signup is off (2026-09-18):** the product is internal. Public signup is disabled in Supabase Auth and the `/auth/sign-up` route is unrouted (component kept in `features/auth/sign-up.ts`). New users are created by an admin in the Supabase dashboard (Authentication → Users → Add user, with `display_name` in user metadata) and the same trigger below does the rest.
 - **Onboarding:** signup trigger auto-creates a personal tenant + `owner` membership, so the solo-user launch experience is unchanged — teams are enabled later by simply inserting more memberships (invite flow is post-launch, §12). The trigger also inserts **one sample lead** (`is_demo = true`, Hebrew demo content) so first-time users see a populated Kanban; demo leads are deletable and excluded from analytics.
 - **Attribution vs ownership:** `created_by` / `assigned_to` columns reference users for display and assignment, but access control is decided only by `tenant_id`.
 - Tenant-scoped indexes: `(tenant_id, status)`, `(tenant_id, created_at)` on `leads`; `(tenant_id, due_at)` on `reminders`.
 
 ### Migration strategy
-Supabase CLI, run from `client/`: `npx supabase migration new <name>` → SQL file in `client/supabase/migrations/` → applied to the dev instance via `npx supabase db push` (CLI linked to dev project); same files pushed to prod once it exists. No `seed.sql` is used — the first-run demo lead is created per user by the signup trigger, not seeded, so it exists in production too.
+Supabase CLI, run from `client/`: `npx supabase migration new <name>` → SQL file in `client/supabase/migrations/` → applied to the one production project via `npx supabase db push`. No `seed.sql` is used — the first-run demo lead is created per user by the signup trigger, not seeded, so it exists in production too.
 
 ### RLS posture
 - RLS **enabled on every table**; no table is exposed without policies.
@@ -330,7 +331,7 @@ an assigned-to-me filter — arrives with invites (§5, SCREENS 8.3).
   - `dashboard/` — List + Kanban toggle views, search/filter bar, guidance tips
   - `leads/` — lead detail (fields + qualification checklist + activity timeline + reminders), add/edit forms
   - `analytics/` — metrics overview, pipeline progress, source breakdown
-  - `auth/` — sign in / sign up / reset
+  - `auth/` — sign in / reset (sign-up exists but is unrouted, §5)
   - `core/` — `SupabaseService`, auth guard, error/toast service
 - **State:** signal-based stores per feature (`LeadsStore` service holding signals + computed filters). Server is source of truth; optimistic updates for drag-and-drop with rollback on error. A `TenantContext` service in `core/` holds the active tenant (persisted per user); all queries scope to it.
 - **Text direction / i18n:** Hebrew, RTL. `<html dir="rtl" lang="he">`; PrimeNG RTL mode enabled. **CSS logical properties only** (`margin-inline-start`, `padding-block`, etc.) — no left/right physicals. UI copy in Hebrew; a single strings/copy module keyed by feature so future i18n extraction is cheap (no full i18n framework at launch).
