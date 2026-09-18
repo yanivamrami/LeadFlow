@@ -141,7 +141,10 @@ export class LeadFilesStore {
     } catch {
       // A list that will not load is not worth a modal on top of the sheet the user opened to
       // do something else. The block renders empty and the next open retries.
-      this.loadingFor.set(null);
+    } finally {
+      // This is an in-flight guard, not a loaded cache. Leaving the lead id here permanently
+      // made the refresh after a successful upload a no-op, so the new row stayed invisible.
+      if (this.loadingFor() === leadId) this.loadingFor.set(null);
     }
   }
 
@@ -191,16 +194,25 @@ export class LeadFilesStore {
         }
 
         try {
-          await this.supabase.run(
-            this.table().insert({
-              tenant_id: tenantId,
-              lead_id: leadId,
-              storage_path: path,
-              name: file.name,
-              mime_type: file.type || 'application/octet-stream',
-              size_bytes: file.size,
-            }) as never,
+          const row = await this.supabase.run<LeadFileRow>(
+            this.table()
+              .insert({
+                tenant_id: tenantId,
+                lead_id: leadId,
+                storage_path: path,
+                name: file.name,
+                mime_type: file.type || 'application/octet-stream',
+                size_bytes: file.size,
+              })
+              .select('id, lead_id, name, mime_type, size_bytes, storage_path, created_at')
+              .single() as never,
           );
+          // Use the inserted server row as the receipt and render it immediately. A later load
+          // still reconciles the full list, but visibility no longer depends on a second request.
+          this.byLead.update((all) => ({
+            ...all,
+            [leadId]: [toFile(row), ...(all[leadId] ?? [])],
+          }));
           landed++;
         } catch {
           // The object is up but nothing references it, so it would be paid for and unreachable
@@ -211,7 +223,6 @@ export class LeadFilesStore {
       }
 
       if (landed > 0) {
-        await this.load(leadId);
         this.notify.succeeded(COPY.lead.files.uploaded(landed));
       }
     } finally {
@@ -262,14 +273,24 @@ export class LeadFilesStore {
    * bucket is not public.
    */
   async open(file: LeadFile): Promise<void> {
+    // Open during the click's user-activation window. Waiting for the signed URL first lets
+    // popup blockers treat the eventual window as unsolicited, even though the user clicked.
+    const tab = window.open('about:blank', '_blank');
+    if (tab) tab.opener = null;
+
     const { data, error } = await this.storage
       .from(BUCKET)
       .createSignedUrl(file.storagePath, 60);
     if (error || !data?.signedUrl) {
+      tab?.close();
       this.notify.failed(COPY.lead.files.openFailed);
       return;
     }
-    window.open(data.signedUrl, '_blank', 'noopener');
+    if (tab) {
+      tab.location.replace(data.signedUrl);
+      return;
+    }
+    this.notify.failed(COPY.lead.files.openBlocked);
   }
 
   /**

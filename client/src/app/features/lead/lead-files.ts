@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 
 import { COPY, formatBytes } from '../../core/copy';
 import { FILE_ACCEPT, LeadFile } from '../../core/lead-files.store';
@@ -23,24 +23,37 @@ import { FILE_ACCEPT, LeadFile } from '../../core/lead-files.store';
     <section class="files" aria-labelledby="files-title">
       <div class="hd">
         <h3 class="t" id="files-title">{{ copy.title }}</h3>
-
-        <!-- A label wrapping a visually-hidden input: the OS picker, with none of the browser's
-             own button, which cannot be styled into this world. The label is the hit area. -->
-        <label class="add" [class.add--off]="disabled() || busy()">
-          <span>{{ busy() ? copy.adding : copy.add }}</span>
-          <input
-            type="file"
-            class="lf-sr"
-            multiple
-            [accept]="accept"
-            [disabled]="disabled() || busy()"
-            (change)="onPick($event)"
-          />
-        </label>
       </div>
 
-      @if (files().length || pending().length) {
-        <ul class="l">
+      <!-- The label makes the entire drop area a native file-picker trigger, including for
+           keyboard users. Dragging feeds the very same output as choosing from the picker. -->
+      <label
+        class="drop"
+        [class.drop--over]="dragging()"
+        [class.drop--off]="disabled() || busy()"
+        [attr.aria-disabled]="disabled() || busy()"
+        (dragenter)="onDragEnter($event)"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+      >
+        <span class="drop__mark" aria-hidden="true">+</span>
+        <span class="drop__text">
+          {{ busy() ? copy.adding : dragging() ? copy.dropActive : copy.drop }}
+        </span>
+        <input
+          type="file"
+          class="lf-sr"
+          multiple
+          [accept]="accept"
+          [disabled]="disabled() || busy()"
+          (change)="onPick($event)"
+        />
+      </label>
+
+      @if (files().length) {
+        <h4 class="list-title" id="uploaded-files-title">{{ copy.uploadedTitle }}</h4>
+        <ul class="l" aria-labelledby="uploaded-files-title">
           @for (file of files(); track file.id) {
             <li class="f">
               <button
@@ -64,7 +77,12 @@ import { FILE_ACCEPT, LeadFile } from '../../core/lead-files.store';
               </button>
             </li>
           }
+        </ul>
+      }
 
+      @if (pending().length) {
+        <h4 class="list-title" id="pending-files-title">{{ copy.pendingTitle }}</h4>
+        <ul class="l" aria-labelledby="pending-files-title">
           <!-- Chosen on a new lead, not yet uploaded: shown in the same list so the user sees
                one set of files rather than having to reconcile two. -->
           @for (held of pending(); track held.name + held.size; let i = $index) {
@@ -84,11 +102,10 @@ import { FILE_ACCEPT, LeadFile } from '../../core/lead-files.store';
             </li>
           }
         </ul>
+        <p class="hint">{{ copy.queued(pending().length) }}</p>
+      }
 
-        @if (pending().length) {
-          <p class="hint">{{ copy.queued(pending().length) }}</p>
-        }
-      } @else {
+      @if (!files().length && !pending().length) {
         <p class="hint">{{ copy.none }}</p>
       }
 
@@ -117,29 +134,61 @@ import { FILE_ACCEPT, LeadFile } from '../../core/lead-files.store';
       line-height: 1.1;
     }
 
-    /* The label is the control, so it carries the touch target and the focus ring the hidden
-       input would otherwise take with it off screen. */
-    .add {
-      flex: 0 0 auto;
-      display: inline-flex;
+    /* One generous target for both direct manipulation and the native picker. The dashed rule
+       reads as an available placement area in the existing paper-and-ink visual language. */
+    .drop {
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      min-block-size: var(--lf-touch);
-      padding-inline: var(--lf-space-3);
-      border: 2px solid var(--lf-ink);
-      font-size: 14px;
-      font-weight: 500;
+      justify-content: center;
+      gap: var(--lf-space-2);
+      min-block-size: 112px;
+      padding: var(--lf-space-4);
+      border: 3px dashed var(--lf-muted);
+      background: color-mix(in srgb, var(--lf-surface) 62%, transparent);
+      color: var(--lf-ink);
+      text-align: center;
       cursor: pointer;
-      transition: background var(--lf-dur-state) linear, color var(--lf-dur-state) linear;
+      transition:
+        background var(--lf-dur-state) linear,
+        border-color var(--lf-dur-state) linear;
     }
-    .add:hover { background: var(--lf-ink); color: var(--lf-on-ink); }
-    .add:has(input:focus-visible) { outline: 3px solid var(--lf-red); outline-offset: 2px; }
-    .add--off { opacity: 0.6; cursor: default; }
-    .add--off:hover { background: transparent; color: var(--lf-ink); }
+    .drop:hover:not(.drop--off),
+    .drop--over {
+      border-color: var(--lf-red);
+      background: color-mix(in srgb, var(--lf-day) 22%, var(--lf-surface));
+    }
+    .drop:has(input:focus-visible) { outline: 3px solid var(--lf-red); outline-offset: 2px; }
+    .drop--off { opacity: 0.6; cursor: default; }
+    .drop__mark {
+      display: grid;
+      place-items: center;
+      inline-size: var(--lf-touch);
+      block-size: var(--lf-touch);
+      border: 2px solid currentColor;
+      font-family: var(--lf-font-num);
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .drop__text {
+      font-size: var(--lf-size-body);
+      font-weight: 600;
+      line-height: 1.35;
+    }
 
     .l {
       margin: 0;
       padding: 0;
       list-style: none;
+    }
+
+    .list-title {
+      margin: var(--lf-space-4) 0 var(--lf-space-1);
+      font-size: var(--lf-size-small);
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--lf-muted);
     }
 
     .f {
@@ -239,12 +288,43 @@ export class LeadFiles {
   readonly removeRequested = output<LeadFile>();
   readonly pendingDropped = output<number>();
 
+  protected readonly dragging = signal(false);
+  private dragDepth = 0;
+
   protected onPick(event: Event): void {
     const input = event.target as HTMLInputElement;
     const chosen = Array.from(input.files ?? []);
     // Cleared either way: leaving the selection in place means choosing the same file again
     // fires no `change` event, so a failed upload could never be retried.
     input.value = '';
+    if (chosen.length) this.picked.emit(chosen);
+  }
+
+  protected onDragEnter(event: DragEvent): void {
+    event.preventDefault();
+    if (this.disabled() || this.busy()) return;
+    this.dragDepth++;
+    this.dragging.set(true);
+  }
+
+  protected onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  }
+
+  protected onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    if (this.dragDepth > 0) this.dragDepth--;
+    if (this.dragDepth === 0) this.dragging.set(false);
+  }
+
+  protected onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.dragDepth = 0;
+    this.dragging.set(false);
+    if (this.disabled() || this.busy()) return;
+
+    const chosen = Array.from(event.dataTransfer?.files ?? []);
     if (chosen.length) this.picked.emit(chosen);
   }
 }

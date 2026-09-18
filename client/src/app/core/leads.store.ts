@@ -72,9 +72,9 @@ const SELECT = `
 
 /**
  * Dashboard state. Signals only — the app is small enough that NgRx would be ceremony
- * (docs/ARCHITECTURE.md §4). Supabase is the source of truth; every mutation writes
- * first and updates local state from what came back, so the screen can never show a
- * lead the database refused.
+ * (docs/ARCHITECTURE.md §4). Supabase is the source of truth. Stage moves are patched
+ * optimistically (and rolled back on failure) so a dropped card never waits on the network;
+ * other mutations update local state from the server response.
  */
 @Injectable({ providedIn: 'root' })
 export class LeadsStore {
@@ -474,42 +474,70 @@ export class LeadsStore {
    * Stage moves are never blocked by the checklist. A DB trigger appends the
    * `status_changed` activity, so this writes the stage and nothing else.
    */
-  moveToStage(leadId: string, stage: Stage): void {
+  async moveToStage(leadId: string, stage: Stage): Promise<void> {
     const lead = this.byId(leadId);
     if (!lead || lead.stage.id === stage.id) return;
 
-    void this.commit(
-      lead.name,
-      () =>
-        this.supabase.run(
-          this.supabase.client
-            .from('leads')
-            // stage_id is not yet in the generated Database types (see rpc()'s doc
-            // comment below) — widened the same way, on the value rather than the table.
-            .update({ stage_id: stage.id } as never)
-            .eq('id', leadId) as never,
-        ),
-      () => {
-        this.announcement.set(COPY.a11y.stageChanged(lead.name, stage.name));
-        const open = this.openChecklistCount(lead);
-        if (open > 0 && stage.kind === 'open') {
-          // The action opens the lead at its checklist. It never answers anything — that is
-          // why it waited for the checklist to have a screen rather than shipping as a
-          // one-tap "mark done", which would have been a lie about the user's own data.
-          this.notify.nudge(COPY.nudge.checklist(open), COPY.nudge.later, {
-            label: COPY.nudge.fillNow,
-            run: () =>
-              void this.router.navigate(['/lead', leadId], {
-                queryParams: { at: 'checklist' },
-              }),
-          });
-        } else if (stage.guidance) {
-          // A user-created stage may carry no guidance at all (documents/PLAN-stages.md
-          // §4.4) — silence is the right answer there, not a blank toast.
-          this.notify.info(stage.guidance);
-        }
-      },
-    );
+    if (!this.notify.online()) {
+      this.notify.blockedOffline();
+      return;
+    }
+
+    const previousStageId = lead.stage.id;
+    const patchStage = (stageId: string) =>
+      this._rows.update((rows) =>
+        rows.map((row) => (row.id === leadId ? { ...row, stage_id: stageId } : row)),
+      );
+
+    // CDK restores the dragged element to the rendered list as soon as `drop` returns.
+    // Patch in that same turn so Angular renders it in the destination list immediately,
+    // instead of flashing it in its old column while the request and reload are in flight.
+    patchStage(stage.id);
+
+    const run = async () => {
+      await this.supabase.run(
+        this.supabase.client
+          .from('leads')
+          // stage_id is not yet in the generated Database types (see rpc()'s doc
+          // comment below) — widened the same way, on the value rather than the table.
+          .update({ stage_id: stage.id } as never)
+          .eq('id', leadId) as never,
+      );
+      await this.reload();
+      this._writes.update((n) => n + 1);
+    };
+
+    try {
+      await run();
+      this.announcement.set(COPY.a11y.stageChanged(lead.name, stage.name));
+      const open = this.openChecklistCount(lead);
+      if (open > 0 && stage.kind === 'open') {
+        // The action opens the lead at its checklist. It never answers anything — that is
+        // why it waited for the checklist to have a screen rather than shipping as a
+        // one-tap "mark done", which would have been a lie about the user's own data.
+        this.notify.nudge(COPY.nudge.checklist(open), COPY.nudge.later, {
+          label: COPY.nudge.fillNow,
+          run: () =>
+            void this.router.navigate(['/lead', leadId], {
+              queryParams: { at: 'checklist' },
+            }),
+        });
+      } else if (stage.guidance) {
+        // A user-created stage may carry no guidance at all (documents/PLAN-stages.md
+        // §4.4) — silence is the right answer there, not a blank toast.
+        this.notify.info(stage.guidance);
+      }
+    } catch (error) {
+      // Do not leave an unpersisted move on screen. Only undo this move if it is still the
+      // visible one; a later move of the same lead must win over this request's failure.
+      if (this._rows().find((row) => row.id === leadId)?.stage_id === stage.id) {
+        patchStage(previousStageId);
+      }
+      this.report(error, true, lead.name, async () => {
+        patchStage(stage.id);
+        await run();
+      });
+    }
   }
 
   /**
