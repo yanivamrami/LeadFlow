@@ -148,7 +148,7 @@
               >
                 <option value="" disabled>{{ copyStages.chooseDestination }}</option>
                 @for (opt of destinationOptions(); track opt.id) {
-                  <option [value]="opt.id">{{ opt.name }}</option>
+                  <option [value]="opt.id" [selected]="opt.id === destinationId()">{{ opt.name }}</option>
                 }
               </select>
             </label>

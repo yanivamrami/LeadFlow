@@ -12,7 +12,7 @@
         (change)="setSort($any($event.target).value)"
       >
         @for (key of sortKeys; track key) {
-          <option [value]="key">{{ sortLabel[key] }}</option>
+          <option [value]="key" [selected]="key === sort()">{{ sortLabel[key] }}</option>
         }
       </select>
     </label>

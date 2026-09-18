@@ -2,6 +2,7 @@
 // token posts a lead and it lands on that tenant's board. First caller is the Netlush WhatsApp
 // bot; the public web form (SCREENS 8.2) will use the same endpoint.
 //
+// Two modes, decided by the payload: create (`source` present) and update (`source` absent).
 // This file is deliberately thin. Authentication, rate limiting, validation, idempotency and
 // both inserts live in the `capture_lead` RPC (migration 20260918100100), which only the
 // secret-key client can call. Here we only: read the bearer token, parse JSON, call the RPC,
@@ -68,6 +69,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       console.log(`capture-lead 401 ref=${ref} ${ms}ms`);
       return json({ error: 'unauthorized' }, 401);
     }
+    if (msg === 'not_found') {
+      console.log(`capture-lead 404 ref=${ref} ${ms}ms`);
+      return json({ error: 'not_found' }, 404);
+    }
     if (msg === 'rate_limited') {
       console.log(`capture-lead 429 ref=${ref} ${ms}ms`);
       return json({ error: 'rate_limited' }, 429);
@@ -81,8 +86,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ error: 'internal' }, 500);
   }
 
-  const result = data as { lead_id: string; created: boolean; tenant_id: string };
+  const result = data as { lead_id: string; created: boolean; note_id?: string | null; tenant_id: string };
   const status = result.created ? 201 : 200;
   console.log(`capture-lead ${status} tenant=${result.tenant_id} ref=${ref} ${ms}ms`);
-  return json({ lead_id: result.lead_id, created: result.created }, status);
+  const body: Record<string, unknown> = { lead_id: result.lead_id, created: result.created };
+  if (result.note_id) body.note_id = result.note_id;
+  return json(body, status);
 });

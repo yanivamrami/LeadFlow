@@ -56,6 +56,47 @@ begin
     assert sqlerrm = 'validation:name', 'expected validation:name, got ' || sqlerrm;
   end;
 
+  -- update mode: fields, answers, note
+  v_b := public.capture_lead(v_token, jsonb_build_object('external_ref', 'check:1',
+           'estimated_value', 1234.5, 'phone', '+972500000001', 'answers', jsonb_build_object('budget','yes','need','unknown')));
+  assert (select estimated_value = 1234.5 and phone = '+972500000001' from public.leads where id = (v_a->>'lead_id')::uuid), 'fields updated';
+  assert (select count(*) from public.qualification_answers where lead_id = (v_a->>'lead_id')::uuid) = 2, 'two answers upserted';
+  v_b := public.capture_lead(v_token, jsonb_build_object('external_ref', 'check:1', 'answers', jsonb_build_object('need','yes')));
+  assert (select answer = 'yes' from public.qualification_answers where lead_id = (v_a->>'lead_id')::uuid and item = 'need'), 'answer overwritten';
+  begin
+    perform public.capture_lead(v_token, jsonb_build_object('external_ref', 'check:1', 'answers', jsonb_build_object('shoe_size','yes')));
+    raise exception 'bad answer key must fail';
+  exception when others then
+    assert sqlerrm = 'validation:answers', 'expected validation:answers, got ' || sqlerrm;
+  end;
+
+  -- append-note
+  v_b := public.capture_lead(v_token, jsonb_build_object('external_ref', 'check:1', 'append_note', 'עוד הערה'));
+  assert v_b->>'lead_id' = v_a->>'lead_id' and (v_b->>'note_id') is not null, 'append returns lead + note id';
+  select count(*) into v_notes from public.activities
+   where lead_id = (v_a->>'lead_id')::uuid and type = 'note';
+  assert v_notes = 2, 'append adds exactly one note';
+  assert (select count(*) from public.reminders
+           where lead_id = (v_a->>'lead_id')::uuid and done_at is null) = 1,
+    'one open reminder after create + append, due now';
+  assert (select due_at <= now() from public.reminders
+           where lead_id = (v_a->>'lead_id')::uuid and done_at is null),
+    'reminder is due now';
+
+  begin
+    perform public.capture_lead(v_token, jsonb_build_object('external_ref', 'nope', 'append_note', 'x'));
+    raise exception 'unknown ref must fail';
+  exception when others then
+    assert sqlerrm = 'not_found', 'expected not_found, got ' || sqlerrm;
+  end;
+
+  begin
+    perform public.capture_lead(v_token, jsonb_build_object('external_ref', 'check:1', 'append_note', '  '));
+    raise exception 'blank note must fail';
+  exception when others then
+    assert sqlerrm = 'validation:append_note', 'expected validation:append_note, got ' || sqlerrm;
+  end;
+
   raise notice 'capture_lead: all checks passed';
 end $$;
 

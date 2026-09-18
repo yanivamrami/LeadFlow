@@ -41,9 +41,10 @@ Unknown fields are ignored. `null` is treated as absent.
 | Status | Body |
 |---|---|
 | 201 | `{"lead_id":"<uuid>","created":true}` |
-| 200 | `{"lead_id":"<uuid>","created":false}` — same `external_ref` seen before, nothing changed |
+| 200 | `{"lead_id":"<uuid>","created":false}` — create replayed (nothing changed) or an update applied; see Update mode |
 | 400 | `{"error":"validation","field":"<name>"}` — `field` is one of the names above, or `body` for unparseable JSON |
 | 401 | `{"error":"unauthorized"}` — missing, unknown, or revoked token |
+| 404 | `{"error":"not_found"}` — update for an `external_ref` that was never created |
 | 405 | `{"error":"method_not_allowed"}` |
 | 429 | `{"error":"rate_limited"}` — more than 60 calls in the current minute for this token |
 | 500 | `{"error":"internal"}` — retry later |
@@ -66,6 +67,7 @@ one note, even when two retries race.
   ```
   The `עובדים:` and `שיחה:` lines appear only when sent.
 - The board updates live for anyone looking at it (realtime on `leads`).
+- **Every call opens a follow-up due now** on the lead (or pulls the open one forward), so it lands on the owner's day sheet today.
 - **Stage automations do not fire on arrival.** LeadFlow's `lead_enters_stage` rules run on a
   stage *change*, not on creation, and that is also true for leads created by hand. So the
   tenant's "follow up in N days" rule for the first stage does not create a reminder for a
@@ -88,7 +90,43 @@ First run 201, second run 200 with the same id. Tell us when you are done so we 
 - 60 requests per minute per token, fixed window. Plenty for one lead per conversation.
 - The token can create leads in one tenant and do nothing else. Ask us to rotate it if it leaks.
 
-## Not built (per your scope)
+## Update mode (added 2026-09-18, replaces the append-note request)
 
-- No update / append-note mode. A second call with a known `external_ref` is a no-op.
+Same endpoint, same bearer. **A payload without `source` is an update** of the lead with that
+`external_ref`. Create needs `source`; leave it out and nothing is created. Every field is
+optional, an absent key is untouched, and there is no idempotency: replaying an update is
+harmless.
+
+```json
+{
+  "external_ref": "netlush-whatsapp-bot:conversation:46",
+  "name": "יניב כהן",
+  "company": "גלידה בע״מ",
+  "phone": "+972544497130",
+  "email": "yaniv@glida.co.il",
+  "estimated_value": 18000,
+  "answers": { "budget": "yes", "authority": "unknown" },
+  "append_note": "ביקש שנחזור אליו אחרי 14:00"
+}
+```
+
+| Field | Rule |
+|---|---|
+| `external_ref` | required, must already exist → else `404 {"error":"not_found"}` |
+| `name`, `company`, `phone`, `email` | same lengths as create; `name` non-empty if sent; empty string clears the others |
+| `estimated_value` | number ≥ 0, in ₪ |
+| `answers` | object; keys `interest`, `need`, `budget`, `authority`, `timeline`; values `yes`, `no`, `unknown`. Only the items sent change. |
+| `append_note` | string ≤ 4000, non-empty. Goes on the timeline prefixed `עדכון מהבוט של נטלוש בוואטסאפ`. |
+
+Response: `200 {"lead_id":"<uuid>","created":false}` plus `"note_id":"<uuid>"` when a note was
+added. Validation errors name the field as in create, e.g. `{"error":"validation","field":"answers"}`.
+
+**What every bot call does in LeadFlow, create or update:** it opens a follow-up reminder due
+now on the lead, or pulls the existing open one forward. That is what puts the lead on the
+owner's day sheet immediately. You do not need to do anything for it.
+
+## Not built
+
+- No stage changes and no source changes via the API. If you need to mark a lead won or lost,
+  say so and we will discuss what "won" means from the bot's side.
 - No `employees_count` column. It lives in the note.

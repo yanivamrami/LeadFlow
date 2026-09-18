@@ -87,7 +87,16 @@ Then mint the Netlush token in the SQL editor, hand it over out of band, run the
 ### 6. Check left behind
 One SQL file under `client/supabase/snippets/` that mints a throwaway token on a test tenant, calls `capture_lead` twice with the same `external_ref`, asserts one lead and one activity, then rolls back.
 
+## Added the same day: update mode + day-sheet surfacing
+
+Migration `20260918110000_capture_lead_update_mode.sql`. A payload without `source` updates
+the lead with that `external_ref` (contact fields, `estimated_value`, `answers`, `append_note`),
+404 when unknown. Both modes end by opening a follow-up due now (`private.capture_surface_lead`),
+because the client folds every activity into `lastTouchAt` — a bot note alone would make the lead
+look freshly handled and *remove* it from the drift flags — and an open reminder due today is the
+one signal the day sheet ranks first. Also fixed on the way: `<select [value]>` in four templates
+showed the first option regardless of the model, so every lead's source read "אתר".
+
 ## Skipped
 - Separate rate-limit / audit table: two columns on the token row cover 60/min. Add when a token needs per-minute history.
 - Settings screen for tokens: SQL snippet for now, screen when a second tenant needs one.
-- `PATCH` / append-note mode: out of scope per the handoff.

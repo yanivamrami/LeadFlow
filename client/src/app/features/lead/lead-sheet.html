@@ -281,7 +281,7 @@
                 (change)="setSource($any($event.target).value)"
               >
                 @for (option of sources; track option) {
-                  <option [value]="option">{{ sourceLabel[option] }}</option>
+                  <option [value]="option" [selected]="option === source()">{{ sourceLabel[option] }}</option>
                 }
               </select>
               @if (sourceHelpOpen()) {

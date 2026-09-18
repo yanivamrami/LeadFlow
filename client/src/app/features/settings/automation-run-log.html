@@ -30,7 +30,7 @@
           >
             <option value="" disabled>{{ copy.dryRunChoose }}</option>
             @for (l of leads(); track l.id) {
-              <option [value]="l.id">{{ l.name }}</option>
+              <option [value]="l.id" [selected]="l.id === selectedLeadId()">{{ l.name }}</option>
             }
           </select>
         </label>
